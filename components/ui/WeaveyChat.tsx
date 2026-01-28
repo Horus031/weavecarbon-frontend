@@ -180,9 +180,9 @@ Hãy hỏi tôi bất cứ điều gì!`;
 
   // Dashboard variant - compact floating button with expandable chat
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-0 right-2 md:bottom-6 md:right-6 z-50">
       {isOpen ? (
-        <div className="bg-card border border-border rounded-2xl shadow-2xl w-90 h-120 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
+        <div className="bg-card border border-border rounded-2xl shadow-2xl w-90 h-80 md:h-120 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <div className="bg-linear-to-r from-primary to-accent p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">

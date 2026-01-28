@@ -1,5 +1,8 @@
-import React from "react";
+"use client";
+
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { useDashboardTitle } from "@/contexts/DashboardContext";
 import {
   Card,
   CardContent,
@@ -21,27 +24,51 @@ import {
   Lightbulb,
   PlusCircle,
 } from "lucide-react";
-import {
-  marketReadiness,
-  recommendations,
-  dashboardStats,
-  getReadinessColor,
-  getImpactColor,
-} from "@/lib/dashboardData";
+import { getReadinessColor, getImpactColor } from "@/lib/dashboardData";
 import OverviewCharts from "@/components/dashboard/OverviewCharts";
 
 interface Company {
   target_markets: string[] | null;
 }
 
-// Mock company (no DB yet)
-const mockCompany: Company = {
-  target_markets: ["US", "EU"],
-};
+interface Stats {
+  totalCO2: number;
+  skuCount: number;
+  exportReadiness: number;
+  confidenceScore: number;
+}
 
-const OverviewPage: React.FC = () => {
-  const company = mockCompany;
-  const stats = dashboardStats;
+interface MarketReadiness {
+  market: string;
+  score: number;
+}
+
+interface Recommendation {
+  id: number;
+  title: string;
+  description: string;
+  impact: string;
+  reduction: string;
+}
+
+interface OverviewPageClientProps {
+  company: Company;
+  stats: Stats;
+  marketReadiness: MarketReadiness[];
+  recommendations: Recommendation[];
+}
+
+export default function OverviewPageClient({
+  company,
+  stats,
+  marketReadiness,
+  recommendations,
+}: OverviewPageClientProps) {
+  const { setPageTitle } = useDashboardTitle();
+
+  useEffect(() => {
+    setPageTitle("Overview", "Overview of your carbon tracking");
+  }, [setPageTitle]);
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -186,10 +213,7 @@ const OverviewPage: React.FC = () => {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         <Card className="hover:border-primary/50 transition-colors flex flex-col">
-          <Link
-            href="/dashboard/products"
-            className="block flex-1 flex flex-col"
-          >
+          <Link href="/dashboard/products" className="flex-1 flex flex-col">
             <CardHeader className="pb-2">
               <PlusCircle className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2" />
               <CardTitle className="text-base md:text-lg">
@@ -212,7 +236,7 @@ const OverviewPage: React.FC = () => {
         </Card>
 
         <Card className="hover:border-primary/50 transition-colors flex flex-col">
-          <Link href="/dashboard/logistics" className="block flex-1 flex-col">
+          <Link href="/dashboard/logistics" className="flex-1 flex flex-col">
             <CardHeader className="pb-2">
               <Truck className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2" />
               <CardTitle className="text-base md:text-lg">
@@ -235,10 +259,7 @@ const OverviewPage: React.FC = () => {
         </Card>
 
         <Card className="hover:border-primary/50 transition-colors flex flex-col sm:col-span-2 lg:col-span-1">
-          <Link
-            href="/dashboard/reports"
-            className="block flex-1 flex flex-col"
-          >
+          <Link href="/dashboard/reports" className="flex-1 flex flex-col">
             <CardHeader className="pb-2">
               <FileCheck className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2" />
               <CardTitle className="text-base md:text-lg">
@@ -285,6 +306,4 @@ const OverviewPage: React.FC = () => {
       )}
     </div>
   );
-};
-
-export default OverviewPage;
+}

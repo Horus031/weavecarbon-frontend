@@ -63,7 +63,7 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
 
       onOpenChange(false);
 
-      router.push(type === "b2b" ? "/dashboard/overview" : "/b2c-dashboard");
+      router.push(type === "b2b" ? "/overview" : "/b2c");
     } catch (err) {
       toast.error("auth.error");
     } finally {

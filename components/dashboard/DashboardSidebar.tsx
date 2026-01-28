@@ -46,28 +46,28 @@ const menuItems = [
   {
     icon: BarChart3,
     labelKey: "Overview",
-    path: "/dashboard/overview",
+    path: "/overview",
   },
   {
     icon: Package,
     labelKey: "Products",
-    path: "/dashboard/products",
+    path: "/products",
   },
   {
     icon: Truck,
     labelKey: "Logistics",
-    path: "/dashboard/logistics",
+    path: "/logistics",
   },
-  { icon: FileCheck, labelKey: "Export", path: "/dashboard/export" },
+  { icon: FileCheck, labelKey: "Export", path: "/export" },
   {
     icon: TrendingUp,
     labelKey: "Reports",
-    path: "/dashboard/reports",
+    path: "/reports",
   },
   {
     icon: Settings,
     labelKey: "Settings",
-    path: "/dashboard/settings",
+    path: "/settings",
   },
 ];
 
@@ -102,7 +102,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:relative left-0 top-0 h-screen bg-card border-r border-border transition-all duration-300 flex flex-col shrink-0 z-50 lg:z-auto ${
+        className={`fixed left-0 top-0 h-screen bg-card border-r border-border transition-all duration-300 flex flex-col shrink-0 z-50 lg:z-auto ${
           sidebarOpen ? "w-64" : "-translate-x-full"
         }`}
       >

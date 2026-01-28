@@ -13,7 +13,6 @@ import { z } from "zod";
 import { useToast } from "@/hooks/useToast";
 import SocialLogin from "@/components/auth/SocialLogin";
 import EmailAuthTabs from "@/components/auth/EmailAuthTabs";
-import AuthLayout from "@/app/auth/layout";
 import { useParams, useRouter } from "next/navigation";
 
 const emailSchema = z.string().email("Invalid email address");
@@ -51,7 +50,7 @@ const AuthForm: React.FC = () => {
   }>({});
 
   const getDashboardPath = useCallback(() => {
-    return userType === "b2c" ? "/b2c-dashboard" : "/dashboard";
+    return userType === "b2c" ? "/b2c-dashboard" : "/overview";
   }, [userType]);
 
   // Redirect if already logged in
