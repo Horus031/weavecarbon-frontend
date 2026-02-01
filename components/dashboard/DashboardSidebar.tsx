@@ -126,9 +126,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 <Home className="w-4 h-4" />
               </Link>
             </div>
-            <Button variant="ghost" size="icon" onClick={onToggleSidebar}>
+            <Button
+              className="lg:hidden"
+              variant="ghost"
+              size="icon"
+              onClick={onToggleSidebar}
+            >
               {sidebarOpen ? (
-                <X className="w-4 h-4 lg:hidden" />
+                <X className="w-4 h-4" />
               ) : (
                 <Menu className="w-4 h-4" />
               )}
@@ -151,6 +156,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             const active = isActive(item.path);
             return (
               <Link
+                onClick={onToggleSidebar}
                 key={item.path}
                 href={item.path}
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${

@@ -8,12 +8,14 @@ interface SocialLoginProps {
   onDemoLogin: () => void;
   onGoogleLogin: () => void;
   isLoading: boolean;
+  demoButtonText?: string;
 }
 
 export default function SocialLogin({
   onDemoLogin,
   onGoogleLogin,
   isLoading,
+  demoButtonText = "Try Demo Account",
 }: SocialLoginProps) {
   return (
     <>
@@ -25,7 +27,7 @@ export default function SocialLogin({
         disabled={isLoading}
       >
         <Play className="w-5 h-5 mr-2 text-primary" />
-        Try Demo Account
+        {demoButtonText}
       </Button>
 
       {/* Google Login Button */}

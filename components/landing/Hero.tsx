@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { motion } from "motion/react";
 import { ArrowRight, BarChart3, Recycle, Shield } from "lucide-react";
 import { useState } from "react";
 import UserTypeDialog from "./UserTypeDialog";
@@ -21,28 +22,52 @@ const Hero = () => {
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8 animate-fade-up">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8"
+          >
             <Shield className="w-4 h-4" />
             <span className="text-sm font-medium">
               EU DPP & Carbon Tracking Platform
             </span>
-          </div>
+          </motion.div>
 
           {/* Main heading */}
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-foreground mb-6 animate-fade-up delay-100">
+          <motion.h1
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: 0.05 }}
+            className="text-4xl md:text-5xl lg:text-7xl font-bold text-foreground mb-6"
+          >
             Measure Your Fashion{" "}
             <span className="text-gradient-forest">Carbon Footprint</span>
-          </h1>
+          </motion.h1>
 
           {/* Subheading */}
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-up delay-200">
+          <motion.p
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
+          >
             Enable Vietnamese fashion brands to measure carbon footprints for
             2026 export standards and manage a circular economy for garment
             waste.
-          </p>
+          </motion.p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-up delay-300">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: 0.15 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+          >
             <Button
               variant="hero"
               size="xl"
@@ -61,10 +86,16 @@ const Hero = () => {
                 Calculate Now
               </Button>
             </Link>
-          </div>
+          </motion.div>
 
           {/* Feature highlights */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-up delay-400">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
             <FeatureCard
               icon={<BarChart3 className="w-6 h-6" />}
               title="Carbon Proxy Engine"
@@ -80,12 +111,18 @@ const Hero = () => {
               title="Export Readiness"
               description="Score your compliance for EU, US, and JP export standards with actionable insights."
             />
-          </div>
+          </motion.div>
 
           {/* Trust badge */}
-          <p className="mt-12 text-sm text-muted-foreground animate-fade-up delay-500">
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.25 }}
+            className="mt-12 text-sm text-muted-foreground"
+          >
             Trusted by leading Vietnamese manufacturers
-          </p>
+          </motion.p>
         </div>
       </div>
 
@@ -110,13 +147,20 @@ const FeatureCard = ({
   title: string;
   description: string;
 }) => (
-  <div className="glass-card rounded-2xl p-6 text-left hover:scale-[1.02] transition-transform duration-300">
+  <motion.div
+    initial={{ opacity: 0, y: 18 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.5 }}
+    transition={{ duration: 0.6, ease: "easeOut" }}
+    whileHover={{ y: -4, scale: 1.02 }}
+    className="glass-card rounded-2xl p-6 text-left transition-transform duration-300"
+  >
     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
       {icon}
     </div>
     <h3 className="font-semibold text-foreground mb-2">{title}</h3>
     <p className="text-sm text-muted-foreground">{description}</p>
-  </div>
+  </motion.div>
 );
 
 export default Hero;

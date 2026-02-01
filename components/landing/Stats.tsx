@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "motion/react";
 import { TrendingUp } from "lucide-react";
 
 const Stats = () => {
@@ -44,7 +45,13 @@ const Stats = () => {
 
       <div className="container mx-auto px-6 relative z-10">
         {/* Section header */}
-        <div className="max-w-3xl mx-auto text-center mb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="max-w-3xl mx-auto text-center mb-16"
+        >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-foreground/10 text-primary-foreground text-sm font-medium mb-4">
             <TrendingUp className="w-4 h-4" />
             Impact
@@ -55,13 +62,18 @@ const Stats = () => {
           <p className="text-lg text-primary-foreground/80">
             Measurable progress towards a sustainable fashion industry
           </p>
-        </div>
+        </motion.div>
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-          {stats.map((stat) => (
-            <div
+          {stats.map((stat, index) => (
+            <motion.div
               key={stat.labelKey}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.08 }}
+              whileHover={{ y: -4 }}
               className="text-center p-8 rounded-2xl bg-primary-foreground/5 backdrop-blur-sm border border-primary-foreground/10 hover:bg-primary-foreground/10 transition-colors"
             >
               <div className="text-4xl md:text-5xl font-display font-bold mb-2">
@@ -73,7 +85,7 @@ const Stats = () => {
               <div className="text-sm text-primary-foreground/70">
                 {stat.description}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

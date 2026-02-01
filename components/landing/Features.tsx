@@ -1,4 +1,5 @@
 "use client";
+import { motion } from "motion/react";
 import {
   BarChart3,
   Globe,
@@ -81,7 +82,13 @@ const Features = () => {
     <section id="features" className="py-24 md:py-32 bg-muted/30">
       <div className="container mx-auto px-6">
         {/* Section header */}
-        <div className="max-w-3xl mx-auto text-center mb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="max-w-3xl mx-auto text-center mb-16"
+        >
           <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
             Features
           </span>
@@ -92,13 +99,18 @@ const Features = () => {
             Everything you need to track, reduce, and report your carbon
             emissions
           </p>
-        </div>
+        </motion.div>
 
         {/* Features grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {features.map((feature, index) => (
-            <div
+            <motion.div
               key={feature.titleKey}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.05 }}
+              whileHover={{ y: -4 }}
               className={`
                 group relative p-8 rounded-2xl transition-all duration-300
                 ${
@@ -107,7 +119,6 @@ const Features = () => {
                     : "bg-card border border-border hover:border-primary/30 hover:shadow-md"
                 }
               `}
-              style={{ animationDelay: `${index * 50}ms` }}
             >
               <div
                 className={`
@@ -131,7 +142,7 @@ const Features = () => {
               >
                 {getLabel(feature.descKey)}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

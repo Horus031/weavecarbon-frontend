@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "motion/react";
 import { Leaf, Linkedin, Mail, Twitter, Phone } from "lucide-react";
 import Link from "next/link";
 
@@ -38,7 +41,13 @@ const Footer = () => {
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
           {/* Brand column */}
-          <div className="col-span-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="col-span-2"
+          >
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center">
                 <Leaf className="w-5 h-5 text-primary-foreground" />
@@ -74,10 +83,15 @@ const Footer = () => {
                 <Mail className="w-5 h-5" />
               </a>
             </div>
-          </div>
+          </motion.div>
 
           {/* Link columns */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }}
+          >
             <h4 className="font-semibold mb-4">Platform</h4>
             <ul className="space-y-3">
               {footerLinks.platform.map((link) => (
@@ -91,9 +105,14 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
 
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+          >
             <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
@@ -107,9 +126,14 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
 
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.15 }}
+          >
             <h4 className="font-semibold mb-4">Resources</h4>
             <ul className="space-y-3">
               {footerLinks.resources.map((link) => (
@@ -123,10 +147,15 @@ const Footer = () => {
                 </li>
               ))}
             </ul>
-          </div>
+          </motion.div>
 
           {/* Contact column */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+          >
             <h4 className="font-semibold mb-4">Contact Us</h4>
             <div className="space-y-4">
               <div>
@@ -156,11 +185,17 @@ const Footer = () => {
                 </a>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-8 border-t border-primary-foreground/10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+          className="pt-8 border-t border-primary-foreground/10 flex flex-col md:flex-row items-center justify-between gap-4"
+        >
           <p className="text-sm text-primary-foreground/60">
             © {currentYear} WeaveCarbon. All rights reserved.
           </p>
@@ -184,7 +219,7 @@ const Footer = () => {
               Cookies
             </a>
           </div>
-        </div>
+        </motion.div>
       </div>
     </footer>
   );

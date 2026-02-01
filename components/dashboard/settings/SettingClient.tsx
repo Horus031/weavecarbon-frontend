@@ -2,16 +2,20 @@
 
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, Settings } from "lucide-react";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { useToast } from "@/hooks/useToast";
 
 interface Company {
   id: string;
   name: string;
   current_plan: string;
+  business_type?: string;
+  target_markets?: string[];
 }
 
 interface Profile {
@@ -24,7 +28,12 @@ const SettingClient: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  console.log("User Settings", user);
+  console.log("User Company", company);
+  const { toast } = useToast();
+
   const { setPageTitle } = useDashboardTitle();
+  const supabase = createClient();
 
   useEffect(() => {
     setPageTitle("Settings", "Quản lý tài khoản và cấu hình hệ thống");
@@ -39,32 +48,36 @@ const SettingClient: React.FC = () => {
           return;
         }
 
-        // Mock data - replace with actual Supabase calls when database is ready
-        const mockProfile: Profile = {
-          full_name: user.email?.split("@")[0] || "User",
-        };
+        // Set profile from user context
+        setProfile({
+          full_name: user.full_name || null,
+        });
 
-        const mockCompany: Company = {
-          id: "company-1",
-          name: "WeavCarbon Inc.",
-          current_plan: "premium",
-        };
+        // Fetch company data if user has a company_id
+        if (user.company_id) {
+          const { data: companyData, error } = await supabase
+            .from("companies")
+            .select("id, name, current_plan, business_type, target_markets")
+            .eq("id", user.company_id)
+            .single();
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        setProfile(mockProfile);
-        setCompany(mockCompany);
+          if (error) {
+            console.error("Error fetching company:", error);
+            toast({
+              title: "Error",
+              description: "Failed to load company information.",
+              variant: "destructive",
+            });
+          } else if (companyData) {
+            setCompany(companyData);
+          }
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
-        // Set default mock data on error
-        setProfile({
-          full_name: user?.email?.split("@")[0] || "User",
-        });
-        setCompany({
-          id: "company-1",
-          name: "WeavCarbon Inc.",
-          current_plan: "premium",
+        toast({
+          title: "Error",
+          description: "Something went wrong while loading settings.",
+          variant: "destructive",
         });
       } finally {
         setIsLoading(false);
@@ -72,7 +85,7 @@ const SettingClient: React.FC = () => {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, supabase, toast]);
 
   const getPlanFeatures = (plan: string) => {
     const features: Record<string, string[]> = {
@@ -133,7 +146,7 @@ const SettingClient: React.FC = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Họ tên</label>
                   <p className="text-muted-foreground">
-                    {profile?.full_name || "Chưa cập nhật"}
+                    {user?.full_name || "Chưa cập nhật"}
                   </p>
                 </div>
                 <div className="space-y-2">

@@ -1,4 +1,5 @@
 "use client";
+import { motion } from "motion/react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -44,8 +45,14 @@ const HowItWorks = () => {
     <section id="how-it-works" className="py-24 md:py-32 bg-background">
       <div className="container mx-auto px-6">
         {/* Section header */}
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <span className="inline-block px-4 py-1.5 rounded-full bg-accent/20 text-accent-foreground text-sm font-medium mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.6 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          className="max-w-3xl mx-auto text-center mb-16"
+        >
+          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
             How It Works
           </span>
           <h2 className="text-3xl md:text-5xl font-display font-bold text-foreground mb-6">
@@ -54,7 +61,7 @@ const HowItWorks = () => {
           <p className="text-lg text-muted-foreground">
             Get started in minutes with our simple four-step process
           </p>
-        </div>
+        </motion.div>
 
         {/* Steps */}
         <div className="relative">
@@ -63,7 +70,15 @@ const HowItWorks = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {steps.map((step, index) => (
-              <div key={step.number} className="relative">
+              <motion.div
+                key={step.number}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.4 }}
+                transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.08 }}
+                whileHover={{ y: -4 }}
+                className="relative"
+              >
                 {/* Step card */}
                 <div className="bg-card border border-border rounded-2xl p-8 hover:border-primary/30 hover:shadow-lg transition-all duration-300 h-full">
                   {/* Number badge */}
@@ -71,7 +86,7 @@ const HowItWorks = () => {
                     <div className="w-16 h-16 rounded-2xl bg-gradient-forest flex items-center justify-center text-primary-foreground relative z-10">
                       {step.icon}
                     </div>
-                    <span className="text-5xl font-display font-bold text-muted/50">
+                    <span className="text-5xl font-display font-bold text-primary/50">
                       {step.number}
                     </span>
                   </div>
@@ -105,7 +120,7 @@ const HowItWorks = () => {
                     </div>
                   </div>
                 )}
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

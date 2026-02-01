@@ -1,4 +1,6 @@
 "use client";
+
+import { motion } from "motion/react";
 import { Leaf, Menu, X } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
@@ -19,7 +21,14 @@ const Header = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
+      <motion.header
+        initial={{ y: -100 }}
+        animate={{
+          y: [null, null, 0],
+          transition: { duration: 1.5, times: [0, 0.5, 1] },
+        }}
+        className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50"
+      >
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
@@ -122,7 +131,7 @@ const Header = () => {
                     setShowUserTypeDialog(true);
                   }}
                 >
-                  {"nav.login"}
+                  Login
                 </Button>
                 <Button
                   variant="hero"
@@ -132,13 +141,13 @@ const Header = () => {
                     setShowUserTypeDialog(true);
                   }}
                 >
-                  {"nav.getStarted"}
+                  Get Started
                 </Button>
               </div>
             </nav>
           </div>
         )}
-      </header>
+      </motion.header>
 
       {/* User Type Selection Dialog */}
       <UserTypeDialog

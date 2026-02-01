@@ -13,7 +13,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/useToast";
 import SocialLogin from "@/components/auth/SocialLogin";
 import EmailAuthTabs from "@/components/auth/EmailAuthTabs";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z
@@ -28,13 +28,13 @@ const AuthForm: React.FC = () => {
     signInAsDemo,
     user,
     loading,
-    setRole,
   } = useAuth();
-  const navigate = useRouter();
-  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  const userType = params?.type as string as "b2b" | "b2c" | null;
+  // Get user type from query string, default to b2b
+  const userType = (searchParams.get("type") as "b2b" | "b2c") || "b2b";
 
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
@@ -49,16 +49,22 @@ const AuthForm: React.FC = () => {
     name?: string;
   }>({});
 
-  const getDashboardPath = useCallback(() => {
-    return userType === "b2c" ? "/b2c-dashboard" : "/overview";
-  }, [userType]);
+  const getDashboardPath = useCallback((type: "b2b" | "b2c" | undefined) => {
+    return type === "b2c" ? "/b2c" : "/overview";
+  }, []);
 
-  // Redirect if already logged in
+  // Redirect logic based on user type and company_id
   useEffect(() => {
     if (user && !loading) {
-      navigate.push(getDashboardPath());
+      // B2B users need company setup via onboarding
+      if (user.user_type === "b2b" && !user.company_id) {
+        router.push("/onboarding");
+      } else {
+        // Redirect to appropriate dashboard based on user type
+        router.push(getDashboardPath(user.user_type));
+      }
     }
-  }, [user, loading, navigate, getDashboardPath]);
+  }, [user, loading, router, getDashboardPath]);
 
   const validateForm = (isSignUp: boolean) => {
     const newErrors: { email?: string; password?: string; name?: string } = {};
@@ -92,7 +98,8 @@ const AuthForm: React.FC = () => {
     if (!validateForm(false)) return;
 
     setIsLoading(true);
-    const { error } = await signIn(email, password);
+    // Pass userType to signIn to login to the correct account type
+    const { error } = await signIn(email, password, userType);
 
     if (error) {
       setIsLoading(false);
@@ -100,16 +107,13 @@ const AuthForm: React.FC = () => {
         title: "Error",
         description:
           error.message === "Invalid login credentials"
-            ? "Invalid email or password"
+            ? `No ${userType === "b2c" ? "consumer" : "business"} account found with this email and password`
             : error.message,
         variant: "destructive",
       });
     } else {
-      if (userType) {
-        await setRole(userType);
-      }
       setIsLoading(false);
-      navigate.push(getDashboardPath());
+      // Redirect will be handled by useEffect
     }
   };
 
@@ -118,13 +122,13 @@ const AuthForm: React.FC = () => {
     if (!validateForm(true)) return;
 
     setIsLoading(true);
-    const { error } = await signUp(email, password, fullName);
+    const result = await signUp(email, password, fullName, userType);
 
-    if (error) {
+    if (result.error) {
       setIsLoading(false);
-      let errorMessage = error.message;
-      if (error.message.includes("already registered")) {
-        errorMessage = "This email is already registered";
+      let errorMessage = result.error.message;
+      if (result.error.message.includes("already registered")) {
+        errorMessage = "This email is already registered. Please sign in instead.";
       }
       toast({
         title: "Error",
@@ -132,35 +136,51 @@ const AuthForm: React.FC = () => {
         variant: "destructive",
       });
     } else {
-      if (userType) {
-        await setRole(userType);
-      }
       setIsLoading(false);
-      toast({
-        title: "Success",
-        description: "Account created successfully!",
-      });
-      navigate.push(userType === "b2c" ? "/b2c-dashboard" : "/onboarding");
+      
+      if (result.needsConfirmation) {
+        // Email confirmation is required
+        toast({
+          title: "Check your email",
+          description: "We've sent you a confirmation link. Please check your email to continue.",
+          duration: 6000,
+        });
+        setActiveTab("login");
+      } else {
+        // Account created and auto-logged in
+        toast({
+          title: "Success! 🎉",
+          description: "Your account has been created successfully!",
+          duration: 3000,
+        });
+        // Redirect based on user type
+        if (userType === "b2c") {
+          router.push("/b2c");
+        } else {
+          router.push("/onboarding");
+        }
+      }
     }
   };
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     const { error } = await signInWithGoogle();
-    setIsLoading(false);
-
+    
     if (error) {
+      setIsLoading(false);
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
     }
+    // Redirect will be handled by callback
   };
 
   const handleDemoLogin = async () => {
     setIsLoading(true);
-    const { error } = await signInAsDemo();
+    const { error } = await signInAsDemo(userType);
 
     if (error) {
       setIsLoading(false);
@@ -170,11 +190,13 @@ const AuthForm: React.FC = () => {
         variant: "destructive",
       });
     } else {
-      if (userType) {
-        await setRole(userType);
-      }
       setIsLoading(false);
-      navigate.push(getDashboardPath());
+      // Redirect based on user type
+      if (userType === "b2c") {
+        router.push("/b2c");
+      } else {
+        router.push("/onboarding");
+      }
     }
   };
 
@@ -186,11 +208,24 @@ const AuthForm: React.FC = () => {
     );
   }
 
+  const getSubtitle = () => {
+    if (userType === "b2c") {
+      return "Sign in to track your fashion carbon footprint";
+    }
+    return "Sign in to access your business dashboard";
+  };
+
+  const getDemoButtonText = () => {
+    return userType === "b2c" ? "Try Consumer Demo" : "Try Business Demo";
+  };
+
   return (
     <Card className="border-border/50 shadow-xl">
       <CardHeader className="text-center pb-4">
-        <CardTitle className="text-xl">{"Welcome to WEAVECARBON"}</CardTitle>
-        <CardDescription>Sign in to access your B2B dashboard</CardDescription>
+        <CardTitle className="text-xl">
+          {userType === "b2c" ? "Welcome to WEAVECARBON" : "WEAVECARBON for Business"}
+        </CardTitle>
+        <CardDescription>{getSubtitle()}</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -198,6 +233,7 @@ const AuthForm: React.FC = () => {
           onDemoLogin={handleDemoLogin}
           onGoogleLogin={handleGoogleLogin}
           isLoading={isLoading}
+          demoButtonText={getDemoButtonText()}
         />
 
         <EmailAuthTabs

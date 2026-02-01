@@ -82,7 +82,9 @@ export default function DashboardSidebarShell({
   }, []);
 
   const handleToggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(!sidebarOpen);
+    }
   };
 
   // Prevent hydration mismatch

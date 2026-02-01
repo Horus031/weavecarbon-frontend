@@ -22,16 +22,32 @@ interface ProductsClientProps {
   products: Product[];
 }
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string, hiddenString: string) => {
   switch (status) {
     case "verified":
-      return <Badge className="bg-green-100 text-green-700">Đã xác minh</Badge>;
+      return (
+        <Badge className={`bg-green-100 text-green-700 ${hiddenString}`}>
+          Đã xác minh
+        </Badge>
+      );
     case "pending":
-      return <Badge className="bg-yellow-100 text-yellow-700">Chờ duyệt</Badge>;
+      return (
+        <Badge className={`bg-yellow-100 text-yellow-700 ${hiddenString}`}>
+          Chờ duyệt
+        </Badge>
+      );
     case "draft":
-      return <Badge variant="secondary">Nháp</Badge>;
+      return (
+        <Badge variant="secondary" className={`${hiddenString}`}>
+          Nháp
+        </Badge>
+      );
     default:
-      return <Badge variant="secondary">{status}</Badge>;
+      return (
+        <Badge variant="secondary" className={`${hiddenString}`}>
+          {status}
+        </Badge>
+      );
   }
 };
 
@@ -51,7 +67,7 @@ export default function ProductsClient({ products }: ProductsClientProps) {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:items-center justify-between">
           <div>
             <h2 className="text-xl font-bold">Quản lý sản phẩm</h2>
             <p className="text-muted-foreground">
@@ -72,7 +88,10 @@ export default function ProductsClient({ products }: ProductsClientProps) {
               className="hover:shadow-md transition-shadow"
             >
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex-col space-y-2 md:space-y-0 md:flex md:flex-row items-center justify-between">
+                  <div className="flex md:hidden">
+                    {getStatusBadge(product.status, "flex md:hidden")}
+                  </div>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Package className="w-6 h-6 text-primary" />
@@ -91,8 +110,8 @@ export default function ProductsClient({ products }: ProductsClientProps) {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
+                  <div className="flex justify-between items-center gap-3">
+                    <div className="text-left md:text-right">
                       <p className="text-lg font-bold text-primary">
                         {product.co2} kg
                       </p>
@@ -100,28 +119,34 @@ export default function ProductsClient({ products }: ProductsClientProps) {
                         CO₂e / đơn vị
                       </p>
                     </div>
-                    {getStatusBadge(product.status)}
-                    {product.status === "verified" && (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() =>
-                          setSelectedProductForQR({
-                            id: `demo-product-00${product.id}`,
-                            name: product.name,
-                            sku: product.sku,
-                          })
-                        }
-                        title="Tạo QR Code"
-                      >
-                        <QrCode className="w-4 h-4 text-green-600" />
-                      </Button>
-                    )}
-                    <Link href={`/dashboard/products/${product.id}`}>
-                      <Button variant="ghost" size="icon">
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                    </Link>
+                    <div className="space-x-3 flex h-fit">
+                      {getStatusBadge(product.status, "hidden md:flex")}
+
+                      <div className="flex">
+                        {product.status === "verified" && (
+                          <Button
+                            className="sm:hidden md:flex"
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                              setSelectedProductForQR({
+                                id: `demo-product-00${product.id}`,
+                                name: product.name,
+                                sku: product.sku,
+                              })
+                            }
+                            title="Tạo QR Code"
+                          >
+                            <QrCode className="w-4 h-4 text-green-600" />
+                          </Button>
+                        )}
+                        <Link href={`/dashboard/products/${product.id}`}>
+                          <Button variant="ghost" size="icon">
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </CardContent>

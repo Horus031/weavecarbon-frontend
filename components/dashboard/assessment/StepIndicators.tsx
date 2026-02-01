@@ -49,7 +49,7 @@ export default function StepIndicators({
             </div>
             {index < steps.length - 1 && (
               <div
-                className={`w-6 md:w-12 h-0.5 mx-1 md:mx-2 shrink-0 ${
+                className={`w-1 md:w-12 h-0.5 mx-1 md:mx-2 shrink-0 ${
                   isCompleted ? "bg-primary" : "bg-muted"
                 }`}
               />
