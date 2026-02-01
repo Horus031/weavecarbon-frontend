@@ -49,7 +49,7 @@ const AuthForm: React.FC = () => {
     name?: string;
   }>({});
 
-  const getDashboardPath = useCallback((type: "b2b" | "b2c" | undefined) => {
+  const getDashboardPath = useCallback((type: "b2b" | "b2c" | "admin" | undefined) => {
     return type === "b2c" ? "/b2c" : "/overview";
   }, []);
 
