@@ -20,20 +20,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-interface Company {
-  id: string;
-  name: string;
-  business_type: string;
-  current_plan: string;
-  target_markets: string[] | null;
-}
-
-interface Profile {
-  full_name: string | null;
-  email: string | null;
-  company_id: string | null;
-}
+import { Company, Profile } from "@/types/app.type";
 
 interface DashboardSidebarProps {
   company: Company | null;

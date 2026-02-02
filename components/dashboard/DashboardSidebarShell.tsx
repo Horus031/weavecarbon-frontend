@@ -3,30 +3,17 @@
 
 import React, { useState, useEffect } from "react";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
-
-interface Company {
-  id: string;
-  name: string;
-  business_type: string;
-  current_plan: string;
-  target_markets: string[] | null;
-}
-
-interface Profile {
-  full_name: string | null;
-  email: string | null;
-  company_id: string | null;
-}
+import { useAuth } from "@/contexts/AuthContext";
+import { Company } from "@/types/app.type";
 
 interface DashboardSidebarShellProps {
   company: Company | null;
-  profile: Profile | null;
 }
 
 export default function DashboardSidebarShell({
   company,
-  profile,
 }: DashboardSidebarShellProps) {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -95,7 +82,7 @@ export default function DashboardSidebarShell({
   return (
     <DashboardSidebar
       company={company}
-      profile={profile}
+      profile={user}
       sidebarOpen={sidebarOpen}
       onToggleSidebar={handleToggleSidebar}
     />

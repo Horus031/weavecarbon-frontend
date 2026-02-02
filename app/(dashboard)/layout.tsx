@@ -2,7 +2,7 @@ import React from "react";
 import WeaveyChat from "@/components/ui/WeaveyChat";
 import DashboardSidebarShell from "@/components/dashboard/DashboardSidebarShell";
 import PricingModalGate from "@/components/dashboard/PricingModalGate";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { DashboardProvider } from "@/contexts/DashboardContext";
 import DashboardLayoutContent from "@/components/dashboard/DashboardLayoutContent";
 
@@ -33,21 +33,14 @@ const mockCompany: Company = {
   target_markets: ["US", "EU"],
 };
 
-const mockProfile: Profile = {
-  full_name: "Demo User",
-  email: "demo@weavecarbon.com",
-  company_id: "company-123",
-};
-
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const company = mockCompany;
-  const profile = mockProfile;
 
   return (
     <AuthProvider>
       <DashboardProvider>
         <div className="min-h-fit bg-background flex w-full lg:flex-row flex-col">
-          <DashboardSidebarShell company={company} profile={profile} />
+          <DashboardSidebarShell company={company} />
 
           {/* Main Content */}
           <main className="flex-1 lg:pl-64 overflow-auto flex flex-col h-full">
