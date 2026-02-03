@@ -4,6 +4,7 @@ import DashboardSidebarShell from "@/components/dashboard/DashboardSidebarShell"
 import PricingModalGate from "@/components/dashboard/PricingModalGate";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { DashboardProvider } from "@/contexts/DashboardContext";
+import { ProductProvider } from "@/contexts/ProductContext";
 import DashboardLayoutContent from "@/components/dashboard/DashboardLayoutContent";
 
 interface Company {
@@ -39,20 +40,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   return (
     <AuthProvider>
       <DashboardProvider>
-        <div className="min-h-fit bg-background flex w-full lg:flex-row flex-col">
-          <DashboardSidebarShell company={company} />
+        <ProductProvider>
+          <div className="min-h-fit bg-background flex w-full lg:flex-row flex-col">
+            <DashboardSidebarShell company={company} />
 
-          {/* Main Content */}
-          <main className="flex-1 lg:pl-64 overflow-auto flex flex-col h-full">
-            <DashboardLayoutContent>{children}</DashboardLayoutContent>
-          </main>
+            {/* Main Content */}
+            <main className="flex-1 lg:pl-64 overflow-auto flex flex-col h-full">
+              <DashboardLayoutContent>{children}</DashboardLayoutContent>
+            </main>
 
-          {/* Pricing Modal (client gate) */}
-          <PricingModalGate />
+            {/* Pricing Modal (client gate) */}
+            <PricingModalGate />
 
-          {/* Weavey AI Assistant - Dashboard variant */}
-          <WeaveyChat variant="dashboard" />
-        </div>
+            {/* Weavey AI Assistant - Dashboard variant */}
+            <WeaveyChat variant="dashboard" />
+          </div>
+        </ProductProvider>
       </DashboardProvider>
     </AuthProvider>
   );

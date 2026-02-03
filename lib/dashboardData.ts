@@ -1,5 +1,19 @@
 // Shared data for dashboard pages
 
+import type { ProductStatus } from "@/contexts/ProductContext";
+
+interface DemoProduct {
+  id: string;
+  name: string;
+  sku: string;
+  co2: number;
+  status: ProductStatus;
+  materials: string[];
+  category: string;
+  scope: string;
+  isDemo: boolean;
+}
+
 export const carbonTrendData = [
   { month: "T1", emissions: 2100, target: 2500 },
   { month: "T2", emissions: 2400, target: 2500 },
@@ -47,38 +61,50 @@ export const recommendations = [
   },
 ];
 
-export const demoProducts = [
+export const demoProducts: DemoProduct[] = [
   {
-    id: 1,
+    id: "demo-product-001",
     name: "Áo T-shirt Organic Cotton",
     sku: "DEMO-SKU-001",
     co2: 2.4,
-    status: "verified",
+    status: "published",
     materials: ["Cotton hữu cơ 100%"],
+    category: "apparel",
+    scope: "scope1_2_3",
+    isDemo: true,
   },
   {
-    id: 2,
+    id: "demo-product-002",
     name: "Quần Jeans Recycled Denim",
     sku: "DEMO-SKU-002",
     co2: 8.5,
-    status: "pending",
+    status: "in_review",
     materials: ["Denim tái chế 80%", "Elastane 20%"],
+    category: "apparel",
+    scope: "scope1_2",
+    isDemo: true,
   },
   {
-    id: 3,
+    id: "demo-product-003",
     name: "Váy Linen Blend",
     sku: "DEMO-SKU-003",
     co2: 3.2,
-    status: "verified",
+    status: "published",
     materials: ["Linen 60%", "Cotton 40%"],
+    category: "apparel",
+    scope: "scope1_2_3",
+    isDemo: true,
   },
   {
-    id: 4,
+    id: "demo-product-004",
     name: "Áo Hoodie Fleece",
     sku: "DEMO-SKU-004",
     co2: 5.1,
     status: "draft",
     materials: ["Polyester tái chế 100%"],
+    category: "apparel",
+    scope: "scope1",
+    isDemo: true,
   },
 ];
 

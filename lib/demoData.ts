@@ -1,6 +1,38 @@
 // Demo data for B2B product assessment flow
 // DO NOT MODIFY - Demo data for learning and demonstration purposes
 
+// Product Status types
+export type ProductStatus = "draft" | "in_review" | "published" | "archived";
+
+export const PRODUCT_STATUS_LABELS: Record<ProductStatus, string> = {
+  draft: "Draft",
+  in_review: "In Review",
+  published: "Published",
+  archived: "Archived",
+};
+
+export const PRODUCT_STATUS_CONFIG: Record<
+  ProductStatus,
+  { label: string; className: string }
+> = {
+  draft: {
+    label: "Draft",
+    className: "bg-gray-100 text-gray-700 border-gray-200",
+  },
+  in_review: {
+    label: "In Review",
+    className: "bg-blue-100 text-blue-700 border-blue-200",
+  },
+  published: {
+    label: "Published",
+    className: "bg-green-100 text-green-700 border-green-200",
+  },
+  archived: {
+    label: "Archived",
+    className: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  },
+};
+
 export interface ProductData {
   id: string;
   productName: string;
@@ -29,6 +61,9 @@ export interface ProductData {
   isDemo: boolean;
   createdAt: string;
   createdBy: string;
+  // New fields for Draft mode support
+  status: ProductStatus;
+  updatedAt: string;
 }
 
 export interface TransportLeg {
@@ -112,6 +147,8 @@ export const DEMO_PRODUCTS: ProductData[] = [
     isDemo: true,
     createdAt: "2024-01-15T10:30:00Z",
     createdBy: "demo@weavecarbon.com",
+    status: "published",
+    updatedAt: "2024-01-15T14:30:00Z",
   },
   {
     id: "demo-product-002",
@@ -141,6 +178,8 @@ export const DEMO_PRODUCTS: ProductData[] = [
     isDemo: true,
     createdAt: "2024-01-18T14:45:00Z",
     createdBy: "demo@weavecarbon.com",
+    status: "in_review",
+    updatedAt: "2024-01-18T16:00:00Z",
   },
   {
     id: "demo-product-003",
@@ -170,6 +209,39 @@ export const DEMO_PRODUCTS: ProductData[] = [
     isDemo: true,
     createdAt: "2024-01-20T09:15:00Z",
     createdBy: "demo@weavecarbon.com",
+    status: "draft",
+    updatedAt: "2024-01-20T10:30:00Z",
+  },
+  {
+    id: "demo-product-004",
+    productName: "Áo Hoodie Fleece",
+    productCode: "DEMO-SKU-004",
+    category: "apparel",
+    description: "Áo hoodie từ polyester tái chế 100%, sản xuất bền vững",
+    weight: "0.55",
+    unit: "kg",
+    primaryMaterial: "recycled_polyester",
+    materialPercentage: "100",
+    secondaryMaterial: "",
+    secondaryPercentage: "",
+    recycledContent: "100",
+    certifications: ["grs"],
+    manufacturingLocation: "Hải Phòng, Vietnam",
+    energySource: "mixed",
+    processType: "knitting",
+    wasteRecovery: "full",
+    originCountry: "Vietnam",
+    destinationMarket: "us",
+    transportMode: "sea",
+    packagingType: "recycled_paper",
+    packagingWeight: "0.03",
+    sourceType: "documented",
+    confidenceLevel: 85,
+    isDemo: true,
+    createdAt: "2024-01-22T11:00:00Z",
+    createdBy: "demo@weavecarbon.com",
+    status: "draft",
+    updatedAt: "2024-01-22T11:00:00Z",
   },
 ];
 
@@ -287,6 +359,62 @@ export const DEMO_TRANSPORTS: TransportData[] = [
     createdAt: "2024-01-20T10:00:00Z",
     createdBy: "demo@weavecarbon.com",
   },
+  {
+    id: "demo-transport-004",
+    productId: "demo-product-004",
+    legs: [
+      {
+        id: "leg-004-1",
+        legNumber: 1,
+        type: "domestic",
+        mode: "truck_light",
+        origin: {
+          name: "Nhà máy Hải Phòng",
+          lat: 20.8449,
+          lng: 106.6881,
+          type: "address",
+        },
+        destination: {
+          name: "Cảng Hải Phòng",
+          lat: 20.8567,
+          lng: 106.6753,
+          type: "port",
+        },
+        distanceKm: 15,
+        emissionFactor: 0.089,
+        co2Kg: 1.34,
+        routeType: "road",
+      },
+      {
+        id: "leg-004-2",
+        legNumber: 2,
+        type: "international",
+        mode: "ship",
+        origin: {
+          name: "Cảng Hải Phòng",
+          lat: 20.8567,
+          lng: 106.6753,
+          type: "port",
+        },
+        destination: {
+          name: "Cảng Los Angeles, Hoa Kỳ",
+          lat: 33.7361,
+          lng: -118.2922,
+          type: "port",
+        },
+        distanceKm: 18500,
+        emissionFactor: 0.016,
+        co2Kg: 296.0,
+        routeType: "sea",
+      },
+    ],
+    totalDistanceKm: 18515,
+    totalCO2Kg: 297.34,
+    confidenceLevel: 88,
+    isDemo: true,
+    createdAt: "2024-01-22T11:30:00Z",
+    createdBy: "demo@weavecarbon.com",
+  },
 ];
 
 // Demo calculation history - READ ONLY
@@ -334,6 +462,21 @@ export const DEMO_HISTORY: CalculationHistory[] = [
     carbonVersion: "v2024.1-DEFRA",
     isDemo: true,
     createdAt: "2024-01-20T10:30:00Z",
+    createdBy: "demo@weavecarbon.com",
+  },
+  {
+    id: "demo-calc-004",
+    productId: "demo-product-004",
+    productName: "Áo Hoodie Fleece",
+    transportId: "demo-transport-004",
+    materialsCO2: 3.25,
+    manufacturingCO2: 1.45,
+    transportCO2: 297.34,
+    packagingCO2: 0.15,
+    totalCO2: 302.19,
+    carbonVersion: "v2024.1-DEFRA",
+    isDemo: true,
+    createdAt: "2024-01-22T12:00:00Z",
     createdBy: "demo@weavecarbon.com",
   },
 ];

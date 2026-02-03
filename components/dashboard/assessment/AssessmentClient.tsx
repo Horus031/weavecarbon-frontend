@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { useProducts } from "@/contexts/ProductContext";
 import {
   Card,
   CardContent,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import StepIndicators from "./StepIndicators";
 import StepContent, { ProductData } from "./StepContent";
+import ProductOverviewModal from "./ProductOverviewModal";
 
 interface AssessmentClientProps {
   categories: Array<{ value: string; label: string }>;
@@ -75,6 +77,7 @@ export default function AssessmentClient({
 }: AssessmentClientProps) {
   const router = useRouter();
   const { setPageTitle } = useDashboardTitle();
+  const { setPendingProductData } = useProducts();
   const [currentStep, setCurrentStep] = useState(1);
   const [productData, setProductData] =
     useState<ProductData>(initialProductData);
@@ -119,83 +122,87 @@ export default function AssessmentClient({
   };
 
   const handleSubmit = () => {
+    // Store product data in context and navigate to overview
+    setPendingProductData(productData);
     router.push("/overview");
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 max-w-3xl mx-auto">
-      {/* Progress header */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl font-bold">Product Assessment</h2>
-          <span className="text-xs md:text-sm text-muted-foreground">
-            Step {currentStep} / {steps.length}
-          </span>
+    <>
+      <div className="space-y-4 md:space-y-6 max-w-3xl mx-auto">
+        {/* Progress header */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg md:text-xl font-bold">Product Assessment</h2>
+            <span className="text-xs md:text-sm text-muted-foreground">
+              Step {currentStep} / {steps.length}
+            </span>
+          </div>
+          <Progress value={progress} className="h-2" />
         </div>
-        <Progress value={progress} className="h-2" />
-      </div>
 
-      {/* Step indicators */}
-      <StepIndicators currentStep={currentStep} steps={steps} />
+        {/* Step indicators */}
+        <StepIndicators currentStep={currentStep} steps={steps} />
 
-      {/* Step content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg md:text-base">
-            {React.createElement(steps[currentStep - 1].icon, {
-              className: "w-4 h-4 md:w-5 md:h-5",
-            })}
-            <span className="truncate">{steps[currentStep - 1].title}</span>
-          </CardTitle>
-          {currentStep < 5 && (
-            <CardDescription className="text-xs md:text-sm">
-              Fill in the information below to continue
-            </CardDescription>
-          )}
-        </CardHeader>
-        <CardContent>
-          <StepContent
-            currentStep={currentStep}
-            productData={productData}
-            updateField={updateField}
-            categories={categories}
-            materials={materials}
-            certifications={certifications}
-            energySources={energySources}
-            transportModes={transportModes}
-            markets={markets}
-          />
-        </CardContent>
-      </Card>
+        {/* Step content */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg md:text-base">
+              {React.createElement(steps[currentStep - 1].icon, {
+                className: "w-4 h-4 md:w-5 md:h-5",
+              })}
+              <span className="truncate">{steps[currentStep - 1].title}</span>
+            </CardTitle>
+            {currentStep < 5 && (
+              <CardDescription className="text-xs md:text-sm">
+                Fill in the information below to continue
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            <StepContent
+              currentStep={currentStep}
+              productData={productData}
+              updateField={updateField}
+              categories={categories}
+              materials={materials}
+              certifications={certifications}
+              energySources={energySources}
+              transportModes={transportModes}
+              markets={markets}
+            />
+          </CardContent>
+        </Card>
 
-      {/* Navigation buttons */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6">
-        <Button
-          variant="outline"
-          onClick={handleBack}
-          disabled={currentStep === 1}
-          className="gap-2 w-full sm:w-auto"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
-
-        {currentStep < 5 ? (
+        {/* Navigation buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6">
           <Button
-            onClick={handleNext}
-            disabled={!canProceed()}
+            variant="outline"
+            onClick={handleBack}
+            disabled={currentStep === 1}
             className="gap-2 w-full sm:w-auto"
           >
-            Next
-            <ArrowRight className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4" />
+            Back
           </Button>
-        ) : (
-          <Button onClick={handleSubmit} className="gap-2 w-full sm:w-auto">
-            View Results
-            <CheckCircle2 className="w-4 h-4" />
-          </Button>
-        )}
+
+          {currentStep < 5 ? (
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className="gap-2 w-full sm:w-auto"
+            >
+              Next
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} className="gap-2 w-full sm:w-auto">
+              View Results
+              <CheckCircle2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

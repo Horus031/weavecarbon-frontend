@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { useProducts } from "@/contexts/ProductContext";
 import {
   Card,
   CardContent,
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 import { getReadinessColor, getImpactColor } from "@/lib/dashboardData";
 import OverviewCharts from "@/components/dashboard/OverviewCharts";
+import ProductOverviewModal from "@/components/dashboard/assessment/ProductOverviewModal";
 
 interface Company {
   target_markets: string[] | null;
@@ -65,13 +67,19 @@ export default function OverviewPageClient({
   recommendations,
 }: OverviewPageClientProps) {
   const { setPageTitle } = useDashboardTitle();
+  const { pendingProductData, clearPendingProduct } = useProducts();
 
   useEffect(() => {
     setPageTitle("Overview", "Overview of your carbon tracking");
   }, [setPageTitle]);
 
+  const handleCloseModal = () => {
+    clearPendingProduct();
+  };
+
   return (
-    <div className="space-y-4 md:space-y-6">
+    <>
+      <div className="space-y-4 md:space-y-6">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <Card className="h-full">
@@ -305,5 +313,15 @@ export default function OverviewPageClient({
         </Card>
       )}
     </div>
+
+      {/* Product Overview Modal - shows when coming from assessment */}
+      {pendingProductData && (
+        <ProductOverviewModal
+          open={!!pendingProductData}
+          onClose={handleCloseModal}
+          productData={pendingProductData}
+        />
+      )}
+    </>
   );
 }
