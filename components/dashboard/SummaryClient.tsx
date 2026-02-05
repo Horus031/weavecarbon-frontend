@@ -1,64 +1,210 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useProductStore } from "@/hooks/useProductStore";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, AlertCircle, Info } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, AlertCircle, Package, Info } from "lucide-react";
 import ProductQRCode from "@/components/dashboard/ProductQRCode";
-import { useDashboardTitle } from "@/contexts/DashboardContext";
+import {
+  ProductAssessmentData,
+  MATERIAL_TYPES,
+} from "@/components/dashboard/assessment/steps/types";
+import {
+  ProductCarbonDetail,
+  CarbonBreakdownItem,
+  MaterialImpactItem,
+} from "@/lib/carbonDetailData";
+import { ProductData } from "@/lib/demoData";
 
-// Import section components
-import { getCarbonDetail } from "@/lib/carbonDetailData";
+// Import product-details components
 import ProductOverviewHeader from "@/components/dashboard/product-details/ProductOverviewHeader";
-import DataCompletenessCheck from "@/components/dashboard/product-details/DataCompletenessCheck";
 import CarbonBreakdownChart from "@/components/dashboard/product-details/CarbonBreakdownChart";
 import MaterialImpactTable from "@/components/dashboard/product-details/MaterialImpactTable";
-import EndOfLifeAssessment from "@/components/dashboard/product-details/EndOfLifeAssessment";
-import ImprovementSuggestions from "@/components/dashboard/product-details/ImprovementSuggestion";
 import CarbonFootprintCard from "@/components/dashboard/product-details/CarbonFootprintCard";
 import ComplianceStatus from "@/components/dashboard/product-details/ComplianceStatus";
-import VersionHistory from "@/components/dashboard/product-details/VersionHistory";
+
+interface StoredProduct extends ProductAssessmentData {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface SummaryClientProps {
   productId: string;
 }
 
+const STATUS_CONFIG = {
+  draft: { label: "Nháp", className: "bg-gray-100 text-gray-700" },
+  published: { label: "Đã xuất bản", className: "bg-green-100 text-green-700" },
+};
+
+// Helper to get material emission factor
+function getMaterialEmissionFactor(materialType: string): number {
+  const material = MATERIAL_TYPES.find((m) => m.value === materialType);
+  return material?.co2Factor || 6.0; // default factor
+}
+
+// Helper to get material label
+function getMaterialLabel(materialType: string): string {
+  const material = MATERIAL_TYPES.find((m) => m.value === materialType);
+  return material?.label || materialType;
+}
+
 export default function SummaryClient({ productId }: SummaryClientProps) {
   const router = useRouter();
-  const { getProduct, isLoaded } = useProductStore();
   const [showQRModal, setShowQRModal] = useState(false);
-  const { setPageTitle } = useDashboardTitle();
 
-  const product = productId ? getProduct(productId) : null;
-  const carbonDetail = productId ? getCarbonDetail(productId) : null;
+  // Load product from localStorage
+  const product = useMemo(() => {
+    if (!productId || typeof window === "undefined") return null;
+    const storedProducts = JSON.parse(
+      localStorage.getItem("weavecarbonProducts") || "[]"
+    ) as StoredProduct[];
+    return storedProducts.find((p) => p.id === productId) || null;
+  }, [productId]);
 
-  useEffect(() => {
-    if (product) {
-      setPageTitle(product.productName, `SKU: ${product.productCode}`);
-    } else {
-      setPageTitle("Product Summary", "View product carbon details");
-    }
-  }, [product, setPageTitle]);
+  // Transform to ProductData format for ProductOverviewHeader
+  const productData: ProductData | null = useMemo(() => {
+    if (!product) return null;
+    return {
+      id: product.id,
+      productName: product.productName,
+      productCode: product.productCode,
+      category: product.productType || "other",
+      description: "",
+      weight: String(product.weightPerUnit || 0),
+      unit: "g",
+      primaryMaterial: product.materials[0]?.materialType || "",
+      materialPercentage: String(product.materials[0]?.percentage || 0),
+      secondaryMaterial: product.materials[1]?.materialType || "",
+      secondaryPercentage: String(product.materials[1]?.percentage || 0),
+      recycledContent: "0",
+      certifications: product.materials.flatMap((m) => m.certifications || []),
+      manufacturingLocation: product.manufacturingLocation || "",
+      energySource: product.energySources[0]?.source || "",
+      processType: product.productionProcesses[0] || "",
+      wasteRecovery: product.wasteRecovery || "",
+      originCountry: product.originAddress?.country || "",
+      destinationMarket: product.destinationMarket || "",
+      transportMode: product.transportLegs[0]?.mode || "",
+      packagingType: "",
+      packagingWeight: "",
+      sourceType: "documented",
+      confidenceLevel: product.carbonResults?.confidenceLevel === "high" ? 90 : product.carbonResults?.confidenceLevel === "medium" ? 70 : 50,
+      isDemo: false,
+      createdAt: product.createdAt || new Date().toISOString(),
+      createdBy: "User",
+      status: product.status,
+      updatedAt: product.updatedAt || new Date().toISOString(),
+    };
+  }, [product]);
 
-  // Determine carbon status based on confidence
-  const getCarbonStatus = () => {
+  // Generate CarbonBreakdown from assessment data
+  const carbonBreakdown: CarbonBreakdownItem[] = useMemo(() => {
+    if (!product?.carbonResults) return [];
+    const perProduct = product.carbonResults.perProduct;
+    const total = perProduct.total || 1;
+    
+    return [
+      {
+        stage: "materials" as const,
+        label: "Vật liệu",
+        co2e: perProduct.materials || 0,
+        percentage: Math.round(((perProduct.materials || 0) / total) * 100),
+        note: `${product.materials.length} loại vật liệu`,
+        isProxy: false,
+        hasData: true,
+      },
+      {
+        stage: "manufacturing" as const,
+        label: "Sản xuất",
+        co2e: perProduct.production || 0,
+        percentage: Math.round(((perProduct.production || 0) / total) * 100),
+        note: product.manufacturingLocation || "Không xác định",
+        isProxy: false,
+        hasData: true,
+      },
+      {
+        stage: "transport" as const,
+        label: "Vận chuyển",
+        co2e: perProduct.transport || 0,
+        percentage: Math.round(((perProduct.transport || 0) / total) * 100),
+        note: `${product.transportLegs.length} chặng vận chuyển`,
+        isProxy: false,
+        hasData: product.transportLegs.length > 0,
+      },
+    ];
+  }, [product]);
+
+  // Generate MaterialImpact from assessment data
+  const materialImpact: MaterialImpactItem[] = useMemo(() => {
+    if (!product?.materials) return [];
+    const weightPerUnit = product.weightPerUnit || 1000; // default 1kg
+    
+    return product.materials.map((m) => {
+      const emissionFactor = getMaterialEmissionFactor(m.materialType);
+      const weight = (weightPerUnit * (m.percentage / 100)) / 1000; // convert to kg
+      const co2e = weight * emissionFactor;
+      
+      return {
+        material: getMaterialLabel(m.materialType),
+        percentage: m.percentage,
+        emissionFactor: emissionFactor,
+        co2e: co2e,
+        source: m.source === "domestic" ? "documented" : "proxy" as "documented" | "proxy",
+        factorSource: "IPCC 2021 / Industry Average",
+      };
+    });
+  }, [product]);
+
+  // Generate ProductCarbonDetail for CarbonFootprintCard
+  const carbonDetail: ProductCarbonDetail | null = useMemo(() => {
+    if (!product?.carbonResults) return null;
+    const total = product.carbonResults.perProduct.total || 0;
+    const confidenceLevel = product.carbonResults.confidenceLevel || "medium";
+    
+    return {
+      productId: product.id,
+      totalCo2e: total,
+      confidenceLevel: confidenceLevel,
+      confidenceScore: confidenceLevel === "high" ? 90 : confidenceLevel === "medium" ? 70 : 50,
+      calculationNote: product.carbonResults.proxyNotes?.join(", ") || "Tính toán từ dữ liệu đánh giá",
+      isPreliminary: product.status === "draft",
+      breakdown: carbonBreakdown,
+      dataCompleteness: [],
+      materialImpact: materialImpact,
+      versionHistory: [],
+      endOfLife: {
+        strategy: "no_takeback" as const,
+        strategyLabel: "Chưa có chương trình thu hồi",
+        breakdown: { reuse: 0, recycle: 0, disposal: 100 },
+        avoidedEmissions: 0,
+        netImpact: 0,
+        hasData: false,
+      },
+      compliance: [
+        {
+          criterion: "ISO 14067",
+          status: product.status === "published" ? "passed" : "partial" as "passed" | "partial" | "failed",
+          note: product.status === "published" ? "Đạt chuẩn" : "Đang chờ hoàn thiện",
+        },
+      ],
+      exportReady: product.status === "published",
+      suggestions: [],
+    };
+  }, [product, carbonBreakdown, materialImpact]);
+
+  // Determine carbon status
+  const getCarbonStatus = (): "carbon_ready" | "data_partial" | "missing_critical" => {
     if (!carbonDetail) return "missing_critical";
     if (carbonDetail.confidenceScore >= 85) return "carbon_ready";
     if (carbonDetail.confidenceScore >= 65) return "data_partial";
     return "missing_critical";
   };
 
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!product) {
+  if (!productId) {
     return (
       <Card className="max-w-2xl mx-auto">
         <CardContent className="p-8 text-center">
@@ -75,39 +221,24 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
     );
   }
 
-  // Fallback if no carbon detail exists (non-demo products)
-  if (!carbonDetail) {
+  if (!product) {
     return (
-      <>
-        <Button
-          variant="ghost"
-          className="mb-4"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Quay lại
-        </Button>
-        <Card className="max-w-2xl mx-auto">
-          <CardContent className="p-8 text-center">
-            <Info className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">Chưa có dữ liệu carbon</h2>
-            <p className="text-muted-foreground mb-4">
-              Sản phẩm này chưa được tính toán carbon footprint. Vui lòng hoàn
-              tất nhập dữ liệu vận chuyển.
-            </p>
-            <Button
-              onClick={() => router.push(`/transport?productId=${product.id}`)}
-            >
-              Tiếp tục nhập vận chuyển
-            </Button>
-          </CardContent>
-        </Card>
-      </>
+      <Card className="max-w-2xl mx-auto">
+        <CardContent className="p-8 text-center">
+          <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-bold mb-2">Không tìm thấy sản phẩm</h2>
+          <p className="text-muted-foreground mb-4">
+            Sản phẩm với ID &quot;{productId}&quot; không tồn tại trong hệ thống.
+          </p>
+          <Button onClick={() => router.push("/products")}>
+            Quay lại Products
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   const handleDownloadReport = () => {
-    // TODO: Implement report download
     console.log("Download report for:", product.id);
   };
 
@@ -118,44 +249,24 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
   return (
     <>
       {/* Back button */}
-      <Button
-        variant="ghost"
-        className="mb-4"
-        onClick={() => router.back()}
-      >
+      <Button variant="ghost" className="mb-4" onClick={() => router.back()}>
         <ArrowLeft className="w-4 h-4 mr-2" />
         Quay lại
       </Button>
 
-      {/* Demo data notice */}
-      {product.isDemo && (
+      {/* Status notice for draft */}
+      {product.status === "draft" && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
           <Info className="w-5 h-5 text-amber-600" />
           <p className="text-amber-800 text-sm font-medium">
-            Demo data – for learning purpose only
+            Sản phẩm đang ở trạng thái Nháp - Kết quả carbon chỉ mang tính ước tính
           </p>
         </div>
       )}
 
       {/* Section A - Product Overview Header */}
-      <ProductOverviewHeader
-        product={product}
-        carbonStatus={
-          getCarbonStatus() as
-            | "carbon_ready"
-            | "data_partial"
-            | "missing_critical"
-        }
-      />
-
-      {/* Data Completeness Check - Show for Draft/In Review products */}
-      {carbonDetail.isPreliminary && carbonDetail.dataCompleteness && (
-        <div className="mb-6">
-          <DataCompletenessCheck
-            completeness={carbonDetail.dataCompleteness}
-            productId={product.id}
-          />
-        </div>
+      {productData && (
+        <ProductOverviewHeader product={productData} carbonStatus={getCarbonStatus()} />
       )}
 
       {/* Main Content Grid */}
@@ -163,42 +274,144 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
         {/* Left Column - Main Data */}
         <div className="lg:col-span-2 space-y-6">
           {/* Section C - Carbon Breakdown Chart */}
-          <CarbonBreakdownChart breakdown={carbonDetail.breakdown} />
+          {carbonBreakdown.length > 0 && (
+            <CarbonBreakdownChart breakdown={carbonBreakdown} />
+          )}
 
           {/* Section D - Material Impact Table */}
-          <MaterialImpactTable materials={carbonDetail.materialImpact} />
+          {materialImpact.length > 0 && (
+            <MaterialImpactTable materials={materialImpact} />
+          )}
 
-          {/* Section E - End of Life Assessment */}
-          <EndOfLifeAssessment endOfLife={carbonDetail.endOfLife} />
+          {/* Additional Info Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Production Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Thông tin sản xuất</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">Địa điểm sản xuất</p>
+                  <p className="font-medium">{product.manufacturingLocation || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Quy trình</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {product.productionProcesses?.length > 0 ? (
+                      product.productionProcesses.map((p, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {p}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Nguồn năng lượng</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {product.energySources?.length > 0 ? (
+                      product.energySources.map((e, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {e.source} ({e.percentage}%)
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Section G - Improvement Suggestions */}
-          <ImprovementSuggestions suggestions={carbonDetail.suggestions} />
+            {/* Logistics Info */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Thông tin vận chuyển</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">Thị trường đích</p>
+                  <p className="font-medium">{product.destinationMarket || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Tổng khoảng cách</p>
+                  <p className="font-medium">
+                    {product.estimatedTotalDistance?.toLocaleString() || "—"} km
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Các chặng vận chuyển</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {product.transportLegs?.length > 0 ? (
+                      product.transportLegs.map((leg, i) => (
+                        <Badge key={i} variant="outline" className="text-xs">
+                          {leg.mode === "road" ? "Đường bộ" : 
+                           leg.mode === "sea" ? "Đường biển" : 
+                           leg.mode === "air" ? "Đường hàng không" : "Đường sắt"}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Right Column - Summary Cards */}
         <div className="space-y-6">
           {/* Section B - Total Carbon Footprint */}
-          <CarbonFootprintCard carbonDetail={carbonDetail} />
+          {carbonDetail && <CarbonFootprintCard carbonDetail={carbonDetail} />}
 
           {/* Section F - Compliance Status */}
-          <ComplianceStatus
-            compliance={carbonDetail.compliance}
-            exportReady={carbonDetail.exportReady}
-            onDownloadReport={handleDownloadReport}
-            onGenerateQR={handleGenerateQR}
-          />
+          {carbonDetail && (
+            <ComplianceStatus
+              compliance={carbonDetail.compliance}
+              exportReady={carbonDetail.exportReady}
+              onDownloadReport={handleDownloadReport}
+              onGenerateQR={handleGenerateQR}
+            />
+          )}
 
-          {/* Section - Version History */}
-          {carbonDetail.versionHistory &&
-            carbonDetail.versionHistory.length > 0 && (
-              <VersionHistory
-                versions={carbonDetail.versionHistory}
-                currentVersion={carbonDetail.versionHistory[0]?.version}
-                onView={(version) => console.log("View version:", version)}
-                onCompare={(v1, v2) => console.log("Compare:", v1, v2)}
-                onRestore={(version) => console.log("Restore:", version)}
-              />
-            )}
+          {/* Metadata */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Thông tin bổ sung</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Trạng thái:</span>
+                <Badge className={STATUS_CONFIG[product.status].className}>
+                  {STATUS_CONFIG[product.status].label}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Phiên bản:</span>
+                <span>v{product.version || 1}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Số lượng:</span>
+                <span>{product.quantity?.toLocaleString() || "—"} sản phẩm</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tạo lúc:</span>
+                <span>
+                  {new Date(product.createdAt).toLocaleDateString("vi-VN")}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Cập nhật:</span>
+                <span>
+                  {new Date(product.updatedAt).toLocaleDateString("vi-VN")}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

@@ -44,6 +44,119 @@ import {
   TRANSPORT_MODE_LABELS,
 } from "@/lib/demoData";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import {
+  ProductAssessmentData,
+  PRODUCT_TYPES,
+  DESTINATION_MARKETS,
+} from "@/components/dashboard/assessment/steps/types";
+
+// Interface for stored products from assessment
+interface StoredProduct extends ProductAssessmentData {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Helper to convert StoredProduct to ProductData format
+function convertToProductData(stored: StoredProduct): ProductData {
+  const productTypeLabel = PRODUCT_TYPES.find(p => p.value === stored.productType)?.label || stored.productType;
+  
+  return {
+    id: stored.id,
+    productName: stored.productName,
+    productCode: stored.productCode,
+    category: stored.productType || "other",
+    description: `${productTypeLabel} - ${stored.quantity || 1} sản phẩm`,
+    weight: String(stored.weightPerUnit || 0),
+    unit: "g",
+    primaryMaterial: stored.materials[0]?.materialType || "",
+    materialPercentage: String(stored.materials[0]?.percentage || 0),
+    secondaryMaterial: stored.materials[1]?.materialType || "",
+    secondaryPercentage: String(stored.materials[1]?.percentage || 0),
+    recycledContent: "0",
+    certifications: stored.materials.flatMap((m) => m.certifications || []),
+    manufacturingLocation: stored.manufacturingLocation || "Việt Nam",
+    energySource: stored.energySources[0]?.source || "grid",
+    processType: stored.productionProcesses[0] || "",
+    wasteRecovery: stored.wasteRecovery || "",
+    originCountry: stored.originAddress?.country || "Vietnam",
+    destinationMarket: stored.destinationMarket || "vietnam",
+    transportMode: stored.transportLegs[0]?.mode || "sea",
+    packagingType: "",
+    packagingWeight: "",
+    sourceType: "documented",
+    confidenceLevel: stored.carbonResults?.confidenceLevel === "high" ? 90 : stored.carbonResults?.confidenceLevel === "medium" ? 70 : 50,
+    isDemo: false,
+    createdAt: stored.createdAt,
+    createdBy: "User",
+    status: stored.status,
+    updatedAt: stored.updatedAt,
+  };
+}
+
+// Helper to generate calculation history from stored product
+function generateCalculationFromProduct(stored: StoredProduct): CalculationHistory | null {
+  if (!stored.carbonResults) return null;
+  
+  const perProduct = stored.carbonResults.perProduct;
+  return {
+    id: `calc-${stored.id}`,
+    productId: stored.id,
+    productName: stored.productName,
+    transportId: `transport-${stored.id}`,
+    totalCO2: perProduct.total || 0,
+    materialsCO2: perProduct.materials || 0,
+    manufacturingCO2: perProduct.production || 0,
+    transportCO2: perProduct.transport || 0,
+    packagingCO2: 0,
+    carbonVersion: "WeaveCarbon v1.0",
+    isDemo: false,
+    createdAt: stored.createdAt,
+    createdBy: "User",
+  };
+}
+
+// Helper to generate transport data from stored product
+function generateTransportFromProduct(stored: StoredProduct): TransportData | null {
+  if (!stored.transportLegs || stored.transportLegs.length === 0) return null;
+  
+  const legs = stored.transportLegs.map((leg, index) => ({
+    id: leg.id,
+    legNumber: index + 1,
+    type: "international" as const,
+    mode: leg.mode === "road" ? "truck_heavy" : leg.mode === "sea" ? "ship" : leg.mode === "air" ? "air" : "rail" as "truck_light" | "truck_heavy" | "ship" | "air" | "rail",
+    origin: {
+      name: index === 0 ? (stored.originAddress?.city || "Origin") : `Transit ${index}`,
+      lat: 0,
+      lng: 0,
+      type: "address" as const,
+    },
+    destination: {
+      name: index === stored.transportLegs.length - 1 
+        ? (stored.destinationAddress?.city || DESTINATION_MARKETS.find(m => m.value === stored.destinationMarket)?.label || "Destination")
+        : `Transit ${index + 1}`,
+      lat: 0,
+      lng: 0,
+      type: "address" as const,
+    },
+    distanceKm: leg.estimatedDistance || 1000,
+    emissionFactor: 0.016,
+    co2Kg: (stored.carbonResults?.perProduct.transport || 0) / stored.transportLegs.length,
+    routeType: leg.mode === "road" ? "road" : leg.mode === "sea" ? "sea" : "air" as "road" | "sea" | "air",
+  }));
+
+  return {
+    id: `transport-${stored.id}`,
+    productId: stored.id,
+    legs,
+    totalDistanceKm: stored.estimatedTotalDistance || legs.reduce((sum, l) => sum + l.distanceKm, 0),
+    totalCO2Kg: stored.carbonResults?.perProduct.transport || 0,
+    confidenceLevel: stored.carbonResults?.confidenceLevel === "high" ? 90 : 70,
+    isDemo: false,
+    createdAt: stored.createdAt,
+    createdBy: "User",
+  };
+}
 
 const PassportClient: React.FC = () => {
   const searchParams = useSearchParams();
@@ -72,12 +185,28 @@ const PassportClient: React.FC = () => {
 
       // Check demo products first
       let foundProduct = DEMO_PRODUCTS.find((p) => p.id === productId);
+      let foundTransport: TransportData | null = null;
+      let foundCalc: CalculationHistory | null = null;
 
-      // If not found in demo, check localStorage
+      // If not found in demo, check localStorage (new format)
       if (!foundProduct) {
-        const storedProducts = localStorage.getItem("weavecarbon_products");
+        const storedProducts = localStorage.getItem("weavecarbonProducts");
         if (storedProducts) {
-          const userProducts = JSON.parse(storedProducts) as ProductData[];
+          const userProducts = JSON.parse(storedProducts) as StoredProduct[];
+          const storedProduct = userProducts.find((p) => p.id === productId);
+          if (storedProduct) {
+            foundProduct = convertToProductData(storedProduct);
+            foundTransport = generateTransportFromProduct(storedProduct);
+            foundCalc = generateCalculationFromProduct(storedProduct);
+          }
+        }
+      }
+
+      // If still not found, check old localStorage format
+      if (!foundProduct) {
+        const oldStoredProducts = localStorage.getItem("weavecarbon_products");
+        if (oldStoredProducts) {
+          const userProducts = JSON.parse(oldStoredProducts) as ProductData[];
           foundProduct = userProducts.find((p) => p.id === productId);
         }
       }
@@ -85,37 +214,41 @@ const PassportClient: React.FC = () => {
       if (foundProduct) {
         setProduct(foundProduct);
 
-        // Find transport data
-        let foundTransport = DEMO_TRANSPORTS.find(
-          (t) => t.productId === productId,
-        );
+        // Find transport data if not already set
         if (!foundTransport) {
-          const storedTransports = localStorage.getItem(
-            "weavecarbon_transports",
-          );
-          if (storedTransports) {
-            const userTransports = JSON.parse(
-              storedTransports,
-            ) as TransportData[];
-            foundTransport = userTransports.find(
-              (t) => t.productId === productId,
+          foundTransport = DEMO_TRANSPORTS.find(
+            (t) => t.productId === productId,
+          ) || null;
+          if (!foundTransport) {
+            const storedTransports = localStorage.getItem(
+              "weavecarbon_transports",
             );
+            if (storedTransports) {
+              const userTransports = JSON.parse(
+                storedTransports,
+              ) as TransportData[];
+              foundTransport = userTransports.find(
+                (t) => t.productId === productId,
+              ) || null;
+            }
           }
         }
-        setTransport(foundTransport || null);
+        setTransport(foundTransport);
 
-        // Find calculation history
-        let foundCalc = DEMO_HISTORY.find((h) => h.productId === productId);
+        // Find calculation history if not already set
         if (!foundCalc) {
-          const storedHistory = localStorage.getItem("weavecarbon_history");
-          if (storedHistory) {
-            const userHistory = JSON.parse(
-              storedHistory,
-            ) as CalculationHistory[];
-            foundCalc = userHistory.find((h) => h.productId === productId);
+          foundCalc = DEMO_HISTORY.find((h) => h.productId === productId) || null;
+          if (!foundCalc) {
+            const storedHistory = localStorage.getItem("weavecarbon_history");
+            if (storedHistory) {
+              const userHistory = JSON.parse(
+                storedHistory,
+              ) as CalculationHistory[];
+              foundCalc = userHistory.find((h) => h.productId === productId) || null;
+            }
           }
         }
-        setCalculation(foundCalc || null);
+        setCalculation(foundCalc);
       }
 
       setLoading(false);

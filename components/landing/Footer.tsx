@@ -3,9 +3,11 @@
 import { motion } from "motion/react";
 import { Leaf, Linkedin, Mail, Twitter, Phone } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const t = useTranslations("footer");
 
   const footerLinks = {
     platform: [
@@ -57,8 +59,7 @@ const Footer = () => {
               </span>
             </Link>
             <p className="text-primary-foreground/70 text-sm mb-6 max-w-xs">
-              Empowering fashion brands to measure, reduce, and report their
-              carbon footprint while building a circular economy.
+              {t("desc")}
             </p>
             <div className="flex items-center gap-4">
               <a
@@ -92,7 +93,7 @@ const Footer = () => {
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }}
           >
-            <h4 className="font-semibold mb-4">Platform</h4>
+            <h4 className="font-semibold mb-4">{t("platform")}</h4>
             <ul className="space-y-3">
               {footerLinks.platform.map((link) => (
                 <li key={link.labelKey}>
@@ -113,7 +114,7 @@ const Footer = () => {
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
           >
-            <h4 className="font-semibold mb-4">Company</h4>
+            <h4 className="font-semibold mb-4">{t("company")}</h4>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.labelKey}>
@@ -134,7 +135,7 @@ const Footer = () => {
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.6, ease: "easeOut", delay: 0.15 }}
           >
-            <h4 className="font-semibold mb-4">Resources</h4>
+            <h4 className="font-semibold mb-4">{t("resources")}</h4>
             <ul className="space-y-3">
               {footerLinks.resources.map((link) => (
                 <li key={link.labelKey}>
@@ -156,11 +157,11 @@ const Footer = () => {
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
           >
-            <h4 className="font-semibold mb-4">Contact Us</h4>
+            <h4 className="font-semibold mb-4">{t("contact")}</h4>
             <div className="space-y-4">
               <div>
                 <p className="text-xs text-primary-foreground/50 mb-1">
-                  Project Representative
+                  {t("representative")}
                 </p>
                 <p className="text-sm text-primary-foreground/90 font-medium">
                   Doan Thi My Trinh
@@ -197,7 +198,7 @@ const Footer = () => {
           className="pt-8 border-t border-primary-foreground/10 flex flex-col md:flex-row items-center justify-between gap-4"
         >
           <p className="text-sm text-primary-foreground/60">
-            © {currentYear} WeaveCarbon. All rights reserved.
+            © {currentYear} WeaveCarbon. {t("rights")}
           </p>
           <div className="flex items-center gap-6">
             <a

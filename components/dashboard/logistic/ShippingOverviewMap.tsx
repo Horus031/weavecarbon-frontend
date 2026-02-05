@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,39 @@ import SupplyChainMap, {
 import ShipmentMiniMap from "./ShipmentMiniMap";
 import { TransportLeg } from "@/lib/demoData";
 import ProductQRCode from "../ProductQRCode";
+import {
+  ProductAssessmentData,
+  DESTINATION_MARKETS,
+} from "@/components/dashboard/assessment/steps/types";
+
+// Interface for stored products from assessment
+interface StoredProduct extends ProductAssessmentData {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Shipment type definition
+interface Shipment {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  status: "in_transit" | "delivered" | "pending";
+  progress: number;
+  origin: string;
+  destination: string;
+  estimatedArrival: string;
+  currentLocation: {
+    lat: number;
+    lng: number;
+    name: string;
+  };
+  legs: TransportLeg[];
+  totalCO2: number;
+  carrier: string;
+  isDemo?: boolean;
+}
 
 // Demo route data
 const DEMO_VIETNAM_LA_ROUTE: TransportLeg[] = [
@@ -89,7 +122,7 @@ const DEMO_VIETNAM_LA_ROUTE: TransportLeg[] = [
 ];
 
 // All shipments data for the world map
-const ALL_SHIPMENTS = [
+const DEMO_SHIPMENTS: Shipment[] = [
   {
     id: "SHIP-2024-001",
     productId: "demo-product-001",
@@ -108,6 +141,7 @@ const ALL_SHIPMENTS = [
     legs: DEMO_VIETNAM_LA_ROUTE,
     totalCO2: 239.69,
     carrier: "COSCO Shipping",
+    isDemo: true,
   },
   {
     id: "SHIP-2024-002",
@@ -236,8 +270,196 @@ const ALL_SHIPMENTS = [
     ],
     totalCO2: 277.69,
     carrier: "Maersk Line",
+    isDemo: true,
   },
 ];
+
+// Helper to get approximate coordinates for common locations
+const getLocationCoordinates = (
+  city: string,
+  country: string,
+): { lat: number; lng: number } => {
+  const locations: Record<string, { lat: number; lng: number }> = {
+    // Vietnam
+    "ho chi minh": { lat: 10.8231, lng: 106.6297 },
+    "hcm": { lat: 10.8231, lng: 106.6297 },
+    "tp.hcm": { lat: 10.8231, lng: 106.6297 },
+    "hanoi": { lat: 21.0285, lng: 105.8542 },
+    "ha noi": { lat: 21.0285, lng: 105.8542 },
+    "hà nội": { lat: 21.0285, lng: 105.8542 },
+    "da nang": { lat: 16.0544, lng: 108.2022 },
+    "đà nẵng": { lat: 16.0544, lng: 108.2022 },
+    "binh duong": { lat: 10.9808, lng: 106.6333 },
+    "bình dương": { lat: 10.9808, lng: 106.6333 },
+    "dong nai": { lat: 10.9454, lng: 106.8243 },
+    "đồng nai": { lat: 10.9454, lng: 106.8243 },
+    "việt nam": { lat: 14.0583, lng: 108.2772 },
+    // International cities
+    "los angeles": { lat: 34.0522, lng: -118.2437 },
+    "new york": { lat: 40.7128, lng: -74.006 },
+    "tokyo": { lat: 35.6762, lng: 139.6503 },
+    "seoul": { lat: 37.5665, lng: 126.978 },
+    "rotterdam": { lat: 51.9244, lng: 4.4777 },
+    "hamburg": { lat: 53.5511, lng: 9.9937 },
+    "singapore": { lat: 1.3521, lng: 103.8198 },
+    "shanghai": { lat: 31.2304, lng: 121.4737 },
+    "hong kong": { lat: 22.3193, lng: 114.1694 },
+    "sydney": { lat: -33.8688, lng: 151.2093 },
+    "london": { lat: 51.5074, lng: -0.1278 },
+    "paris": { lat: 48.8566, lng: 2.3522 },
+    "berlin": { lat: 52.52, lng: 13.405 },
+    // Destination market labels (Vietnamese)
+    "hoa kỳ": { lat: 37.0902, lng: -95.7129 },
+    "hàn quốc": { lat: 37.5665, lng: 126.978 },
+    "nhật bản": { lat: 35.6762, lng: 139.6503 },
+    "châu âu": { lat: 50.8503, lng: 4.3517 }, // Brussels as EU center
+    "trung quốc": { lat: 31.2304, lng: 121.4737 },
+  };
+
+  const key = city.toLowerCase();
+  if (locations[key]) return locations[key];
+
+  // Default to country center if city not found
+  const countryDefaults: Record<string, { lat: number; lng: number }> = {
+    vietnam: { lat: 14.0583, lng: 108.2772 },
+    usa: { lat: 37.0902, lng: -95.7129 },
+    japan: { lat: 36.2048, lng: 138.2529 },
+    korea: { lat: 35.9078, lng: 127.7669 },
+    germany: { lat: 51.1657, lng: 10.4515 },
+    france: { lat: 46.6034, lng: 1.8883 },
+    netherlands: { lat: 52.1326, lng: 5.2913 },
+    singapore: { lat: 1.3521, lng: 103.8198 },
+    china: { lat: 35.8617, lng: 104.1954 },
+    australia: { lat: -25.2744, lng: 133.7751 },
+    uk: { lat: 55.3781, lng: -3.436 },
+    eu: { lat: 50.8503, lng: 4.3517 },
+  };
+
+  const countryKey = country.toLowerCase();
+  return countryDefaults[countryKey] || { lat: 10.8231, lng: 106.6297 };
+};
+
+// Helper to convert stored product to shipment format
+const convertProductToShipment = (product: StoredProduct): Shipment | null => {
+  const originCity = product.originAddress?.city || product.manufacturingLocation || "Ho Chi Minh";
+  const originCountry = product.originAddress?.country || "Vietnam";
+  const destMarket = DESTINATION_MARKETS.find(
+    (m) => m.value === product.destinationMarket,
+  );
+  const destCity = product.destinationAddress?.city || destMarket?.label || "Unknown";
+  const destCountry = product.destinationAddress?.country || destMarket?.label || "Unknown";
+
+  // Use stored coordinates if available, otherwise fall back to geocoding lookup
+  const originCoords = (product.originAddress?.lat && product.originAddress?.lng)
+    ? { lat: product.originAddress.lat, lng: product.originAddress.lng }
+    : getLocationCoordinates(originCity, originCountry);
+  
+  const destCoords = (product.destinationAddress?.lat && product.destinationAddress?.lng)
+    ? { lat: product.destinationAddress.lat, lng: product.destinationAddress.lng }
+    : getLocationCoordinates(destCity, destCountry);
+
+  console.log("[Logistics] Converting product:", product.productName);
+  console.log("[Logistics] Origin coords:", originCoords, "from address:", product.originAddress);
+  console.log("[Logistics] Dest coords:", destCoords, "from address:", product.destinationAddress);
+
+  let legs: TransportLeg[];
+
+  // If product has transport legs defined, use them
+  if (product.transportLegs && product.transportLegs.length > 0) {
+    legs = product.transportLegs.map((leg, index) => {
+      const isLast = index === product.transportLegs.length - 1;
+      const legOrigin = index === 0 ? originCoords : { lat: originCoords.lat + index * 5, lng: originCoords.lng + index * 10 };
+      const legDest = isLast ? destCoords : { lat: originCoords.lat + (index + 1) * 5, lng: originCoords.lng + (index + 1) * 10 };
+
+      const modeMapping: Record<string, "truck_light" | "truck_heavy" | "ship" | "air" | "rail"> = {
+        road: "truck_heavy",
+        sea: "ship",
+        air: "air",
+        rail: "rail",
+      };
+
+      const co2PerLeg = (product.carbonResults?.perProduct.transport || 0) / product.transportLegs.length;
+
+      return {
+        id: leg.id,
+        legNumber: index + 1,
+        type: index === 0 ? "domestic" as const : "international" as const,
+        mode: modeMapping[leg.mode] || "truck_heavy",
+        origin: {
+          name: index === 0 ? `${originCity}, ${originCountry}` : `Transit ${index}`,
+          lat: legOrigin.lat,
+          lng: legOrigin.lng,
+          type: index === 0 ? "address" as const : leg.mode === "sea" ? "port" as const : leg.mode === "air" ? "airport" as const : "address" as const,
+        },
+        destination: {
+          name: isLast ? `${destCity}, ${destCountry}` : `Transit ${index + 1}`,
+          lat: legDest.lat,
+          lng: legDest.lng,
+          type: isLast ? "address" as const : leg.mode === "sea" ? "port" as const : leg.mode === "air" ? "airport" as const : "address" as const,
+        },
+        distanceKm: leg.estimatedDistance || 1000,
+        emissionFactor: leg.mode === "sea" ? 0.016 : leg.mode === "air" ? 0.602 : 0.105,
+        co2Kg: co2PerLeg,
+        routeType: leg.mode === "sea" ? "sea" as const : leg.mode === "air" ? "air" as const : "road" as const,
+      };
+    });
+  } else {
+    // Generate default route based on destination market
+    const isInternational = product.destinationMarket && product.destinationMarket !== "vietnam";
+    const defaultMode = isInternational ? "ship" : "truck_heavy";
+    const estimatedDistance = product.estimatedTotalDistance || (isInternational ? 5000 : 500);
+    const co2 = product.carbonResults?.perProduct.transport || estimatedDistance * (isInternational ? 0.016 : 0.105);
+
+    legs = [{
+      id: `leg-${product.id}-1`,
+      legNumber: 1,
+      type: isInternational ? "international" as const : "domestic" as const,
+      mode: defaultMode as "truck_heavy" | "ship",
+      origin: {
+        name: `${originCity}, ${originCountry}`,
+        lat: originCoords.lat,
+        lng: originCoords.lng,
+        type: "address" as const,
+      },
+      destination: {
+        name: `${destCity}, ${destCountry}`,
+        lat: destCoords.lat,
+        lng: destCoords.lng,
+        type: isInternational ? "port" as const : "address" as const,
+      },
+      distanceKm: estimatedDistance,
+      emissionFactor: isInternational ? 0.016 : 0.105,
+      co2Kg: co2,
+      routeType: isInternational ? "sea" as const : "road" as const,
+    }];
+  }
+
+  const totalCO2 = product.carbonResults?.perProduct.transport || legs.reduce((sum, l) => sum + l.co2Kg, 0);
+
+  // Determine current location based on status - for published, show at origin (pending)
+  const currentLocation = {
+    lat: originCoords.lat,
+    lng: originCoords.lng,
+    name: `${originCity}, ${originCountry} - Chờ vận chuyển`,
+  };
+
+  return {
+    id: `SHIP-${product.id}`,
+    productId: product.id,
+    productName: product.productName,
+    sku: product.productCode,
+    status: "pending" as const,
+    progress: 0,
+    origin: `${originCity}, ${originCountry}`,
+    destination: `${destCity}, ${destCountry}`,
+    estimatedArrival: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    currentLocation,
+    legs,
+    totalCO2,
+    carrier: "WeaveCarbon Logistics",
+    isDemo: false,
+  };
+};
 
 interface ShippingOverviewMapProps {
   onViewDetails?: () => void;
@@ -340,13 +562,59 @@ const convertLegsToRoutes = (
 const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
   onViewDetails,
 }) => {
-  const [selectedShipment, setSelectedShipment] = useState<
-    (typeof ALL_SHIPMENTS)[0] | null
-  >(null);
-  const [qrShipment, setQrShipment] = useState<
-    (typeof ALL_SHIPMENTS)[0] | null
-  >(null);
+  const [allShipments, setAllShipments] = useState<Shipment[]>(DEMO_SHIPMENTS);
+  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
+  const [qrShipment, setQrShipment] = useState<Shipment | null>(null);
   const [mapMode, setMapMode] = useState<"overview" | "detail">("overview");
+
+  // Load published products from localStorage and convert to shipments
+  useEffect(() => {
+    const loadUserShipments = () => {
+      try {
+        const storedProducts = localStorage.getItem("weavecarbonProducts");
+        console.log("[Logistics] Loading from localStorage:", storedProducts ? "Found data" : "No data");
+        
+        if (storedProducts) {
+          const products = JSON.parse(storedProducts) as StoredProduct[];
+          console.log("[Logistics] Total products:", products.length);
+          console.log("[Logistics] Products:", products.map(p => ({ id: p.id, name: p.productName, status: p.status })));
+          
+          // Only include published products
+          const publishedProducts = products.filter(
+            (p) => p.status === "published",
+          );
+          console.log("[Logistics] Published products:", publishedProducts.length);
+          
+          const userShipments = publishedProducts
+            .map((p) => {
+              const shipment = convertProductToShipment(p);
+              console.log("[Logistics] Converted product to shipment:", p.productName, shipment ? "Success" : "Failed");
+              return shipment;
+            })
+            .filter((s): s is Shipment => s !== null);
+
+          console.log("[Logistics] User shipments created:", userShipments.length);
+          
+          // Merge with demo shipments
+          setAllShipments([...DEMO_SHIPMENTS, ...userShipments]);
+        }
+      } catch (error) {
+        console.error("Error loading shipments from localStorage:", error);
+      }
+    };
+
+    loadUserShipments();
+
+    // Listen for storage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "weavecarbonProducts") {
+        loadUserShipments();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -377,20 +645,20 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
   };
 
   // Stats summary
-  const stats = {
-    total: ALL_SHIPMENTS.length,
-    inTransit: ALL_SHIPMENTS.filter((s) => s.status === "in_transit").length,
-    delivered: ALL_SHIPMENTS.filter((s) => s.status === "delivered").length,
-    pending: ALL_SHIPMENTS.filter((s) => s.status === "pending").length,
-    totalCO2: ALL_SHIPMENTS.reduce((sum, s) => sum + s.totalCO2, 0),
-  };
+  const stats = useMemo(() => ({
+    total: allShipments.length,
+    inTransit: allShipments.filter((s) => s.status === "in_transit").length,
+    delivered: allShipments.filter((s) => s.status === "delivered").length,
+    pending: allShipments.filter((s) => s.status === "pending").length,
+    totalCO2: allShipments.reduce((sum, s) => sum + s.totalCO2, 0),
+  }), [allShipments]);
 
   // Prepare all nodes and routes for the world overview map
   const allNodes = useMemo((): SupplyChainNode[] => {
     const nodes: SupplyChainNode[] = [];
     const addedLocations = new Set<string>();
 
-    ALL_SHIPMENTS.forEach((shipment) => {
+    allShipments.forEach((shipment) => {
       shipment.legs.forEach((leg, legIndex) => {
         // Add origin
         const originKey = `${leg.origin.lat.toFixed(2)}-${leg.origin.lng.toFixed(2)}`;
@@ -439,9 +707,9 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
     });
 
     return nodes;
-  }, []);
+  }, [allShipments]);
 
-  const allRoutes: SupplyChainRoute[] = ALL_SHIPMENTS.flatMap((shipment) =>
+  const allRoutes = useMemo((): SupplyChainRoute[] => allShipments.flatMap((shipment) =>
     shipment.legs.map((leg) => ({
       id: `${shipment.id}-${leg.id}`,
       from: {
@@ -469,7 +737,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
       co2Kg: leg.co2Kg,
       distanceKm: leg.distanceKm,
     })),
-  );
+  ), [allShipments]);
 
   return (
     <div className="space-y-6">
@@ -539,12 +807,21 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
                   ← Quay lại bản đồ toàn cầu
                 </Button>
               )}
-              <Badge
-                variant="outline"
-                className="text-amber-600 border-amber-300 bg-amber-50"
-              >
-                Demo Data
-              </Badge>
+              {allShipments.some(s => !s.isDemo) ? (
+                <Badge
+                  variant="outline"
+                  className="text-green-600 border-green-300 bg-green-50"
+                >
+                  Live Data
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="text-amber-600 border-amber-300 bg-amber-50"
+                >
+                  Demo Data
+                </Badge>
+              )}
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -579,7 +856,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
             onNodeClick={(node) => {
               if (mapMode === "overview") {
                 // Find shipment that contains this node
-                const shipment = ALL_SHIPMENTS.find((s) =>
+                const shipment = allShipments.find((s) =>
                   s.legs.some(
                     (leg) =>
                       leg.origin.name === node.name ||
@@ -600,7 +877,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
       <div>
         <h3 className="text-lg font-semibold mb-3">Tuyến vận chuyển</h3>
         <div className="grid lg:grid-cols-3 gap-4">
-          {ALL_SHIPMENTS.map((shipment) => (
+          {allShipments.map((shipment) => (
             <Card
               key={shipment.id}
               className={`cursor-pointer transition-all hover:shadow-md ${
@@ -616,7 +893,14 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-medium text-sm">{shipment.productName}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">{shipment.productName}</p>
+                      {!shipment.isDemo && (
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-600 border-green-200">
+                          Mới
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {shipment.sku}
                     </p>

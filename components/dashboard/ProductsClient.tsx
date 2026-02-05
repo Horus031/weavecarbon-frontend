@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useMemo } from "react";
+import { useBatches } from "@/contexts/BatchContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,104 +18,77 @@ import {
   PlusCircle,
   ChevronRight,
   QrCode,
-  FileText,
-  AlertCircle,
-  TrendingUp,
   Search,
   Filter,
+  FileText,
+  TrendingUp,
+  Upload,
+  Layers,
 } from "lucide-react";
 import ProductQRCode from "@/components/dashboard/ProductQRCode";
-import { useDashboardTitle } from "@/contexts/DashboardContext";
-import { ProductStatus } from "@/contexts/ProductContext";
+import BulkUploadModal from "@/components/dashboard/products/BulkUploadModal";
+import BatchManagementModal from "@/components/dashboard/products/BatchManagementModal";
+import { useRouter } from "next/navigation";
+import { ProductAssessmentData } from "./assessment/steps/types";
 
-interface Product {
+// Type for stored products in localStorage
+interface StoredProduct extends ProductAssessmentData {
   id: string;
-  name: string;
-  sku: string;
-  co2: number;
-  status: ProductStatus;
-  materials: string[];
-  category: string;
-  scope: string;
-  isDemo?: boolean;
-}
-
-interface ProductsClientProps {
-  products: Product[];
+  createdAt: string;
+  updatedAt: string;
+  status: "draft" | "published";
 }
 
 const STATUS_CONFIG: Record<
-  ProductStatus,
+  "draft" | "published",
   { label: string; className: string }
 > = {
   draft: { label: "Nháp", className: "bg-gray-100 text-gray-700" },
-  in_review: {
-    label: "Đang xem xét",
-    className: "bg-yellow-100 text-yellow-700",
-  },
   published: { label: "Đã xuất bản", className: "bg-green-100 text-green-700" },
-  archived: { label: "Lưu trữ", className: "bg-blue-100 text-blue-700" },
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
-  apparel: "Quần áo",
-  footwear: "Giày dép",
-  accessories: "Phụ kiện",
-  textiles: "Vải textile",
-  homegoods: "Đồ gia dụng",
-};
-
-const SCOPE_LABELS: Record<string, string> = {
-  scope1: "Scope 1",
-  scope1_2: "Scope 1-2",
-  scope1_2_3: "Scope 1-2-3",
-};
-
-export default function ProductsClient({ products }: ProductsClientProps) {
+const ProductsClient: React.FC = () => {
   const router = useRouter();
-  const { setPageTitle } = useDashboardTitle();
-
-  useEffect(() => {
-    setPageTitle("Products", "Overview of your carbon tracking");
-  }, [setPageTitle]);
-
+  const { batches } = useBatches();
+  const [products] = useState<StoredProduct[]>(() => {
+    if (typeof window === "undefined") return [];
+    const storedProducts = JSON.parse(
+      localStorage.getItem("weavecarbonProducts") || "[]"
+    ) as StoredProduct[];
+    return storedProducts;
+  });
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ProductStatus | "all">(
-    "all",
-  );
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<"draft" | "published" | "all">("all");
   const [selectedProductForQR, setSelectedProductForQR] = useState<{
     id: string;
     name: string;
     sku: string;
   } | null>(null);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
 
   // Filter and search products
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchesSearch =
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.sku.toLowerCase().includes(searchQuery.toLowerCase());
+        product.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.productCode.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus =
         statusFilter === "all" || product.status === statusFilter;
-      const matchesCategory =
-        categoryFilter === "all" || product.category === categoryFilter;
 
-      return matchesSearch && matchesStatus && matchesCategory;
+      return matchesSearch && matchesStatus;
     });
-  }, [products, searchQuery, statusFilter, categoryFilter]);
+  }, [products, searchQuery, statusFilter]);
 
   // Statistics
   const stats = useMemo(
     () => ({
       total: products.length,
       draft: products.filter((p) => p.status === "draft").length,
-      inReview: products.filter((p) => p.status === "in_review").length,
       published: products.filter((p) => p.status === "published").length,
-      archived: products.filter((p) => p.status === "archived").length,
     }),
-    [products],
+    [products]
   );
 
   const handleViewProduct = (productId: string) => {
@@ -131,16 +104,35 @@ export default function ProductsClient({ products }: ProductsClientProps) {
             <h2 className="text-xl font-bold">Quản lý sản phẩm</h2>
             <p className="text-muted-foreground">
               Tổng cộng {stats.total} sản phẩm • {stats.draft} nháp •{" "}
-              {stats.published} đã xuất bản
+              {stats.published} đã xuất bản • {batches.length} lô hàng
             </p>
           </div>
-          <Button onClick={() => router.push("/assessment")} className="gap-2">
-            <PlusCircle className="w-4 h-4" /> Thêm sản phẩm mới
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowBatchModal(true)}
+              className="gap-2"
+            >
+              <Layers className="w-4 h-4" /> Quản lý lô hàng
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkUpload(true)}
+              className="gap-2"
+            >
+              <Upload className="w-4 h-4" /> Tải file
+            </Button>
+            <Button
+              onClick={() => router.push("/assessment")}
+              className="gap-2"
+            >
+              <PlusCircle className="w-4 h-4" /> Thêm SP
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Card
             className="cursor-pointer hover:shadow-md transition-shadow"
             onClick={() => setStatusFilter("all")}
@@ -170,23 +162,6 @@ export default function ProductsClient({ products }: ProductsClientProps) {
                 <div>
                   <p className="text-2xl font-bold">{stats.draft}</p>
                   <p className="text-xs text-muted-foreground">Nháp</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setStatusFilter("in_review")}
-          >
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.inReview}</p>
-                  <p className="text-xs text-muted-foreground">Đang xem xét</p>
                 </div>
               </div>
             </CardContent>
@@ -224,7 +199,7 @@ export default function ProductsClient({ products }: ProductsClientProps) {
 
           <Select
             value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as ProductStatus | "all")}
+            onValueChange={(v) => setStatusFilter(v as "draft" | "published" | "all")}
           >
             <SelectTrigger className="w-full md:w-45">
               <Filter className="w-4 h-4 mr-2" />
@@ -233,23 +208,7 @@ export default function ProductsClient({ products }: ProductsClientProps) {
             <SelectContent>
               <SelectItem value="all">Tất cả trạng thái</SelectItem>
               <SelectItem value="draft">Nháp</SelectItem>
-              <SelectItem value="in_review">Đang xem xét</SelectItem>
               <SelectItem value="published">Đã xuất bản</SelectItem>
-              <SelectItem value="archived">Lưu trữ</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full md:w-45">
-              <SelectValue placeholder="Danh mục" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả danh mục</SelectItem>
-              {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
             </SelectContent>
           </Select>
         </div>
@@ -288,34 +247,22 @@ export default function ProductsClient({ products }: ProductsClientProps) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-medium truncate">
-                            {product.name}
+                            {product.productName}
                           </h3>
-                          {!product.isDemo && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs bg-blue-50 text-blue-700 border-blue-200 shrink-0"
-                            >
-                              Mới
-                            </Badge>
-                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {product.sku}
+                          {product.productCode}
                         </p>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {product.materials.map((m, i) => (
+                          {product.materials.slice(0, 2).map((m) => (
                             <Badge
-                              key={i}
+                              key={m.id}
                               variant="outline"
                               className="text-xs"
                             >
-                              {m}
+                              {m.materialType} {m.percentage}%
                             </Badge>
                           ))}
-                          <Badge variant="outline" className="text-xs">
-                            {CATEGORY_LABELS[product.category] ||
-                              product.category}
-                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -323,14 +270,11 @@ export default function ProductsClient({ products }: ProductsClientProps) {
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right hidden sm:block">
                         <p className="text-lg font-bold text-primary">
-                          {product.co2} kg
+                          {product.carbonResults?.perProduct.total.toFixed(2) || "—"} kg
                         </p>
                         <p className="text-xs text-muted-foreground">
                           CO₂e / đơn vị
                         </p>
-                        <Badge variant="outline" className="text-xs mt-1">
-                          {SCOPE_LABELS[product.scope] || product.scope}
-                        </Badge>
                       </div>
 
                       <Badge
@@ -347,8 +291,8 @@ export default function ProductsClient({ products }: ProductsClientProps) {
                             e.stopPropagation();
                             setSelectedProductForQR({
                               id: product.id,
-                              name: product.name,
-                              sku: product.sku,
+                              name: product.productName,
+                              sku: product.productCode,
                             });
                           }}
                           title="Tạo QR Code"
@@ -386,6 +330,20 @@ export default function ProductsClient({ products }: ProductsClientProps) {
           onClose={() => setSelectedProductForQR(null)}
         />
       )}
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        open={showBulkUpload}
+        onClose={() => setShowBulkUpload(false)}
+      />
+
+      {/* Batch Management Modal */}
+      <BatchManagementModal
+        open={showBatchModal}
+        onClose={() => setShowBatchModal(false)}
+      />
     </>
   );
-}
+};
+
+export default ProductsClient;

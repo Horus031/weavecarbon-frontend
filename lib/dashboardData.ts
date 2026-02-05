@@ -24,10 +24,10 @@ export const carbonTrendData = [
 ];
 
 export const emissionBreakdown = [
-  { name: "Vật liệu", value: 45, color: "hsl(150 60% 20%)" },
-  { name: "Sản xuất", value: 25, color: "hsl(30 45% 60%)" },
-  { name: "Vận chuyển", value: 20, color: "hsl(150, 40%, 50%)" },
-  { name: "Đóng gói", value: 10, color: "hsl(35, 50%, 60%)" },
+  { name: "chart.pie.material", value: 45, color: "hsl(150 60% 20%)" },
+  { name: "chart.pie.manufacture", value: 25, color: "hsl(30 45% 60%)" },
+  { name: "chart.pie.transport", value: 20, color: "hsl(150, 40%, 50%)" },
+  { name: "chart.pie.package", value: 10, color: "hsl(35, 50%, 60%)" },
 ];
 
 export const marketReadiness = [
@@ -35,6 +35,25 @@ export const marketReadiness = [
   { market: "US", score: 65, status: "warning" },
   { market: "JP", score: 82, status: "good" },
   { market: "KR", score: 71, status: "warning" },
+];
+
+export const certificateList = [
+  {
+    name: "certi1.name",
+    status: "certi1.status",
+    expires: "certi1.expires",
+  },
+  {
+    name: "certi2.name",
+    status: "certi2.status",
+    expires: "certi2.expires",
+  },
+  {
+    name: "certi3.name",
+    status: "certi3.status",
+    expires: null,
+  },
+  { name: "certi4.name", status: "certi4.status", expires: null },
 ];
 
 export const recommendations = [
@@ -63,7 +82,7 @@ export const recommendations = [
 
 export const demoProducts: DemoProduct[] = [
   {
-    id: "demo-product-001",
+    id: "1",
     name: "Áo T-shirt Organic Cotton",
     sku: "DEMO-SKU-001",
     co2: 2.4,
@@ -74,7 +93,7 @@ export const demoProducts: DemoProduct[] = [
     isDemo: true,
   },
   {
-    id: "demo-product-002",
+    id: "2",
     name: "Quần Jeans Recycled Denim",
     sku: "DEMO-SKU-002",
     co2: 8.5,
@@ -85,7 +104,7 @@ export const demoProducts: DemoProduct[] = [
     isDemo: true,
   },
   {
-    id: "demo-product-003",
+    id: "3",
     name: "Váy Linen Blend",
     sku: "DEMO-SKU-003",
     co2: 3.2,
@@ -96,7 +115,7 @@ export const demoProducts: DemoProduct[] = [
     isDemo: true,
   },
   {
-    id: "demo-product-004",
+    id: "4",
     name: "Áo Hoodie Fleece",
     sku: "DEMO-SKU-004",
     co2: 5.1,

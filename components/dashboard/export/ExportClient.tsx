@@ -3,9 +3,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Globe, FileText, FileCheck } from "lucide-react";
-import { marketReadiness, getReadinessColor } from "@/lib/dashboardData";
+import {
+  marketReadiness,
+  getReadinessColor,
+  certificateList,
+} from "@/lib/dashboardData";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -21,56 +26,40 @@ const getStatusBadge = (status: string) => {
 };
 
 const ExportClient: React.FC = () => {
+  const t = useTranslations("export");
+
   const { setPageTitle } = useDashboardTitle();
 
   useEffect(() => {
-    setPageTitle("Export", "Overview of your carbon tracking");
-  }, [setPageTitle]);
+    setPageTitle(t("title"), t("subtitle"));
+  }, [setPageTitle, t]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold">Xuất khẩu & Tuân thủ</h2>
-        <p className="text-muted-foreground">
-          Quản lý hồ sơ xuất khẩu và kiểm tra tuân thủ quy định quốc tế
-        </p>
-      </div>
-
       <div className="grid lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="w-5 h-5" />
-              Mức độ sẵn sàng theo thị trường
+              {t("marketReadiness")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {marketReadiness.map((market) => (
               <div
-                key={market.market}
+                key={t(market.market)}
                 className="flex items-center justify-between p-3 rounded-lg border"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold">{market.market}</span>
+                  <span className="text-2xl font-bold">
+                    {market.market.replace("m", "")}
+                  </span>
                   <div>
                     <p className="font-medium">
-                      Thị trường{" "}
-                      {market.market === "EU"
-                        ? "Châu Âu"
-                        : market.market === "US"
-                          ? "Mỹ"
-                          : market.market === "JP"
-                            ? "Nhật Bản"
-                            : "Hàn Quốc"}
+                      {t(market.market.concat(".title"))}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {market.market === "EU"
-                        ? "CBAM, EU Green Deal"
-                        : market.market === "US"
-                          ? "California Climate"
-                          : market.market === "JP"
-                            ? "JIS Standards"
-                            : "K-ETS"}
+                      {t(market.market.concat(".location"))}
                     </p>
                   </div>
                 </div>
@@ -88,28 +77,11 @@ const ExportClient: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              Chứng chỉ & Giấy tờ
+              {t("certificates")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {[
-              {
-                name: "GOTS Certificate",
-                status: "valid",
-                expires: "2024-12-31",
-              },
-              {
-                name: "OEKO-TEX Standard 100",
-                status: "valid",
-                expires: "2024-08-15",
-              },
-              {
-                name: "Carbon Footprint Report",
-                status: "pending",
-                expires: null,
-              },
-              { name: "EU Product Passport", status: "draft", expires: null },
-            ].map((doc, i) => (
+            {certificateList.map((doc, i) => (
               <div
                 key={i}
                 className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
@@ -117,15 +89,15 @@ const ExportClient: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <FileCheck className="w-5 h-5 text-primary" />
                   <div>
-                    <p className="font-medium text-sm">{doc.name}</p>
+                    <p className="font-medium text-sm">{t(doc.name)}</p>
                     {doc.expires && (
                       <p className="text-xs text-muted-foreground">
-                        Hết hạn: {doc.expires}
+                        Hết hạn: {t(doc.expires)}
                       </p>
                     )}
                   </div>
                 </div>
-                {getStatusBadge(doc.status)}
+                {getStatusBadge(t(doc.status))}
               </div>
             ))}
           </CardContent>

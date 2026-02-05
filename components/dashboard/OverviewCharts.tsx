@@ -21,18 +21,21 @@ import {
   Tooltip,
 } from "recharts";
 import { carbonTrendData, emissionBreakdown } from "@/lib/dashboardData";
+import { useTranslations } from "next-intl";
 
 export default function OverviewCharts() {
+  const t = useTranslations("overview");
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
       <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg md:text-base">
             <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
-            <span className="truncate">Carbon Trends</span>
+            <span className="truncate">{t("chart.carbon.title")}</span>
           </CardTitle>
           <CardDescription className="text-xs md:text-sm">
-            Comparison of actual vs target emissions
+            {t("chart.carbon.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -79,7 +82,7 @@ export default function OverviewCharts() {
                   stroke="hsl(150 60% 20%)"
                   strokeWidth={2}
                   fill="url(#colorEmissions)"
-                  name="Thực tế"
+                  name={t("chart.carbon.outcome")}
                 />
                 <Area
                   type="monotone"
@@ -88,7 +91,7 @@ export default function OverviewCharts() {
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   fill="transparent"
-                  name="Mục tiêu"
+                  name={t("chart.carbon.expect")}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -100,7 +103,7 @@ export default function OverviewCharts() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg md:text-base">
             <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
-            <span className="truncate">Emission Sources</span>
+            <span className="truncate">{t("chart.pie.title")}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -125,13 +128,20 @@ export default function OverviewCharts() {
           </div>
           <div className="grid grid-cols-2 gap-2 mt-4">
             {emissionBreakdown.map((item) => (
-              <div key={item.name} className="flex items-center gap-2 text-xs md:text-sm">
+              <div
+                key={t(item.name)}
+                className="flex items-center gap-2 text-xs md:text-sm"
+              >
                 <div
                   className="w-2 h-2 md:w-3 md:h-3 rounded-full shrink-0"
                   style={{ backgroundColor: item.color }}
                 />
-                <span className="text-muted-foreground truncate">{item.name}</span>
-                <span className="font-medium ml-auto text-xs md:text-sm">{item.value}%</span>
+                <span className="text-muted-foreground truncate">
+                  {t(item.name)}
+                </span>
+                <span className="font-medium ml-auto text-xs md:text-sm">
+                  {item.value}%
+                </span>
               </div>
             ))}
           </div>

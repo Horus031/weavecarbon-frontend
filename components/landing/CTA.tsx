@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import { ArrowRight, Mail } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 const CTA = () => {
   const [email, setEmail] = useState("");
+  const t = useTranslations("cta");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +39,7 @@ const CTA = () => {
                 transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 }}
                 className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
               >
-                Get Started
+                {t("badge")}
               </motion.span>
 
               <motion.h2
@@ -47,7 +49,7 @@ const CTA = () => {
                 transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
                 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold text-foreground mb-6"
               >
-                Ready to Transform Your Carbon Strategy?
+                {t("title")}
               </motion.h2>
 
               <motion.p
@@ -57,8 +59,7 @@ const CTA = () => {
                 transition={{ duration: 0.6, ease: "easeOut", delay: 0.15 }}
                 className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto"
               >
-                Join leading fashion brands measuring and reducing their
-                environmental impact
+                {t("subtitle")}
               </motion.p>
 
               {/* Email form */}
@@ -75,7 +76,7 @@ const CTA = () => {
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder={t("email")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full h-14 pl-12 pr-4 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
@@ -88,7 +89,7 @@ const CTA = () => {
                     size="xl"
                     className="shrink-0"
                   >
-                    Get Early Access
+                    {t("button")}
                     <ArrowRight className="w-5 h-5" />
                   </Button>
                 </div>
@@ -101,7 +102,7 @@ const CTA = () => {
                 transition={{ duration: 0.5, ease: "easeOut", delay: 0.25 }}
                 className="text-sm text-muted-foreground"
               >
-                By subscribing, you agree to our Terms and Privacy Policy
+                {t("terms")}
               </motion.p>
             </div>
           </motion.div>

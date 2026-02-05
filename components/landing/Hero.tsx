@@ -6,12 +6,15 @@ import { ArrowRight, BarChart3, Recycle, Shield } from "lucide-react";
 import { useState } from "react";
 import UserTypeDialog from "./UserTypeDialog";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 const Hero = () => {
   const [showUserTypeDialog, setShowUserTypeDialog] = useState(false);
+  const t = useTranslations("hero");
+  const tFeatures = useTranslations("features");
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-gradient-hero">
+    <section className="relative h-fit flex items-center justify-center pt-32 pb-20 overflow-hidden bg-gradient-hero">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-soft" />
@@ -31,7 +34,7 @@ const Hero = () => {
           >
             <Shield className="w-4 h-4" />
             <span className="text-sm font-medium">
-              EU DPP & Carbon Tracking Platform
+              {t("badge")}
             </span>
           </motion.div>
 
@@ -43,8 +46,8 @@ const Hero = () => {
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.05 }}
             className="text-4xl md:text-5xl lg:text-7xl font-bold text-foreground mb-6"
           >
-            Measure Your Fashion{" "}
-            <span className="text-gradient-forest">Carbon Footprint</span>
+            {t("title")}{" "}
+            <span className="text-gradient-forest">{t("titleHighlight")}</span>
           </motion.h1>
 
           {/* Subheading */}
@@ -55,9 +58,7 @@ const Hero = () => {
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Enable Vietnamese fashion brands to measure carbon footprints for
-            2026 export standards and manage a circular economy for garment
-            waste.
+            {t("subtitle")}
           </motion.p>
 
           {/* CTA Buttons */}
@@ -74,7 +75,7 @@ const Hero = () => {
               className="w-full sm:w-auto"
               onClick={() => setShowUserTypeDialog(true)}
             >
-              Get Started
+              {t("cta.demo")}
               <ArrowRight className="w-5 h-5" />
             </Button>
             <Link href="/calculator">
@@ -83,7 +84,7 @@ const Hero = () => {
                 size="xl"
                 className="w-full sm:w-auto"
               >
-                Calculate Now
+                {t("cta.calculate")}
               </Button>
             </Link>
           </motion.div>
@@ -98,18 +99,18 @@ const Hero = () => {
           >
             <FeatureCard
               icon={<BarChart3 className="w-6 h-6" />}
-              title="Carbon Proxy Engine"
-              description="Calculate CO₂e for products with incomplete supply chain data using proxy emission factors."
+              title={tFeatures("carbonProxy.title")}
+              description={tFeatures("carbonProxy.desc")}
             />
             <FeatureCard
               icon={<Recycle className="w-6 h-6" />}
-              title="Circular Hub"
-              description="Connect with recyclers and track the circular journey of your textile waste."
+              title={tFeatures("circularHub.title")}
+              description={tFeatures("circularHub.desc")}
             />
             <FeatureCard
               icon={<Shield className="w-6 h-6" />}
-              title="Export Readiness"
-              description="Score your compliance for EU, US, and JP export standards with actionable insights."
+              title={tFeatures("exportReady.title")}
+              description={tFeatures("exportReady.desc")}
             />
           </motion.div>
 
@@ -121,7 +122,7 @@ const Hero = () => {
             transition={{ duration: 0.6, ease: "easeOut", delay: 0.25 }}
             className="mt-12 text-sm text-muted-foreground"
           >
-            Trusted by leading Vietnamese manufacturers
+            {t("trust")}
           </motion.p>
         </div>
       </div>

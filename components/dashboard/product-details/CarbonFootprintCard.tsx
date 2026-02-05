@@ -25,7 +25,7 @@ const CarbonFootprintCard: React.FC<CarbonFootprintCardProps> = ({
 
   return (
     <Card
-      className={`border-2 ${isPreliminary ? "border-yellow-300 bg-linear-to-br from-yellow-50/50 to-transparent" : "border-primary/20 bg-linear-to-br from-primary/5 to-transparent"}`}
+      className={`border-2 ${isPreliminary ? "border-yellow-300 bg-gradient-to-br from-yellow-50/50 to-transparent" : "border-primary/20 bg-gradient-to-br from-primary/5 to-transparent"}`}
     >
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between text-lg">
@@ -48,7 +48,7 @@ const CarbonFootprintCard: React.FC<CarbonFootprintCardProps> = ({
         {/* Preliminary Notice */}
         {isPreliminary && (
           <div className="text-xs text-yellow-700 bg-yellow-100 rounded-lg p-2 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             <span>
               Đây là kết quả ước tính sơ bộ. Cập nhật dữ liệu để có kết quả
               chính xác hơn.
@@ -126,7 +126,7 @@ const CarbonFootprintCard: React.FC<CarbonFootprintCardProps> = ({
 
         {/* Methodology Note */}
         <div className="text-xs text-muted-foreground flex items-start gap-2 pt-2">
-          <Info className="w-4 h-4 shrink-0 mt-0.5" />
+          <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <span>
             Tính toán theo phương pháp LCA (Life Cycle Assessment), tuân thủ ISO
             14067 và GHG Protocol.

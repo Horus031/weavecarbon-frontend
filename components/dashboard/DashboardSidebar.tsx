@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Company, Profile } from "@/types/app.type";
+import { useTranslations } from "next-intl";
 
 interface DashboardSidebarProps {
   company: Company | null;
@@ -32,28 +33,28 @@ interface DashboardSidebarProps {
 const menuItems = [
   {
     icon: BarChart3,
-    labelKey: "Overview",
+    labelKey: "overview",
     path: "/overview",
   },
   {
     icon: Package,
-    labelKey: "Products",
+    labelKey: "product",
     path: "/products",
   },
   {
     icon: Truck,
-    labelKey: "Logistics",
+    labelKey: "logistics",
     path: "/logistics",
   },
-  { icon: FileCheck, labelKey: "Export", path: "/export" },
+  { icon: FileCheck, labelKey: "export", path: "/export" },
   {
     icon: TrendingUp,
-    labelKey: "Reports",
+    labelKey: "reports",
     path: "/reports",
   },
   {
     icon: Settings,
-    labelKey: "Settings",
+    labelKey: "settings",
     path: "/settings",
   },
 ];
@@ -64,6 +65,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   sidebarOpen,
   onToggleSidebar,
 }) => {
+  const t = useTranslations("sidebar");
   const { user, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -154,7 +156,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               >
                 <item.icon className="w-5 h-5 shrink-0" />
                 {sidebarOpen && (
-                  <span className="text-sm font-medium">{item.labelKey}</span>
+                  <span className="text-sm font-medium">
+                    {t(item.labelKey)}
+                  </span>
                 )}
               </Link>
             );

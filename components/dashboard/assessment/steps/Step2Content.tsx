@@ -1,8 +1,7 @@
-"use client";
-
-import React from "react";
-import { Label } from "@/components/ui/label";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -11,143 +10,548 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ProductData } from "../StepContent";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Plus,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
+  Sparkles,
+  HelpCircle,
+} from "lucide-react";
+import {
+  ProductAssessmentData,
+  MaterialInput,
+  CERTIFICATIONS,
+  ACCESSORY_TYPES,
+  AccessoryInput,
+} from "./types";
+import MaterialCombobox from "../MaterialCombobox";
+import OtherMaterialModal from "../OtherMaterialModal";
+import { CatalogMaterial, MaterialType } from "../materialCatalog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-interface Step2ContentProps {
-  productData: ProductData;
-  updateField: (field: keyof ProductData, value: string | string[]) => void;
-  materials: Array<{ value: string; label: string }>;
-  certifications: Array<{ value: string; label: string }>;
+interface Step2MaterialsProps {
+  data: ProductAssessmentData;
+  onChange: (updates: Partial<ProductAssessmentData>) => void;
 }
 
-export default function Step2Content({
-  productData,
-  updateField,
-  materials,
-  certifications,
-}: Step2ContentProps) {
-  const handleCertificationToggle = (certValue: string) => {
-    const current = productData.certifications;
-    if (current.includes(certValue)) {
-      updateField(
-        "certifications",
-        current.filter((c: string) => c !== certValue),
-      );
-    } else {
-      updateField("certifications", [...current, certValue]);
+// Extended material input with catalog support
+interface ExtendedMaterialInput extends MaterialInput {
+  catalogMaterialId?: string;
+  customName?: string;
+  userSource?: "selected_catalog" | "ai_suggested" | "user_other";
+  confidenceScore?: number;
+}
+
+const MATERIAL_SOURCES = [
+  { value: "domestic", label: "Trong nước" },
+  { value: "imported", label: "Nhập khẩu" },
+  { value: "unknown", label: "Không xác định" },
+];
+
+const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
+  const [otherModalOpen, setOtherModalOpen] = useState(false);
+  const [editingMaterialIndex, setEditingMaterialIndex] = useState<
+    number | null
+  >(null);
+
+  // Calculate total percentage
+  const totalPercentage = data.materials.reduce(
+    (sum, m) => sum + (m.percentage || 0),
+    0,
+  );
+  const isValidTotal = totalPercentage === 100;
+  const hasProxySource = data.materials.some(
+    (m) =>
+      m.source === "unknown" ||
+      (m as ExtendedMaterialInput).userSource === "user_other",
+  );
+
+  // Add new material
+  const addMaterial = () => {
+    const newMaterial: ExtendedMaterialInput = {
+      id: `mat-${Date.now()}`,
+      materialType: "",
+      percentage: 0,
+      source: "domestic",
+      certifications: [],
+      userSource: "selected_catalog",
+      confidenceScore: 1.0,
+    };
+    onChange({ materials: [...data.materials, newMaterial] });
+  };
+
+  // Remove material
+  const removeMaterial = (id: string) => {
+    onChange({ materials: data.materials.filter((m) => m.id !== id) });
+  };
+
+  // Update material
+  const updateMaterial = (
+    id: string,
+    updates: Partial<ExtendedMaterialInput>,
+  ) => {
+    onChange({
+      materials: data.materials.map((m) =>
+        m.id === id ? { ...m, ...updates } : m,
+      ),
+    });
+  };
+
+  // Handle catalog material selection
+  const handleCatalogSelect = (
+    materialId: string,
+    catalogMaterial: CatalogMaterial | null,
+  ) => {
+    if (catalogMaterial) {
+      updateMaterial(materialId, {
+        materialType: catalogMaterial.id, // Store catalog ID as materialType for carbon calculation
+        catalogMaterialId: catalogMaterial.id,
+        customName: undefined,
+        userSource: "selected_catalog",
+        confidenceScore: 1.0,
+      });
     }
   };
 
+  // Handle "Other" material modal
+  const handleOtherClick = (index: number) => {
+    setEditingMaterialIndex(index);
+    setOtherModalOpen(true);
+  };
+
+  const handleOtherMaterialSelect = (
+    catalogMaterial: CatalogMaterial | null,
+    customData?: {
+      name: string;
+      description: string;
+      materialType: MaterialType;
+      confidenceScore: number;
+      isProxy: boolean;
+    },
+  ) => {
+    if (editingMaterialIndex === null) return;
+
+    const materialId = data.materials[editingMaterialIndex]?.id;
+    if (!materialId) return;
+
+    if (catalogMaterial) {
+      // AI suggested a catalog material
+      updateMaterial(materialId, {
+        materialType: catalogMaterial.id,
+        catalogMaterialId: catalogMaterial.id,
+        customName: undefined,
+        userSource: "ai_suggested",
+        confidenceScore: 0.75,
+      });
+    } else if (customData) {
+      // User created a proxy material
+      updateMaterial(materialId, {
+        materialType: "cat-other-generic", // Use generic proxy
+        catalogMaterialId: "cat-other-generic",
+        customName: customData.name,
+        userSource: "user_other",
+        confidenceScore: customData.confidenceScore,
+      });
+    }
+
+    setEditingMaterialIndex(null);
+  };
+
+  // Toggle certification for a material
+  const toggleCertification = (materialId: string, certValue: string) => {
+    const material = data.materials.find((m) => m.id === materialId);
+    if (!material) return;
+
+    const certs = material.certifications || [];
+    const updated = certs.includes(certValue)
+      ? certs.filter((c) => c !== certValue)
+      : [...certs, certValue];
+
+    updateMaterial(materialId, { certifications: updated });
+  };
+
+  // Get display name for material
+  // const getMaterialDisplayName = (material: ExtendedMaterialInput): string => {
+  //   if (material.customName) return material.customName;
+  //   if (material.catalogMaterialId) {
+  //     const catalogMat = getMaterialById(material.catalogMaterialId);
+  //     return catalogMat?.displayNameVi || material.materialType;
+  //   }
+  //   // Legacy: try to find by materialType
+  //   const legacyMat = MATERIAL_CATALOG.find(
+  //     (m) => m.id === material.materialType,
+  //   );
+  //   return legacyMat?.displayNameVi || material.materialType || "Chưa chọn";
+  // };
+
+  // Get source badge
+  const getSourceBadge = (material: ExtendedMaterialInput) => {
+    switch (material.userSource) {
+      case "ai_suggested":
+        return (
+          <Badge variant="secondary" className="text-xs">
+            <Sparkles className="w-3 h-3 mr-1" />
+            AI gợi ý
+          </Badge>
+        );
+      case "user_other":
+        return (
+          <Badge
+            variant="outline"
+            className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+          >
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Proxy
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Add accessory
+  const addAccessory = () => {
+    const newAccessory: AccessoryInput = {
+      id: `acc-${Date.now()}`,
+      name: "",
+      type: "",
+      weight: undefined,
+    };
+    onChange({ accessories: [...data.accessories, newAccessory] });
+  };
+
+  // Remove accessory
+  const removeAccessory = (id: string) => {
+    onChange({ accessories: data.accessories.filter((a) => a.id !== id) });
+  };
+
+  // Update accessory
+  const updateAccessory = (id: string, updates: Partial<AccessoryInput>) => {
+    onChange({
+      accessories: data.accessories.map((a) =>
+        a.id === id ? { ...a, ...updates } : a,
+      ),
+    });
+  };
+
   return (
-    <div className="space-y-4 md:space-y-6">
-      {/* Primary Material */}
-      <div className="grid md:grid-cols-2 gap-4 md:gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="primaryMaterial">Primary Material *</Label>
-          <Select
-            value={productData.primaryMaterial}
-            onValueChange={(v) => updateField("primaryMaterial", v)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select material" />
-            </SelectTrigger>
-            <SelectContent>
-              {materials.map((mat) => (
-                <SelectItem key={mat.value} value={mat.value}>
-                  {mat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="materialPercentage">Percentage (%) *</Label>
-          <Input
-            id="materialPercentage"
-            type="number"
-            min="0"
-            max="100"
-            value={productData.materialPercentage}
-            onChange={(e) => updateField("materialPercentage", e.target.value)}
-            placeholder="80"
-          />
-        </div>
-      </div>
+    <TooltipProvider>
+      <div className="space-y-6">
+        {/* Materials Section */}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg">Vật liệu chính</CardTitle>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>
+                      Chọn vật liệu từ danh mục chuẩn hoặc thêm vật liệu mới nếu
+                      không tìm thấy.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="flex items-center gap-2">
+                {isValidTotal ? (
+                  <Badge
+                    variant="outline"
+                    className="bg-green-500/10 text-green-600 border-green-500/30"
+                  >
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Tổng: {totalPercentage}%
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+                  >
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    Tổng: {totalPercentage}% (cần = 100%)
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {data.materials.map((material, index) => {
+              const extMaterial = material as ExtendedMaterialInput;
+              return (
+                <div
+                  key={material.id}
+                  className="p-4 rounded-lg border bg-card space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Vật liệu {index + 1}
+                      </span>
+                      {getSourceBadge(extMaterial)}
+                    </div>
+                    {data.materials.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeMaterial(material.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
 
-      {/* Secondary Material */}
-      <div className="grid md:grid-cols-2 gap-4 md:gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="secondaryMaterial">
-            Secondary Material (Optional)
-          </Label>
-          <Select
-            value={productData.secondaryMaterial || "none"}
-            onValueChange={(v) =>
-              updateField("secondaryMaterial", v === "none" ? "" : v)
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select material (optional)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {materials.map((mat) => (
-                <SelectItem key={mat.value} value={mat.value}>
-                  {mat.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="secondaryPercentage">Percentage (%)</Label>
-          <Input
-            id="secondaryPercentage"
-            type="number"
-            min="0"
-            max="100"
-            value={productData.secondaryPercentage}
-            onChange={(e) => updateField("secondaryPercentage", e.target.value)}
-            placeholder="20"
-            disabled={!productData.secondaryMaterial}
-          />
-        </div>
-      </div>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="space-y-2 md:col-span-2">
+                      <Label>Tìm vật liệu *</Label>
+                      <MaterialCombobox
+                        value={
+                          extMaterial.catalogMaterialId ||
+                          extMaterial.materialType
+                        }
+                        onSelect={(catalogMat) =>
+                          handleCatalogSelect(material.id, catalogMat)
+                        }
+                        onOtherClick={() => handleOtherClick(index)}
+                        placeholder={
+                          extMaterial.customName || "Tìm vật liệu..."
+                        }
+                      />
+                      {extMaterial.customName && (
+                        <p className="text-xs text-muted-foreground">
+                          Vật liệu tùy chỉnh: {extMaterial.customName}
+                        </p>
+                      )}
+                    </div>
 
-      {/* Recycled Content */}
-      <div className="space-y-2">
-        <Label htmlFor="recycledContent">Recycled Content (%)</Label>
-        <Input
-          id="recycledContent"
-          type="number"
-          min="0"
-          max="100"
-          value={productData.recycledContent}
-          onChange={(e) => updateField("recycledContent", e.target.value)}
-          placeholder="0"
+                    <div className="space-y-2">
+                      <Label>Tỷ lệ (%) *</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={material.percentage || ""}
+                        onChange={(e) =>
+                          updateMaterial(material.id, {
+                            percentage: Number(e.target.value),
+                          })
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Nguồn nguyên liệu</Label>
+                      <Select
+                        value={material.source}
+                        onValueChange={(
+                          v: "domestic" | "imported" | "unknown",
+                        ) => updateMaterial(material.id, { source: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MATERIAL_SOURCES.map((src) => (
+                            <SelectItem key={src.value} value={src.value}>
+                              {src.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {extMaterial.confidenceScore !== undefined &&
+                      extMaterial.confidenceScore < 1.0 && (
+                        <div className="space-y-2">
+                          <Label>Độ tin cậy dữ liệu</Label>
+                          <div className="flex items-center gap-2 h-10">
+                            <div className="flex-1 bg-muted rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full ${
+                                  extMaterial.confidenceScore >= 0.7
+                                    ? "bg-green-500"
+                                    : extMaterial.confidenceScore >= 0.4
+                                      ? "bg-yellow-500"
+                                      : "bg-red-500"
+                                }`}
+                                style={{
+                                  width: `${extMaterial.confidenceScore * 100}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {Math.round(
+                                (extMaterial.confidenceScore || 0) * 100,
+                              )}
+                              %
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                  </div>
+
+                  {/* Certifications */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">Chứng nhận (nếu có)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {CERTIFICATIONS.map((cert) => (
+                        <Badge
+                          key={cert.value}
+                          variant={
+                            (material.certifications || []).includes(cert.value)
+                              ? "default"
+                              : "outline"
+                          }
+                          className="cursor-pointer"
+                          onClick={() =>
+                            toggleCertification(material.id, cert.value)
+                          }
+                        >
+                          {cert.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            <Button
+              variant="outline"
+              onClick={addMaterial}
+              className="w-full border-dashed"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm vật liệu
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Accessories Section */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Phụ liệu (tuỳ chọn)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {data.accessories.map((accessory, index) => (
+              <div key={accessory.id} className="p-4 rounded-lg border bg-card">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Phụ liệu {index + 1}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeAccessory(accessory.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Loại phụ liệu</Label>
+                    <Select
+                      value={accessory.type}
+                      onValueChange={(v) =>
+                        updateAccessory(accessory.id, { type: v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn loại" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ACCESSORY_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Tên/Mô tả</Label>
+                    <Input
+                      value={accessory.name}
+                      onChange={(e) =>
+                        updateAccessory(accessory.id, { name: e.target.value })
+                      }
+                      placeholder="VD: Nút nhựa 4 lỗ"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Trọng lượng (gram)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={accessory.weight || ""}
+                      onChange={(e) =>
+                        updateAccessory(accessory.id, {
+                          weight: Number(e.target.value),
+                        })
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            <Button
+              variant="outline"
+              onClick={addAccessory}
+              className="w-full border-dashed"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm phụ liệu
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Proxy Warning */}
+        {hasProxySource && (
+          <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-yellow-700">
+                  Sử dụng hệ số proxy
+                </p>
+                <p className="text-yellow-600 mt-1">
+                  Một số vật liệu có nguồn &quot;Không xác định&quot; hoặc
+                  &quot;Vật liệu khác&quot;. Hệ thống sẽ sử dụng hệ số phát thải
+                  trung bình ngành để tính toán. Độ tin cậy kết quả sẽ giảm.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Other Material Modal */}
+        <OtherMaterialModal
+          open={otherModalOpen}
+          onOpenChange={setOtherModalOpen}
+          onSelectMaterial={handleOtherMaterialSelect}
         />
       </div>
-
-      {/* Certifications */}
-      <div className="space-y-3">
-        <Label>Certifications (if any)</Label>
-        <div className="flex flex-wrap gap-2">
-          {certifications.map((cert) => (
-            <Badge
-              key={cert.value}
-              variant={
-                productData.certifications.includes(cert.value)
-                  ? "default"
-                  : "outline"
-              }
-              className="cursor-pointer transition-all hover:scale-105"
-              onClick={() => handleCertificationToggle(cert.value)}
-            >
-              {cert.label}
-            </Badge>
-          ))}
-        </div>
-      </div>
-    </div>
+    </TooltipProvider>
   );
-}
+};
+
+export default Step2Materials;

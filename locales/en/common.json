@@ -1,0 +1,389 @@
+{
+  "navigation": {
+    "features": "Features",
+    "howItWorks": "How It Works",
+    "impact": "Impact",
+    "contact": "Contact",
+    "calculator": "Calculator",
+    "login": "Log In",
+    "getStarted": "Get Started"
+  },
+
+  "hero": {
+    "badge": "EU DPP & Carbon Tracking Platform",
+    "title": "Measure Your Fashion",
+    "titleHighlight": "Carbon Footprint",
+    "subtitle": "Enable Vietnamese fashion brands to measure carbon footprints for 2026 export standards and manage a circular economy for garment waste.",
+    "cta": {
+      "demo": "Book a Demo",
+      "calculate": "Calculate Now"
+    },
+
+    "trust": "Trusted by leading Vietnamese manufacturers"
+  },
+
+  "userType": {
+    "title": "Who are you?",
+    "b2b": "Business B2B",
+    "b2bDesc": "Fashion brands, manufacturers, and exporters",
+    "b2c": "Individual B2C",
+    "b2cDesc": "Consumers who want to contribute to circular economy",
+    "orTry": "Or try",
+    "demoB2B": "Demo B2B",
+    "demoB2C": "Demo B2C"
+  },
+
+  "features": {
+    "badge": "Features",
+    "title": "Powerful Features for Sustainable Fashion",
+    "subtitle": "Everything you need to track, reduce, and report your carbon emissions",
+    "carbonProxy": {
+      "title": "Carbon Proxy Engine",
+      "desc": "Calculate CO₂e for products with incomplete supply chain data using proxy emission factors."
+    },
+    "circularHub": {
+      "title": "Circular Hub",
+      "desc": "Connect with recyclers and track the circular journey of your textile waste."
+    },
+    "exportReady": {
+      "title": "Export Readiness",
+      "desc": "Score your compliance for EU, US, and JP export standards with actionable insights."
+    },
+    "materialDb": {
+      "title": "Material Database",
+      "desc": "Access comprehensive emission factors for Cotton, Polyester, Denim, and 50+ other materials."
+    },
+    "ngoPartner": {
+      "title": "NGO Partnerships",
+      "desc": "Direct connections to verified charities and recycling partners for maximum social impact."
+    },
+    "recommendations": {
+      "title": "Recommendations",
+      "desc": "AI-powered suggestions to reduce carbon tax and improve supplier sustainability."
+    },
+    "transportCalc": {
+      "title": "Transport Calculation",
+      "desc": "Automatic carbon calculation based on production origin and destination shipping routes."
+    },
+    "carbonCredits": {
+      "title": "Carbon Credits",
+      "desc": "Convert recycled and donated items into verified carbon offsets for your ESG reports."
+    },
+    "esgReports": {
+      "title": "ESG Reports",
+      "desc": "Export-ready documentation for audits, customs, and stakeholder communications."
+    }
+  },
+
+  "howItWorks": {
+    "badge": "How It Works",
+    "title": "How It Works",
+    "subtitle": "Get started in minutes with our simple four-step process",
+    "step1": {
+      "title": "Connect Your Data",
+      "desc": "Import your product SKUs and supply chain information",
+      "item1": "Multi-role support",
+      "item2": "Team collaboration",
+      "item3": "API integrations"
+    },
+    "step2": {
+      "title": "Calculate Emissions",
+      "desc": "Our engine computes accurate CO₂e using industry factors",
+      "item1": "Material library",
+      "item2": "Transport mapping",
+      "item3": "Batch upload"
+    },
+    "step3": {
+      "title": "Track & Reduce",
+      "desc": "Monitor your progress and identify reduction opportunities",
+      "item1": "AI sorting",
+      "item2": "NGO matching",
+      "item3": "Impact tracking"
+    },
+    "step4": {
+      "title": "Report & Export",
+      "desc": "Generate compliant reports for international markets",
+      "item1": "EU DPP ready",
+      "item2": "Carbon certificates",
+      "item3": "Audit trails"
+    }
+  },
+
+  "stats": {
+    "badge": "Impact",
+    "title": "Making Real Impact",
+    "subtitle": "Measurable progress towards a sustainable fashion industry",
+    "co2Tracked": {
+      "title": "CO₂e Tracked",
+      "description": "Carbon footprints calculated monthly"
+    },
+    "brands": "Brands",
+    "exports": {
+      "title": "Export Ready",
+      "description": "Compliance success rate"
+    },
+    "recycled": {
+      "title": "Textiles Recycled",
+      "description": "Through Circular Hub network"
+    },
+    "carbon": {
+      "title": "kg CO₂e",
+      "description": "Total emissions documented"
+    }
+  },
+
+  "cta": {
+    "badge": "Get Started",
+    "title": "Ready to Transform Your Carbon Strategy?",
+    "subtitle": "Join leading fashion brands measuring and reducing their environmental impact",
+    "email": "Enter your email",
+    "button": "Get Early Access",
+    "terms": "By subscribing, you agree to our Terms and Privacy Policy"
+  },
+
+  "footer": {
+    "desc": "Empowering fashion brands to measure, reduce, and report their carbon footprint while building a circular economy.",
+    "platform": "Platform",
+    "company": "Company",
+    "resources": "Resources",
+    "legal": "Legal",
+    "contact": "Contact Us",
+    "representative": "Project Representative",
+    "rights": "All rights reserved."
+  },
+
+  "calculator": {
+    "badge": "Carbon Proxy Engine",
+    "title": "Carbon Calculator",
+    "subtitle": "Calculate CO₂e emissions for your fashion products",
+    "description": "Using proxy emission factors for incomplete supply chain data",
+    "productWeight": "Product Weight (kg)",
+    "materialType": "Material Type",
+    "shippingRoute": "Shipping Route",
+    "calculate": "Calculate Emissions",
+    "result": "Estimated CO₂e Emissions",
+    "instruction": "Fill in the form and click calculate to see your emissions breakdown",
+    "kgCO2e": "kg CO₂e",
+    "breakdown": "Emissions Breakdown",
+    "material": "Material Production",
+    "manufacturing": "Manufacturing",
+    "transport": "Transport",
+    "packaging": "Packaging",
+    "selectMaterial": "Select material type",
+    "selectRoute": "Select shipping route",
+
+    "materials": {
+      "cotton": "Cotton",
+      "polyester": "Polyester",
+      "wool": "Wool",
+      "silk": "Silk",
+      "linen": "Linen",
+      "recycledPoly": "Recycled Polyester",
+      "organicCotton": "Organic Cotton"
+    },
+
+    "routes": {
+      "vnEu": "Vietnam → EU (Rotterdam)",
+      "vnUs": "Vietnam → USA (Los Angeles)",
+      "vnJp": "Vietnam → Japan (Tokyo)",
+      "vnDomestic": "Vietnam Domestic",
+      "vnKr": "Vietnam → South Korea"
+    },
+
+    "proxyNote": "Using proxy emission factors for incomplete supply chain data"
+  },
+
+  "pricing": {
+    "title": "Pricing Plans",
+    "starter": "Starter",
+    "starterDesc": "For small businesses starting their sustainability journey",
+    "standard": "Standard",
+    "standardDesc": "For growing brands with moderate tracking needs",
+    "export": "Export",
+    "exportDesc": "For enterprises requiring full export compliance",
+    "month": "/month"
+  },
+
+  "auth": {
+    "welcome": "Welcome to WEAVECARBON",
+    "description": "Sign in to access your B2B dashboard",
+    "b2bSubtitle": "Carbon Tracking for Fashion Businesses",
+    "demoLogin": "Try Demo Account",
+    "googleLogin": "Continue with Google",
+    "orContinueWith": "or continue with email",
+    "login": "Sign In",
+    "signup": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter your full name",
+    "loginButton": "Sign In",
+    "signupButton": "Create Account",
+    "loading": "Please wait...",
+    "error": "Error",
+    "success": "Success",
+    "invalidCredentials": "Invalid email or password",
+    "alreadyRegistered": "This email is already registered",
+    "accountCreated": "Account created successfully!",
+    "termsNotice": "By signing in, you agree to our Terms and Privacy Policy"
+  },
+
+  "onboarding": {
+    "title": "Set Up Your Business",
+    "subtitle": "Tell us about your company to get started",
+    "companyName": "Company Name",
+    "companyNamePlaceholder": "Enter your company name",
+    "businessType": "Business Type",
+    "shopOnline": "Online Shop",
+    "brand": "Brand",
+    "factory": "Factory",
+    "targetMarkets": "Target Markets",
+    "optional": "optional",
+    "starterPlan": "Starter Plan",
+    "starterPlanDesc": "Free trial to get you started",
+    "continue": "Continue to Dashboard",
+    "creating": "Creating...",
+    "error": "Error",
+    "success": "Success",
+    "fillRequired": "Please fill in all required fields",
+    "companyCreated": "Company profile created!"
+  },
+
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of your carbon tracking",
+    "overview": "Overview",
+    "products": "Products",
+    "logistics": "Logistics",
+    "export": "Export",
+    "reports": "Reports",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "noCompany": "No company",
+    "totalCO2": "Total CO₂ Emissions",
+    "thisMonth": "this month",
+    "skuTracking": "SKUs Tracking",
+    "activeProducts": "active products",
+    "shipments": "Shipments",
+    "ordersTracked": "orders tracked",
+    "exportReadiness": "Export Readiness",
+    "addProduct": "Add New Product",
+    "addProductDesc": "Create a new product and calculate its carbon footprint",
+    "trackShipment": "Track Shipment",
+    "trackShipmentDesc": "Monitor shipping emissions for your orders",
+    "exportReport": "Generate Report",
+    "exportReportDesc": "Create compliance reports for export markets",
+    "getStarted": "Get Started",
+    "targetMarkets": "Target Markets",
+    "targetMarketsDesc": "Your selected export destinations"
+  },
+
+  "overview": {
+    "pageTitle": "Overview",
+    "pageSubtitle": "Overview of your carbon tracking",
+    "stats": {
+      "totalCO2": "Total CO₂ Emissions",
+      "kgCO2eThisMonth": "kg CO₂e this month",
+      "skuTracking": "SKUs Tracking",
+      "activeProducts": "active products",
+      "exportReadiness": "Export Readiness",
+      "dataReliability": "Data Reliability",
+      "basedOnSKUs": "Based on {count} SKUs"
+    },
+    "chart": {
+      "carbon": {
+        "title": "Carbon Trends",
+        "description": "Comparison of actual vs target emissions",
+        "expect": "Target",
+        "outcome": "Actual"
+      },
+      "pie": {
+        "title": "Emission Sources",
+        "material": "Material",
+        "manufacture": "Manufacture",
+        "transport": "Transport",
+        "package": "Package"
+      }
+    },
+    "marketReadiness": {
+      "title": "Export Readiness Level",
+      "subtitle": "Assessment by Target Market"
+    },
+    "recommendations": {
+      "title": "Recommendations",
+      "subtitle": "AI-powered suggestions"
+    },
+    "quickActions": {
+      "addProduct": {
+        "title": "Add New Product",
+        "description": "Create a product and calculate carbon footprint"
+      },
+      "trackShipment": {
+        "title": "Track Shipment",
+        "description": "Monitor shipping emissions"
+      },
+      "generateReport": {
+        "title": "Generate Report",
+        "description": "Create compliance reports"
+      },
+      "getStarted": "Get Started"
+    },
+    "targetMarkets": {
+      "title": "Target Markets",
+      "description": "Your selected export destinations"
+    }
+  },
+
+  "sidebar": {
+    "overview": "Overview",
+    "product": "Product",
+    "logistics": "Logistics",
+    "export": "Export",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+
+  "export": {
+    "title": "Export & Compliance",
+    "subtitle": "Managing export documentation and verifying compliance with international regulations.",
+    "marketReadiness": "Market Readiness Level",
+    "certificates": "Certificates and Documents",
+    "EU": {
+      "title": "Europe",
+      "location": "CBAM, EU Green Deal"
+    },
+    "US": {
+      "title": "United States",
+      "location": "California Climate"
+    },
+    "JP": {
+      "title": "Japan",
+      "location": "JIS Standards"
+    },
+    "KR": {
+      "title": "Korea",
+      "location": "K-ETS"
+    },
+
+    "certi1": {
+      "name": "GOTS Certificate",
+      "status": "valid",
+      "expires": "2024-12-31"
+    },
+    "certi2": {
+      "name": "OEKO-TEX Standard 100",
+      "status": "valid",
+      "expires": "2024-08-15"
+    },
+    "certi3": {
+      "name": "Carbon Footprint Report",
+      "status": "pending",
+      "expires": null
+    },
+    "certi4": {
+      "name": "EU Product Passport",
+      "status": "draft",
+      "expires": null
+    }
+  }
+}

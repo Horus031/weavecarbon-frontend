@@ -3,6 +3,7 @@
 import React from "react";
 import DashboardHeaderButton from "./DashboardHeaderButton";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { LanguageToggle } from "../ui/LanguageToggle";
 
 interface DashboardLayoutContentProps {
   children: React.ReactNode;
@@ -27,6 +28,7 @@ export default function DashboardLayoutContent({
             </p>
           </div>
         </div>
+        <LanguageToggle />
       </header>
 
       <div className="flex-1 p-3 pt-24 md:p-6 md:pt-24 lg:pt-3">{children}</div>

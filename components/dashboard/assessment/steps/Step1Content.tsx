@@ -1,10 +1,6 @@
-"use client";
-import { ProductData } from "../StepContent";
-
 import React from "react";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -12,100 +8,176 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Info, Package } from "lucide-react";
+import { ProductAssessmentData, PRODUCT_TYPES } from "./types";
 
-interface Step1ContentProps {
-  productData: ProductData;
-  updateField: (field: keyof ProductData, value: string | string[]) => void;
-  categories: Array<{ value: string; label: string }>;
+interface Step1SKUInfoProps {
+  data: ProductAssessmentData;
+  onChange: (updates: Partial<ProductAssessmentData>) => void;
 }
 
-export default function Step1Content({
-  productData,
-  updateField,
-  categories,
-}: Step1ContentProps) {
+const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
+  // Generate SKU instances preview
+  const generateSKUPreview = () => {
+    if (!data.productCode || !data.quantity || data.quantity <= 0) return [];
+    const count = Math.min(data.quantity, 5); // Show max 5 examples
+    return Array.from(
+      { length: count },
+      (_, i) => `${data.productCode}-${String(i + 1).padStart(2, "0")}`,
+    );
+  };
+
+  const skuPreviews = generateSKUPreview();
+
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+    <div className="space-y-6">
+      {/* Basic Info */}
+      <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="productName">Product Name *</Label>
-          <Input
-            id="productName"
-            value={productData.productName}
-            onChange={(e) => updateField("productName", e.target.value)}
-            placeholder="e.g., Organic Cotton T-Shirt"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="productCode">SKU Code</Label>
+          <Label htmlFor="productCode">Mã sản phẩm (Product Code) *</Label>
           <Input
             id="productCode"
-            value={productData.productCode}
-            onChange={(e) => updateField("productCode", e.target.value)}
-            placeholder="e.g., SKU-2024-001"
+            value={data.productCode}
+            onChange={(e) =>
+              onChange({ productCode: e.target.value.toUpperCase() })
+            }
+            placeholder="VD: SKU-2024-001"
           />
+          <p className="text-xs text-muted-foreground">
+            Mã định danh duy nhất cho sản phẩm
+          </p>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Product Category *</Label>
-        <Select
-          value={productData.category}
-          onValueChange={(v) => updateField("category", v)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat.value} value={cat.value}>
-                {cat.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Product Description</Label>
-        <Textarea
-          id="description"
-          value={productData.description}
-          onChange={(e) => updateField("description", e.target.value)}
-          placeholder="Brief description of the product..."
-          rows={3}
-        />
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4 md:gap-6">
         <div className="space-y-2">
-          <Label htmlFor="weight">Product Weight *</Label>
+          <Label htmlFor="productName">Tên sản phẩm *</Label>
           <Input
-            id="weight"
-            type="number"
-            step="0.01"
-            value={productData.weight}
-            onChange={(e) => updateField("weight", e.target.value)}
-            placeholder="0.5"
+            id="productName"
+            value={data.productName}
+            onChange={(e) => onChange({ productName: e.target.value })}
+            placeholder="VD: Áo T-shirt Organic Cotton"
           />
         </div>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label>Unit</Label>
+          <Label>Loại sản phẩm *</Label>
           <Select
-            value={productData.unit}
-            onValueChange={(v) => updateField("unit", v)}
+            value={data.productType}
+            onValueChange={(v) => onChange({ productType: v })}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Chọn loại sản phẩm" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="kg">Kilogram (kg)</SelectItem>
-              <SelectItem value="g">Gram (g)</SelectItem>
-              <SelectItem value="lb">Pound (lb)</SelectItem>
+              {PRODUCT_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="weightPerUnit">
+            Trọng lượng TB / sản phẩm (gram) *
+          </Label>
+          <Input
+            id="weightPerUnit"
+            type="number"
+            min="1"
+            step="1"
+            value={data.weightPerUnit || ""}
+            onChange={(e) =>
+              onChange({ weightPerUnit: Number(e.target.value) })
+            }
+            placeholder="VD: 250"
+          />
+          <p className="text-xs text-muted-foreground">
+            Trọng lượng trung bình của 1 sản phẩm hoàn thiện
+          </p>
+        </div>
+      </div>
+
+      {/* Quantity - Key Feature */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Package className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <div>
+                <Label htmlFor="quantity" className="text-base font-semibold">
+                  Số lượng sản xuất *
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Hệ thống sẽ tự động tạo các SKU instance để theo dõi theo lô
+                </p>
+              </div>
+              <div className="max-w-xs">
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  max="100000"
+                  value={data.quantity || ""}
+                  onChange={(e) =>
+                    onChange({ quantity: Number(e.target.value) })
+                  }
+                  placeholder="VD: 30"
+                  className="text-lg font-medium"
+                />
+              </div>
+
+              {/* SKU Preview */}
+              {skuPreviews.length > 0 && (
+                <div className="pt-2">
+                  <p className="text-sm font-medium mb-2">
+                    SKU instances sẽ được tạo:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {skuPreviews.map((sku, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-background rounded border text-xs font-mono"
+                      >
+                        {sku}
+                      </span>
+                    ))}
+                    {data.quantity > 5 && (
+                      <span className="px-2 py-1 text-xs text-muted-foreground">
+                        ... và {data.quantity - 5} SKU khác
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Info Box */}
+      <div className="p-4 rounded-lg bg-muted/50 border border-border">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-muted-foreground mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-foreground mb-1">
+              Về số lượng sản xuất
+            </p>
+            <ul className="text-muted-foreground space-y-1">
+              <li>
+                • Hệ thống sẽ tính carbon cho từng sản phẩm và tổng lô hàng
+              </li>
+              <li>• Các SKU instance dùng để nhóm theo batch/lô xuất khẩu</li>
+              <li>• Bạn không cần nhập từng SKU - việc đánh số là tự động</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Step1SKUInfo;

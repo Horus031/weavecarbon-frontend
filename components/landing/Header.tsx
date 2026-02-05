@@ -6,17 +6,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import UserTypeDialog from "./UserTypeDialog";
+import { LanguageToggle } from "../ui/LanguageToggle";
+import { useTranslations } from "next-intl";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showUserTypeDialog, setShowUserTypeDialog] = useState(false);
+  const t = useTranslations("navigation");
 
   const navLinks = [
-    { labelKey: "Features", href: "#features" },
-    { labelKey: "How It Works", href: "#how-it-works" },
-    { labelKey: "Impact", href: "#impact" },
-    { labelKey: "Calculator", href: "/calculator" },
-    { labelKey: "Contact", href: "#contact" },
+    { labelKey: "features", href: "#features" },
+    { labelKey: "howItWorks", href: "#how-it-works" },
+    { labelKey: "impact", href: "#impact" },
+    { labelKey: "calculator", href: "/calculator" },
+    { labelKey: "contact", href: "#contact" },
   ];
 
   return (
@@ -50,7 +53,7 @@ const Header = () => {
                     href={link.href}
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {link.labelKey}
+                    {t(link.labelKey)}
                   </Link>
                 ) : (
                   <a
@@ -58,7 +61,7 @@ const Header = () => {
                     href={link.href}
                     className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {link.labelKey}
+                    {t(link.labelKey)}
                   </a>
                 ),
               )}
@@ -66,19 +69,20 @@ const Header = () => {
 
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center gap-3">
+              <LanguageToggle />
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowUserTypeDialog(true)}
               >
-                Log In
+                {t("login")}
               </Button>
               <Button
                 variant="hero"
                 size="sm"
                 onClick={() => setShowUserTypeDialog(true)}
               >
-                Get Started
+                {t("getStarted")}
               </Button>
             </div>
 
@@ -109,7 +113,7 @@ const Header = () => {
                     className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {link.labelKey}
+                    {t(link.labelKey)}
                   </Link>
                 ) : (
                   <a
@@ -118,7 +122,7 @@ const Header = () => {
                     className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {link.labelKey}
+                    {t(link.labelKey)}
                   </a>
                 ),
               )}
@@ -131,7 +135,7 @@ const Header = () => {
                     setShowUserTypeDialog(true);
                   }}
                 >
-                  Login
+                  {t("login")}
                 </Button>
                 <Button
                   variant="hero"
@@ -141,7 +145,7 @@ const Header = () => {
                     setShowUserTypeDialog(true);
                   }}
                 >
-                  Get Started
+                  {t("login")}
                 </Button>
               </div>
             </nav>

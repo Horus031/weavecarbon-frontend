@@ -11,72 +11,61 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 const Features = () => {
+  const t = useTranslations("features");
+
   const features = [
     {
       icon: <Scale className="w-7 h-7" />,
-      titleKey: "Carbon Proxy Engine",
-      descKey:
-        "Calculate CO₂e for products with incomplete supply chain data using proxy emission factors.",
+      titleKey: "carbonProxy.title",
+      descKey: "carbonProxy.desc",
       highlight: true,
     },
     {
       icon: <Package className="w-7 h-7" />,
-      titleKey: "Material Database",
-      descKey:
-        "Access comprehensive emission factors for Cotton, Polyester, Denim, and 50+ other materials.",
+      titleKey: "materialDb.title",
+      descKey: "materialDb.desc",
     },
     {
       icon: <Globe className="w-7 h-7" />,
-      titleKey: "Transport Calculation",
-      descKey:
-        "Automatic carbon calculation based on production origin and destination shipping routes.",
+      titleKey: "transportCalc.title",
+      descKey: "transportCalc.desc",
     },
     {
       icon: <Recycle className="w-7 h-7" />,
-      titleKey: "Circular Hub",
-      descKey:
-        "Connect with recyclers and track the circular journey of your textile waste.",
+      titleKey: "circularHub.title",
+      descKey: "circularHub.desc",
       highlight: true,
     },
     {
       icon: <Users className="w-7 h-7" />,
-      titleKey: "NGO Partnerships",
-      descKey:
-        "Direct connections to verified charities and recycling partners for maximum social impact.",
+      titleKey: "ngoPartner.title",
+      descKey: "ngoPartner.desc",
     },
     {
       icon: <Leaf className="w-7 h-7" />,
-      titleKey: "Carbon Credits",
-      descKey:
-        "Convert recycled and donated items into verified carbon offsets for your ESG reports.",
+      titleKey: "carbonCredits.title",
+      descKey: "carbonCredits.desc",
     },
     {
       icon: <PieChart className="w-7 h-7" />,
-      titleKey: "Export Readiness",
-      descKey:
-        "Score your compliance for EU, US, and JP export standards with actionable insights.",
+      titleKey: "exportReady.title",
+      descKey: "exportReady.desc",
       highlight: true,
     },
     {
       icon: <TrendingUp className="w-7 h-7" />,
-      titleKey: "Recommendations",
-      descKey:
-        "AI-powered suggestions to reduce carbon tax and improve supplier sustainability.",
+      titleKey: "recommendations.title",
+      descKey: "recommendations.desc",
     },
     {
       icon: <BarChart3 className="w-7 h-7" />,
-      titleKey: "ESG Reports",
-      descKey:
-        "Export-ready documentation for audits, customs, and stakeholder communications.",
+      titleKey: "esgReports.title",
+      descKey: "esgReports.desc",
     },
   ];
-
-  const getLabel = (key: string) => {
-    const translated = key;
-    return translated !== key ? translated : key;
-  };
 
   return (
     <section id="features" className="py-24 md:py-32 bg-muted/30">
@@ -90,14 +79,13 @@ const Features = () => {
           className="max-w-3xl mx-auto text-center mb-16"
         >
           <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            Features
+            {t("badge")}
           </span>
           <h2 className="text-3xl md:text-5xl font-display font-bold text-foreground mb-6">
-            Powerful Features for Sustainable Fashion
+            {t("title")}
           </h2>
           <p className="text-lg text-muted-foreground">
-            Everything you need to track, reduce, and report your carbon
-            emissions
+            {t("subtitle")}
           </p>
         </motion.div>
 
@@ -135,12 +123,12 @@ const Features = () => {
               <h3
                 className={`text-xl font-semibold mb-3 ${feature.highlight ? "" : "text-foreground"}`}
               >
-                {getLabel(feature.titleKey)}
+                {t(feature.titleKey)}
               </h3>
               <p
                 className={`text-sm leading-relaxed ${feature.highlight ? "text-primary-foreground/80" : "text-muted-foreground"}`}
               >
-                {getLabel(feature.descKey)}
+                {t(feature.descKey)}
               </p>
             </motion.div>
           ))}

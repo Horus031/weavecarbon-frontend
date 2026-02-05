@@ -2,28 +2,30 @@
 
 import { motion } from "motion/react";
 import { TrendingUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 const Stats = () => {
+  const t = useTranslations("stats");
   const stats = [
     {
       value: "50K+",
-      labelKey: "stats.co2Tracked",
-      description: "Carbon footprints calculated monthly",
+      labelKey: "co2Tracked.title",
+      description: "co2Tracked.description",
     },
     {
       value: "2.5M",
-      labelKey: "kg CO₂e",
-      description: "Total emissions documented",
+      labelKey: "carbon.title",
+      description: "carbon.description",
     },
     {
       value: "180K",
-      labelKey: "stats.recycled",
-      description: "Through Circular Hub network",
+      labelKey: "recycled.title",
+      description: "recycled.description",
     },
     {
       value: "98%",
-      labelKey: "stats.exports",
-      description: "Compliance success rate",
+      labelKey: "exports.title",
+      description: "exports.description",
     },
   ];
 
@@ -54,14 +56,12 @@ const Stats = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-foreground/10 text-primary-foreground text-sm font-medium mb-4">
             <TrendingUp className="w-4 h-4" />
-            Impact
+            {t("badge")}
           </div>
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-6">
-            Making Real Impact
+            {t("title")}
           </h2>
-          <p className="text-lg text-primary-foreground/80">
-            Measurable progress towards a sustainable fashion industry
-          </p>
+          <p className="text-lg text-primary-foreground/80">{t("subtitle")}</p>
         </motion.div>
 
         {/* Stats grid */}
@@ -72,18 +72,20 @@ const Stats = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.08 }}
+              transition={{
+                duration: 0.6,
+                ease: "easeOut",
+                delay: index * 0.08,
+              }}
               whileHover={{ y: -4 }}
               className="text-center p-8 rounded-2xl bg-primary-foreground/5 backdrop-blur-sm border border-primary-foreground/10 hover:bg-primary-foreground/10 transition-colors"
             >
               <div className="text-4xl md:text-5xl font-display font-bold mb-2">
                 {stat.value}
               </div>
-              <div className="font-semibold mb-1">
-                {getLabel(stat.labelKey)}
-              </div>
+              <div className="font-semibold mb-1">{t(stat.labelKey)}</div>
               <div className="text-sm text-primary-foreground/70">
-                {stat.description}
+                {t(stat.description)}
               </div>
             </motion.div>
           ))}

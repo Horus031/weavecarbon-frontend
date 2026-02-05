@@ -86,7 +86,7 @@ const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
       <CardContent>
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Donut Chart */}
-          <div className="h-70">
+          <div className="h-[280px]">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>

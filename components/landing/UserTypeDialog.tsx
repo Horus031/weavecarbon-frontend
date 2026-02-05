@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface DemoSession {
   id: string;
@@ -28,6 +29,7 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [demoHistory, setDemoHistory] = useState<DemoSession[]>([]);
+  const t = useTranslations("userType");
 
   useEffect(() => {
     // Load demo history from localStorage
@@ -93,7 +95,7 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">
-            {showHistory ? "Demo History" : "Who are you?"}
+            {showHistory ? t("demoHistory") : t("title")}
           </DialogTitle>
         </DialogHeader>
 
@@ -163,10 +165,10 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-foreground text-lg mb-1">
-                  Business B2B
+                  {t("b2b")}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Fashion brands, manufacturers, and exporters
+                  {t("b2bDesc")}
                 </p>
               </div>
               <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -183,10 +185,10 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-foreground text-lg mb-1">
-                  Individual B2C
+                  {t("b2c")}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Consumers who want to contribute to circular economy
+                  {t("b2cDesc")}
                 </p>
               </div>
               <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-accent transition-colors" />
@@ -199,7 +201,7 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  hoặc dùng thử
+                  {t("orTry")}
                 </span>
               </div>
             </div>
@@ -213,7 +215,7 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
                 disabled={isLoadingDemo}
               >
                 <Play className="w-4 h-4" />
-                <span>Demo B2B</span>
+                <span>{t("demoB2B")}</span>
               </Button>
               <Button
                 variant="outline"
@@ -222,7 +224,7 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
                 disabled={isLoadingDemo}
               >
                 <Play className="w-4 h-4" />
-                <span>Demo B2C</span>
+                <span>{t("demoB2C")}</span>
               </Button>
             </div>
 
@@ -235,7 +237,7 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
                 onClick={() => setShowHistory(true)}
               >
                 <History className="w-4 h-4 mr-2" />
-                Xem lịch sử demo ({demoHistory.length})
+                {t("viewHistory")} ({demoHistory.length})
               </Button>
             )}
           </div>

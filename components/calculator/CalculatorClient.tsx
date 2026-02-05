@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/landing/Header";
 import Footer from "@/components/landing/Footer";
+import { useTranslations } from "next-intl";
 
 // Emission factors (kg CO2e per kg of material)
 const materialFactors: Record<string, number> = {
@@ -65,21 +66,21 @@ interface EmissionBreakdown {
 }
 
 const MATERIALS = [
-  { value: "cotton", label: "Cotton" },
-  { value: "polyester", label: "Polyester" },
-  { value: "wool", label: "Wool" },
-  { value: "silk", label: "Silk" },
-  { value: "linen", label: "Linen" },
-  { value: "recycledPoly", label: "Recycled Polyester" },
-  { value: "organicCotton", label: "Organic Cotton" },
+  { value: "cotton", label: "materials.cotton" },
+  { value: "polyester", label: "materials.polyester" },
+  { value: "wool", label: "materials.wool" },
+  { value: "silk", label: "materials.silk" },
+  { value: "linen", label: "materials.linen" },
+  { value: "recycledPoly", label: "materials.recycledPoly" },
+  { value: "organicCotton", label: "materials.organicCotton" },
 ];
 
 const ROUTES = [
-  { value: "vnEu", label: "Vietnam → EU" },
-  { value: "vnUs", label: "Vietnam → US" },
-  { value: "vnJp", label: "Vietnam → Japan" },
-  { value: "vnDomestic", label: "Vietnam Domestic" },
-  { value: "vnKr", label: "Vietnam → Korea" },
+  { value: "vnEu", label: "routes.vnEu" },
+  { value: "vnUs", label: "routes.vnUs" },
+  { value: "vnJp", label: "routes.vnJp" },
+  { value: "vnDomestic", label: "routes.vnDomestic" },
+  { value: "vnKr", label: "routes.vnKr" },
 ];
 
 export default function CalculatorClient() {
@@ -87,6 +88,7 @@ export default function CalculatorClient() {
   const [material, setMaterial] = useState<string>("");
   const [route, setRoute] = useState<string>("");
   const [emissions, setEmissions] = useState<EmissionBreakdown | null>(null);
+  const t = useTranslations("calculator");
 
   const calculateEmissions = () => {
     if (!weight || !material || !route) return;
@@ -132,13 +134,13 @@ export default function CalculatorClient() {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
               <Calculator className="w-4 h-4" />
-              <span className="text-sm font-medium">Carbon Proxy Engine</span>
+              <span className="text-sm font-medium">{t("badge")}</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
-              Carbon Calculator
+              {t("title")}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Calculate CO₂e emissions for your fashion products
+              {t("subtitle")}
             </p>
           </div>
 
@@ -150,16 +152,14 @@ export default function CalculatorClient() {
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                     <Calculator className="w-5 h-5 text-primary" />
                   </div>
-                  Carbon Calculator
+                  {t("title")}
                 </CardTitle>
-                <CardDescription>
-                  Using proxy emission factors for incomplete supply chain data
-                </CardDescription>
+                <CardDescription>{t("description")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Weight Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="weight">Product Weight (kg)</Label>
+                  <Label htmlFor="weight">{t("productWeight")}</Label>
                   <Input
                     id="weight"
                     type="number"
@@ -174,15 +174,15 @@ export default function CalculatorClient() {
 
                 {/* Material Select */}
                 <div className="space-y-2">
-                  <Label>Material Type</Label>
+                  <Label>{t("materialType")}</Label>
                   <Select value={material} onValueChange={setMaterial}>
                     <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Select material type" />
+                      <SelectValue placeholder={t("selectMaterial")} />
                     </SelectTrigger>
                     <SelectContent>
                       {MATERIALS.map((m) => (
                         <SelectItem key={m.value} value={m.value}>
-                          {m.label}
+                          {t(m.label)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -191,15 +191,15 @@ export default function CalculatorClient() {
 
                 {/* Shipping Route Select */}
                 <div className="space-y-2">
-                  <Label>Shipping Route</Label>
+                  <Label>{t("shippingRoute")}</Label>
                   <Select value={route} onValueChange={setRoute}>
                     <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Select shipping route" />
+                      <SelectValue placeholder={t("selectRoute")} />
                     </SelectTrigger>
                     <SelectContent>
                       {ROUTES.map((r) => (
                         <SelectItem key={r.value} value={r.value}>
-                          {r.label}
+                          {t(r.label)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -212,15 +212,12 @@ export default function CalculatorClient() {
                   onClick={calculateEmissions}
                   disabled={!weight || !material || !route}
                 >
-                  Calculate Emissions
+                  {t("calculate")}
                 </Button>
 
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
                   <Info className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span>
-                    Using proxy emission factors for incomplete supply chain
-                    data
-                  </span>
+                  <span>{t("description")}</span>
                 </div>
               </CardContent>
             </Card>
@@ -232,9 +229,9 @@ export default function CalculatorClient() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <Leaf className="w-5 h-5 text-accent-foreground" />
+                    <Leaf className="w-5 h-5 text-primary" />
                   </div>
-                  Estimated CO₂e Emissions
+                  {t("result")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -243,7 +240,7 @@ export default function CalculatorClient() {
                     {/* Total Emissions */}
                     <div className="text-center p-6 rounded-2xl bg-gradient-forest text-primary-foreground">
                       <p className="text-sm font-medium opacity-80 mb-2">
-                        Estimated CO₂e Emissions
+                        {t("result")}
                       </p>
                       <p className="text-5xl font-display font-bold mb-1">
                         {emissions.total.toFixed(2)}
@@ -254,7 +251,7 @@ export default function CalculatorClient() {
                     {/* Breakdown */}
                     <div className="space-y-4">
                       <h4 className="font-semibold text-foreground">
-                        Emissions Breakdown
+                        {t("breakdown")}
                       </h4>
 
                       {/* Material */}
@@ -262,10 +259,10 @@ export default function CalculatorClient() {
                         <div className="flex items-center justify-between text-sm">
                           <span className="flex items-center gap-2 text-muted-foreground">
                             <Leaf className="w-4 h-4" />
-                            Material Production
+                            {t("material")}
                           </span>
                           <span className="font-medium text-foreground">
-                            {emissions.material.toFixed(2)} kg CO₂e
+                            {emissions.material.toFixed(2)} {t("kgCO2e")}
                           </span>
                         </div>
                         <Progress
@@ -282,10 +279,10 @@ export default function CalculatorClient() {
                         <div className="flex items-center justify-between text-sm">
                           <span className="flex items-center gap-2 text-muted-foreground">
                             <Factory className="w-4 h-4" />
-                            Manufacturing
+                            {t("manufacturing")}
                           </span>
                           <span className="font-medium text-foreground">
-                            {emissions.manufacturing.toFixed(2)} kg CO₂e
+                            {emissions.manufacturing.toFixed(2)} {t("kgCO2e")}
                           </span>
                         </div>
                         <Progress
@@ -302,10 +299,10 @@ export default function CalculatorClient() {
                         <div className="flex items-center justify-between text-sm">
                           <span className="flex items-center gap-2 text-muted-foreground">
                             <Truck className="w-4 h-4" />
-                            Transport
+                            {t("transport")}
                           </span>
                           <span className="font-medium text-foreground">
-                            {emissions.transport.toFixed(2)} kg CO₂e
+                            {emissions.transport.toFixed(2)} {t("kgCO2e")}
                           </span>
                         </div>
                         <Progress
@@ -322,10 +319,10 @@ export default function CalculatorClient() {
                         <div className="flex items-center justify-between text-sm">
                           <span className="flex items-center gap-2 text-muted-foreground">
                             <Package className="w-4 h-4" />
-                            Packaging
+                            {t("packaging")}
                           </span>
                           <span className="font-medium text-foreground">
-                            {emissions.packaging.toFixed(2)} kg CO₂e
+                            {emissions.packaging.toFixed(2)} {t("kgCO2e")}
                           </span>
                         </div>
                         <Progress
@@ -340,11 +337,7 @@ export default function CalculatorClient() {
                   </div>
                 ) : (
                   <div className="h-64 flex items-center justify-center text-muted-foreground">
-                    <p className="text-center">
-                      Fill in the form and click calculate
-                      <br />
-                      to see your emissions breakdown
-                    </p>
+                    <p className="text-center">{t("instruction")}</p>
                   </div>
                 )}
               </CardContent>

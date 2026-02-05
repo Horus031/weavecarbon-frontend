@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
 import { useProducts } from "@/contexts/ProductContext";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -66,12 +67,13 @@ export default function OverviewPageClient({
   marketReadiness,
   recommendations,
 }: OverviewPageClientProps) {
+  const t = useTranslations("overview");
   const { setPageTitle } = useDashboardTitle();
   const { pendingProductData, clearPendingProduct } = useProducts();
 
   useEffect(() => {
-    setPageTitle("Overview", "Overview of your carbon tracking");
-  }, [setPageTitle]);
+    setPageTitle(t("pageTitle"), t("pageSubtitle"));
+  }, [setPageTitle, t]);
 
   const handleCloseModal = () => {
     clearPendingProduct();
@@ -85,7 +87,7 @@ export default function OverviewPageClient({
         <Card className="h-full">
           <CardHeader className="pb-2 pt-4 px-3 md:px-6">
             <CardDescription className="text-xs md:text-sm">
-              Total CO₂ Emissions
+              {t("stats.totalCO2")}
             </CardDescription>
             <CardTitle className="text-2xl md:text-3xl font-bold mt-1">
               {stats.totalCO2.toLocaleString()}
@@ -93,7 +95,7 @@ export default function OverviewPageClient({
           </CardHeader>
           <CardContent className="px-3 md:px-6 pb-4">
             <p className="text-xs md:text-sm text-muted-foreground">
-              kg CO₂e this month
+              {t("stats.kgCO2eThisMonth")}
             </p>
           </CardContent>
         </Card>
@@ -101,7 +103,7 @@ export default function OverviewPageClient({
         <Card className="h-full">
           <CardHeader className="pb-2 pt-4 px-3 md:px-6">
             <CardDescription className="text-xs md:text-sm">
-              SKUs Tracking
+              {t("stats.skuTracking")}
             </CardDescription>
             <CardTitle className="text-2xl md:text-3xl font-bold mt-1">
               {stats.skuCount}
@@ -109,7 +111,7 @@ export default function OverviewPageClient({
           </CardHeader>
           <CardContent className="px-3 md:px-6 pb-4">
             <p className="text-xs md:text-sm text-muted-foreground">
-              active products
+              {t("stats.activeProducts")}
             </p>
           </CardContent>
         </Card>
@@ -117,7 +119,7 @@ export default function OverviewPageClient({
         <Card className="h-full">
           <CardHeader className="pb-2 pt-4 px-3 md:px-6">
             <CardDescription className="text-xs md:text-sm">
-              Export Readiness
+              {t("stats.exportReadiness")}
             </CardDescription>
             <CardTitle className="text-2xl md:text-3xl font-bold text-primary mt-1">
               {stats.exportReadiness}%
@@ -131,7 +133,7 @@ export default function OverviewPageClient({
         <Card className="h-full">
           <CardHeader className="pb-2 pt-4 px-3 md:px-6">
             <CardDescription className="text-xs md:text-sm">
-              Data Reliability
+              {t("stats.dataReliability")}
             </CardDescription>
             <CardTitle className="text-2xl md:text-3xl font-bold text-accent mt-1">
               {stats.confidenceScore}%
@@ -140,7 +142,7 @@ export default function OverviewPageClient({
           <CardContent className="px-3 md:px-6 pb-4">
             <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
               <Gauge className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="truncate">Based on {stats.skuCount} SKUs</span>
+              <span className="truncate">{t("stats.basedOnSKUs", { count: stats.skuCount })}</span>
             </div>
           </CardContent>
         </Card>
@@ -155,9 +157,9 @@ export default function OverviewPageClient({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
-              Export Readiness Level
+              {t("marketReadiness.title")}
             </CardTitle>
-            <CardDescription>Assessment by Target Market</CardDescription>
+            <CardDescription>{t("marketReadiness.subtitle")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {marketReadiness.map((market) => (
@@ -188,10 +190,10 @@ export default function OverviewPageClient({
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg md:text-base">
               <Lightbulb className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="truncate">Recommendations</span>
+              <span className="truncate">{t("recommendations.title")}</span>
             </CardTitle>
             <CardDescription className="text-xs md:text-sm">
-              AI-powered suggestions
+              {t("recommendations.subtitle")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 md:space-y-4">
@@ -225,10 +227,10 @@ export default function OverviewPageClient({
             <CardHeader className="pb-2">
               <PlusCircle className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2" />
               <CardTitle className="text-base md:text-lg">
-                Add New Product
+                {t("quickActions.addProduct.title")}
               </CardTitle>
               <CardDescription className="text-xs md:text-sm line-clamp-2">
-                Create a product and calculate carbon footprint
+                {t("quickActions.addProduct.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex items-end">
@@ -237,7 +239,7 @@ export default function OverviewPageClient({
                 size="sm"
                 className="w-full text-xs md:text-sm"
               >
-                Get Started <ChevronRight className="w-4 h-4 ml-1" />
+                {t("quickActions.getStarted")} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </CardContent>
           </Link>
@@ -248,10 +250,10 @@ export default function OverviewPageClient({
             <CardHeader className="pb-2">
               <Truck className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2" />
               <CardTitle className="text-base md:text-lg">
-                Track Shipment
+                {t("quickActions.trackShipment.title")}
               </CardTitle>
               <CardDescription className="text-xs md:text-sm line-clamp-2">
-                Monitor shipping emissions
+                {t("quickActions.trackShipment.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex items-end">
@@ -260,7 +262,7 @@ export default function OverviewPageClient({
                 size="sm"
                 className="w-full text-xs md:text-sm"
               >
-                Get Started <ChevronRight className="w-4 h-4 ml-1" />
+                {t("quickActions.getStarted")} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </CardContent>
           </Link>
@@ -271,10 +273,10 @@ export default function OverviewPageClient({
             <CardHeader className="pb-2">
               <FileCheck className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2" />
               <CardTitle className="text-base md:text-lg">
-                Generate Report
+                {t("quickActions.generateReport.title")}
               </CardTitle>
               <CardDescription className="text-xs md:text-sm line-clamp-2">
-                Create compliance reports
+                {t("quickActions.generateReport.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex items-end">
@@ -283,7 +285,7 @@ export default function OverviewPageClient({
                 size="sm"
                 className="w-full text-xs md:text-sm"
               >
-                Get Started <ChevronRight className="w-4 h-4 ml-1" />
+                {t("quickActions.getStarted")} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </CardContent>
           </Link>
@@ -295,10 +297,10 @@ export default function OverviewPageClient({
         <Card>
           <CardHeader>
             <CardTitle className="text-lg md:text-base">
-              Target Markets
+              {t("targetMarkets.title")}
             </CardTitle>
             <CardDescription className="text-xs md:text-sm">
-              Your selected export destinations
+              {t("targetMarkets.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>

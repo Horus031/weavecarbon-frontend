@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
-import { useProducts } from "@/contexts/ProductContext";
 import {
   Card,
   CardContent,
@@ -21,18 +20,16 @@ import {
   Leaf,
   Factory,
   Truck,
+  Save,
 } from "lucide-react";
 import StepIndicators from "./StepIndicators";
-import StepContent, { ProductData } from "./StepContent";
-import ProductOverviewModal from "./ProductOverviewModal";
+import StepContent from "./StepContent";
+import { DraftVersion, ProductAssessmentData } from "./steps/types";
 
-interface AssessmentClientProps {
-  categories: Array<{ value: string; label: string }>;
-  materials: Array<{ value: string; label: string }>;
-  certifications: Array<{ value: string; label: string }>;
-  energySources: Array<{ value: string; label: string }>;
-  transportModes: Array<{ value: string; label: string }>;
-  markets: Array<{ value: string; label: string }>;
+interface StoredProduct extends ProductAssessmentData {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const steps = [
@@ -40,54 +37,61 @@ const steps = [
   { id: 2, title: "Materials", icon: Leaf, key: "materials" },
   { id: 3, title: "Manufacturing", icon: Factory, key: "manufacturing" },
   { id: 4, title: "Logistics", icon: Truck, key: "logistics" },
-  { id: 5, title: "Complete", icon: CheckCircle2, key: "complete" },
+  { id: 5, title: "Assessment", icon: CheckCircle2, key: "assessment" },
+  { id: 6, title: "Save", icon: Save, key: "save" },
 ];
 
-const initialProductData: ProductData = {
-  productName: "",
-  productCode: "",
-  category: "",
-  description: "",
-  weight: "",
-  unit: "kg",
-  primaryMaterial: "",
-  materialPercentage: "",
-  secondaryMaterial: "",
-  secondaryPercentage: "",
-  recycledContent: "",
-  certifications: [],
-  manufacturingLocation: "Vietnam",
-  energySource: "",
-  processType: "",
-  wasteRecovery: "",
-  originCountry: "Vietnam",
-  destinationMarket: "",
-  transportMode: "",
-  packagingType: "",
-  packagingWeight: "",
+const emptyAddress = {
+  streetNumber: "",
+  street: "",
+  ward: "",
+  district: "",
+  city: "",
+  stateRegion: "",
+  country: "Vietnam",
+  postalCode: "",
 };
 
-export default function AssessmentClient({
-  categories,
-  materials,
-  certifications,
-  energySources,
-  transportModes,
-  markets,
-}: AssessmentClientProps) {
+const initialProductData: ProductAssessmentData = {
+  productCode: "",
+  productName: "",
+  productType: "",
+  weightPerUnit: 0,
+  quantity: 0,
+  materials: [],
+  accessories: [],
+  productionProcesses: [],
+  energySources: [],
+  manufacturingLocation: "",
+  wasteRecovery: "",
+  destinationMarket: "",
+  originAddress: { ...emptyAddress },
+  destinationAddress: { ...emptyAddress },
+  transportLegs: [],
+  estimatedTotalDistance: 0,
+  status: "draft",
+  version: 1,
+};
+
+export default function AssessmentClient() {
   const router = useRouter();
   const { setPageTitle } = useDashboardTitle();
-  const { setPendingProductData } = useProducts();
   const [currentStep, setCurrentStep] = useState(1);
   const [productData, setProductData] =
-    useState<ProductData>(initialProductData);
+    useState<ProductAssessmentData>(initialProductData);
+  const [draftHistory, setDraftHistory] = useState<DraftVersion[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setPageTitle("Product Assessment", "Create a new product assessment");
   }, [setPageTitle]);
 
-  const updateField = (field: keyof ProductData, value: string | string[]) => {
-    setProductData((prev) => ({ ...prev, [field]: value }));
+  const updateData = (updates: Partial<ProductAssessmentData>) => {
+    setProductData((prev) => ({
+      ...prev,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    }));
   };
 
   const progress = ((currentStep - 1) / (steps.length - 1)) * 100;
@@ -96,14 +100,28 @@ export default function AssessmentClient({
     switch (currentStep) {
       case 1:
         return (
-          productData.productName && productData.category && productData.weight
+          !!productData.productCode &&
+          !!productData.productName &&
+          !!productData.productType &&
+          productData.weightPerUnit > 0 &&
+          productData.quantity > 0
         );
-      case 2:
-        return productData.primaryMaterial && productData.materialPercentage;
-      case 3:
-        return productData.energySource && productData.processType;
+      case 2: {
+        const total = productData.materials.reduce(
+          (sum, m) => sum + (m.percentage || 0),
+          0,
+        );
+        return productData.materials.length > 0 && total === 100;
+      }
+      case 3: {
+        const total = productData.energySources.reduce(
+          (sum, e) => sum + (e.percentage || 0),
+          0,
+        );
+        return productData.productionProcesses.length > 0 && total === 100;
+      }
       case 4:
-        return productData.destinationMarket && productData.transportMode;
+        return !!productData.destinationMarket;
       default:
         return true;
     }
@@ -121,19 +139,102 @@ export default function AssessmentClient({
     }
   };
 
-  const handleSubmit = () => {
-    // Store product data in context and navigate to overview
-    setPendingProductData(productData);
-    router.push("/overview");
+  const handleSaveDraft = () => {
+    const nextVersion = (productData.version || 0) + 1;
+    const timestamp = new Date().toISOString();
+    const productId = `product-${Date.now()}`;
+    
+    const draft: DraftVersion = {
+      id: `draft-${Date.now()}`,
+      version: nextVersion,
+      data: {
+        ...productData,
+        status: "draft",
+        version: nextVersion,
+        updatedAt: timestamp,
+      },
+      timestamp,
+    };
+    
+    // Save to localStorage
+    const storedProduct: StoredProduct = {
+      ...productData,
+      id: productId,
+      status: "draft",
+      version: nextVersion,
+      createdAt: productData.createdAt || timestamp,
+      updatedAt: timestamp,
+    } as StoredProduct;
+    
+    // Get existing products from localStorage
+    const existingProducts = JSON.parse(
+      localStorage.getItem("weavecarbonProducts") || "[]",
+    ) as StoredProduct[];
+    
+    // Add new product
+    const updatedProducts = [storedProduct, ...existingProducts];
+    localStorage.setItem("weavecarbonProducts", JSON.stringify(updatedProducts));
+    
+    setDraftHistory((prev) => [draft, ...prev]);
+    setProductData((prev) => ({
+      ...prev,
+      status: "draft",
+      version: nextVersion,
+      createdAt: prev.createdAt || timestamp,
+      updatedAt: timestamp,
+    }));
+    
+    // Show success message
+    alert("Sản phẩm đã lưu nháp thành công");
+  };
+
+  const handlePublish = () => {
+    setIsSubmitting(true);
+    try {
+      const timestamp = new Date().toISOString();
+      const productId = `product-${Date.now()}`;
+      const nextVersion = (productData.version || 0) + 1;
+
+      // Create product to store
+      const publishedProduct: StoredProduct = {
+        ...productData,
+        id: productId,
+        status: "published",
+        version: nextVersion,
+        createdAt: productData.createdAt || timestamp,
+        updatedAt: timestamp,
+      } as StoredProduct;
+
+      // Get existing products from localStorage
+      const existingProducts = JSON.parse(
+        localStorage.getItem("weavecarbonProducts") || "[]",
+      ) as StoredProduct[];
+
+      // Add new product
+      const updatedProducts = [publishedProduct, ...existingProducts];
+      localStorage.setItem("weavecarbonProducts", JSON.stringify(updatedProducts));
+
+      setProductData((prev) => ({
+        ...prev,
+        status: "published",
+        version: nextVersion,
+        createdAt: prev.createdAt || timestamp,
+        updatedAt: timestamp,
+      }));
+
+      // Redirect to summary page
+      router.push(`/products`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <>
-      <div className="space-y-4 md:space-y-6 max-w-3xl mx-auto">
+      <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto">
         {/* Progress header */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg md:text-xl font-bold">Product Assessment</h2>
             <span className="text-xs md:text-sm text-muted-foreground">
               Step {currentStep} / {steps.length}
             </span>
@@ -153,7 +254,7 @@ export default function AssessmentClient({
               })}
               <span className="truncate">{steps[currentStep - 1].title}</span>
             </CardTitle>
-            {currentStep < 5 && (
+            {currentStep < steps.length && (
               <CardDescription className="text-xs md:text-sm">
                 Fill in the information below to continue
               </CardDescription>
@@ -162,14 +263,12 @@ export default function AssessmentClient({
           <CardContent>
             <StepContent
               currentStep={currentStep}
-              productData={productData}
-              updateField={updateField}
-              categories={categories}
-              materials={materials}
-              certifications={certifications}
-              energySources={energySources}
-              transportModes={transportModes}
-              markets={markets}
+              data={productData}
+              onChange={updateData}
+              draftHistory={draftHistory}
+              onSaveDraft={handleSaveDraft}
+              onPublish={handlePublish}
+              isSubmitting={isSubmitting}
             />
           </CardContent>
         </Card>
@@ -186,7 +285,7 @@ export default function AssessmentClient({
             Back
           </Button>
 
-          {currentStep < 5 ? (
+          {currentStep < steps.length ? (
             <Button
               onClick={handleNext}
               disabled={!canProceed()}
@@ -196,8 +295,12 @@ export default function AssessmentClient({
               <ArrowRight className="w-4 h-4" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} className="gap-2 w-full sm:w-auto">
-              View Results
+            <Button
+              variant="outline"
+              onClick={() => router.push("/products")}
+              className="gap-2 w-full sm:w-auto"
+            >
+              Back to Products
               <CheckCircle2 className="w-4 h-4" />
             </Button>
           )}
