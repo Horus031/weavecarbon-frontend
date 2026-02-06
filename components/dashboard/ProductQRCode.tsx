@@ -238,7 +238,7 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
 
         <div className="space-y-4">
           {/* QR Code Display */}
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-50">
+          <Card className="bg-linear-to-br from-green-50 to-emerald-50">
             <CardContent className="p-6 flex flex-col items-center">
               <div className="bg-white p-4 rounded-xl shadow-sm">
                 <QRCodeSVG

@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import WeaveyChat from "@/components/ui/WeaveyChat";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 export const metadata: Metadata = {
   title: "WeaveCarbon",
@@ -20,12 +22,15 @@ export default async function RootLayout({
   return (
     <html data-scroll-behavior="smooth" lang={locale} suppressHydrationWarning>
       <body className={`antialiased`}>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <LanguageProvider>
-            {children}
-            <Toaster />
-          </LanguageProvider>
-        </NextIntlClientProvider>
+        <AuthProvider>
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <LanguageProvider>
+              {children}
+              <Toaster />
+              <WeaveyChat variant="landing" />
+            </LanguageProvider>
+          </NextIntlClientProvider>
+        </AuthProvider>
       </body>
     </html>
   );

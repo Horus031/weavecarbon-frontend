@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export interface ChatMessage {
   id: string;
@@ -22,10 +21,8 @@ interface UseWeaveyChatOptions {
   carbonData?: Record<string, unknown>;
 }
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(
-  process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
-);
+// Custom API endpoint for WeaveCarbon AI
+const WEAVEY_API_URL = process.env.NEXT_PUBLIC_WEAVEY_API_URL;
 
 // Mock storage (keep existing)
 const mockStorage = {
@@ -111,7 +108,8 @@ const mockStorage = {
 
 mockStorage.loadFromLocalStorage();
 
-export function useWeaveyChat(options: UseWeaveyChatOptions = {}) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function useWeaveyChat(_options: UseWeaveyChatOptions = {}) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -158,12 +156,8 @@ export function useWeaveyChat(options: UseWeaveyChatOptions = {}) {
 
         mockStorage.addMessage(convId, userMessage);
 
-        // Call Gemini API
-        const assistantContent = await getGeminiResponse(
-          input,
-          messages,
-          options,
-        );
+        // Call WeaveCarbon API
+        const assistantContent = await getWeaveyResponse(input);
 
         const assistantMessage: ChatMessage = {
           id: `assistant_${Date.now()}`,
@@ -190,7 +184,7 @@ export function useWeaveyChat(options: UseWeaveyChatOptions = {}) {
         setIsLoading(false);
       }
     },
-    [isLoading, conversationId, messages, options, user?.id, sessionId],
+    [isLoading, conversationId, user?.id, sessionId],
   );
 
   const clearHistory = useCallback(() => {
@@ -209,46 +203,39 @@ export function useWeaveyChat(options: UseWeaveyChatOptions = {}) {
   };
 }
 
-// Gemini API response handler
-async function getGeminiResponse(
-  input: string,
-  conversationHistory: ChatMessage[],
-  options: UseWeaveyChatOptions,
-): Promise<string> {
+// Custom API response handler
+async function getWeaveyResponse(input: string): Promise<string> {
+  if (!WEAVEY_API_URL) {
+    throw new Error("WEAVEY_API_URL is not configured");
+  }
+
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-    // Build conversation context
-    const systemPrompt = `You are Weavey, an AI assistant for WeaveCarbon, a platform for tracking and reducing carbon footprint in the fashion industry.
-You help users with:
-- Carbon footprint calculation and tracking
-- Export compliance requirements
-- Sustainability recommendations
-- Product lifecycle analysis
-- Supply chain optimization
-
-Current page: ${options.currentPage || "unknown"}
-Language: Vietnamese (Vietnamese language preferred, but respond in user's language)
-
-Be helpful, concise, and provide actionable advice.`;
-
-    // Format chat history for Gemini
-    const chatHistory = conversationHistory.map((msg) => ({
-      role: msg.role === "user" ? "user" : "model",
-      parts: [{ text: msg.content }],
-    }));
-
-    // Start chat session
-    const chat = model.startChat({
-      history: chatHistory,
+    const response = await fetch(WEAVEY_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true", // Skip ngrok browser warning
+      },
+      body: JSON.stringify({
+        columns_to_answer: ["cau hoi"],
+        query: input,
+      }),
     });
 
-    // Send message and get response
-    const result = await chat.sendMessage(systemPrompt + "\n\nUser: " + input);
-    const response = await result.response;
-    return response.text();
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Extract the answer from the response
+    if (data.answer) {
+      return data.answer;
+    }
+
+    throw new Error("No answer in response");
   } catch (error) {
-    console.error("Gemini API error:", error);
-    throw new Error("Failed to get response from Gemini API");
+    console.error("WeaveCarbon API error:", error);
+    throw new Error("Failed to get response from WeaveCarbon API");
   }
 }

@@ -9,46 +9,20 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
   const t = useTranslations("footer");
 
-  const footerLinks = {
-    platform: [
-      { labelKey: "Carbon Engine", href: "#" },
-      { labelKey: "Circular Hub", href: "#" },
-      { labelKey: "Export Scoring", href: "#" },
-      { labelKey: "API Access", href: "#" },
-    ],
-    company: [
-      { labelKey: "About Us", href: "#" },
-      { labelKey: "Careers", href: "#" },
-      { labelKey: "Blog", href: "#" },
-      { labelKey: "Contact", href: "#" },
-    ],
-    resources: [
-      { labelKey: "Documentation", href: "#" },
-      { labelKey: "Case Studies", href: "#" },
-      { labelKey: "Carbon Guide", href: "#" },
-      { labelKey: "EU DPP Info", href: "#" },
-    ],
-    legal: [
-      { labelKey: "Privacy Policy", href: "#" },
-      { labelKey: "Terms of Service", href: "#" },
-      { labelKey: "Cookie Policy", href: "#" },
-    ],
-  };
-
   return (
     <footer
       id="contact"
       className="bg-foreground text-primary-foreground pt-16 pb-8"
     >
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-12">
           {/* Brand column */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="col-span-2"
+            className=""
           >
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-xl bg-primary-foreground/10 flex items-center justify-center">
@@ -84,70 +58,6 @@ const Footer = () => {
                 <Mail className="w-5 h-5" />
               </a>
             </div>
-          </motion.div>
-
-          {/* Link columns */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }}
-          >
-            <h4 className="font-semibold mb-4">{t("platform")}</h4>
-            <ul className="space-y-3">
-              {footerLinks.platform.map((link) => (
-                <li key={link.labelKey}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    {link.labelKey}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
-          >
-            <h4 className="font-semibold mb-4">{t("company")}</h4>
-            <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.labelKey}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    {link.labelKey}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.15 }}
-          >
-            <h4 className="font-semibold mb-4">{t("resources")}</h4>
-            <ul className="space-y-3">
-              {footerLinks.resources.map((link) => (
-                <li key={link.labelKey}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-                  >
-                    {link.labelKey}
-                  </a>
-                </li>
-              ))}
-            </ul>
           </motion.div>
 
           {/* Contact column */}

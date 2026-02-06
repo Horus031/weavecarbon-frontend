@@ -2,7 +2,7 @@ import React from "react";
 import WeaveyChat from "@/components/ui/WeaveyChat";
 import DashboardSidebarShell from "@/components/dashboard/DashboardSidebarShell";
 import PricingModalGate from "@/components/dashboard/PricingModalGate";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { DashboardProvider } from "@/contexts/DashboardContext";
 import { ProductProvider } from "@/contexts/ProductContext";
 import DashboardLayoutContent from "@/components/dashboard/DashboardLayoutContent";
@@ -17,11 +17,11 @@ interface Company {
   target_markets: string[] | null;
 }
 
-interface Profile {
-  full_name: string | null;
-  email: string | null;
-  company_id: string | null;
-}
+// interface Profile {
+//   full_name: string | null;
+//   email: string | null;
+//   company_id: string | null;
+// }
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

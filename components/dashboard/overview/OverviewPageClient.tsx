@@ -1,10 +1,10 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import React, { useEffect } from "react";
-import Link from "next/link";
-import { useDashboardTitle } from "@/contexts/DashboardContext";
+import React, { useEffect, useState, useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useProducts } from "@/contexts/ProductContext";
-import { useTranslations } from "next-intl";
+import { createClient } from "@/lib/supabase/client";
 import {
   Card,
   CardContent,
@@ -26,140 +26,193 @@ import {
   Lightbulb,
   PlusCircle,
 } from "lucide-react";
-import { getReadinessColor, getImpactColor } from "@/lib/dashboardData";
-import OverviewCharts from "@/components/dashboard/OverviewCharts";
-import ProductOverviewModal from "@/components/dashboard/assessment/ProductOverviewModal";
+import { useIsDemo } from "@/hooks/useTenantData";
+import {
+  marketReadiness,
+  recommendations,
+  getReadinessColor,
+  getImpactColor,
+} from "@/lib/dashboardData";
+import { useTranslations } from "next-intl";
+import ProductOverviewModal from "../assessment/ProductOverviewModal";
+import OverviewCharts from "../OverviewCharts";
+import { useRouter } from "next/navigation";
 
 interface Company {
   target_markets: string[] | null;
+  name?: string;
 }
 
-interface Stats {
-  totalCO2: number;
-  skuCount: number;
-  exportReadiness: number;
-  confidenceScore: number;
-}
+// Mock company data for demo users
+const MOCK_DEMO_COMPANY: Company = {
+  name: "WeaveCarbon Demo Company",
+  target_markets: ["US", "EU", "JP"],
+};
 
-interface MarketReadiness {
-  market: string;
-  score: number;
-}
-
-interface Recommendation {
-  id: number;
-  title: string;
-  description: string;
-  impact: string;
-  reduction: string;
-}
-
-interface OverviewPageClientProps {
-  company: Company;
-  stats: Stats;
-  marketReadiness: MarketReadiness[];
-  recommendations: Recommendation[];
-}
-
-export default function OverviewPageClient({
-  company,
-  stats,
-  marketReadiness,
-  recommendations,
-}: OverviewPageClientProps) {
+const OverviewPage: React.FC = () => {
   const t = useTranslations("overview");
-  const { setPageTitle } = useDashboardTitle();
-  const { pendingProductData, clearPendingProduct } = useProducts();
+  const { user } = useAuth();
+  const { products, pendingProductData, clearPendingProduct } = useProducts();
+  const navigate = useRouter();
+  const [company, setCompany] = useState<Company | null>(null);
+  const isDemo = useIsDemo();
+  const [showProductModal, setShowProductModal] = useState(false);
 
+  // Show modal when there's pending product data from assessment
   useEffect(() => {
-    setPageTitle(t("pageTitle"), t("pageSubtitle"));
-  }, [setPageTitle, t]);
+    if (pendingProductData) {
+      setShowProductModal(true);
+    }
+  }, [pendingProductData]);
 
   const handleCloseModal = () => {
+    setShowProductModal(false);
     clearPendingProduct();
   };
 
+  // Calculate dashboard stats dynamically from products
+  const stats = useMemo(() => {
+    const totalCO2 = products.reduce((sum, p) => sum + p.co2, 0);
+    const skuCount = products.length;
+    const publishedCount = products.filter(
+      (p) => p.status === "published",
+    ).length;
+    const avgConfidence =
+      products.length > 0
+        ? Math.round(
+            products.reduce((sum, p) => sum + p.confidenceScore, 0) /
+              products.length,
+          )
+        : 0;
+
+    // Export readiness based on published ratio and average confidence
+    const exportReadiness =
+      products.length > 0
+        ? Math.round(
+            (publishedCount / products.length) * 50 + avgConfidence * 0.5,
+          )
+        : 0;
+
+    return {
+      totalCO2: Math.round(totalCO2 * 100) / 100,
+      skuCount,
+      exportReadiness: Math.min(exportReadiness, 100),
+      confidenceScore: avgConfidence,
+    };
+  }, [products]);
+
+  // Load company data - use mock data for demo users, fetch from DB for real users
+  useEffect(() => {
+    if (isDemo || user?.is_demo_user) {
+      // Use mock company data for demo users
+      console.log("[OverviewPage] Using mock company data for demo user");
+      setCompany(MOCK_DEMO_COMPANY);
+    } else {
+      // Fetch real company data from database
+      const fetchCompany = async () => {
+        const companyId = user?.company_id;
+        if (!companyId) {
+          console.log("[OverviewPage] No companyId found");
+          return;
+        }
+
+        console.log("[OverviewPage] Fetching company data for:", companyId);
+        const supabase = createClient();
+        const { data: companyData, error } = await supabase
+          .from("companies")
+          .select("target_markets, name")
+          .eq("id", companyId)
+          .maybeSingle();
+
+        if (error) {
+          console.error("[OverviewPage] Error fetching company:", error);
+          return;
+        }
+
+        if (companyData) {
+          console.log("[OverviewPage] Company data loaded:", companyData.name);
+          setCompany(companyData);
+        }
+      };
+      fetchCompany();
+    }
+  }, [user?.company_id, user?.is_demo_user, isDemo]);
+
   return (
-    <>
-      <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <Card className="h-full">
-          <CardHeader className="pb-2 pt-4 px-3 md:px-6">
-            <CardDescription className="text-xs md:text-sm">
-              {t("stats.totalCO2")}
-            </CardDescription>
-            <CardTitle className="text-2xl md:text-3xl font-bold mt-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>{t("dashboard.totalCO2")}</CardDescription>
+            <CardTitle className="text-3xl font-bold">
               {stats.totalCO2.toLocaleString()}
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 md:px-6 pb-4">
-            <p className="text-xs md:text-sm text-muted-foreground">
-              {t("stats.kgCO2eThisMonth")}
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              kg CO₂e {t("dashboard.thisMonth")}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="h-full">
-          <CardHeader className="pb-2 pt-4 px-3 md:px-6">
-            <CardDescription className="text-xs md:text-sm">
-              {t("stats.skuTracking")}
-            </CardDescription>
-            <CardTitle className="text-2xl md:text-3xl font-bold mt-1">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>{t("dashboard.skuTracking")}</CardDescription>
+            <CardTitle className="text-3xl font-bold">
               {stats.skuCount}
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 md:px-6 pb-4">
-            <p className="text-xs md:text-sm text-muted-foreground">
-              {t("stats.activeProducts")}
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {t("dashboard.activeProducts")}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="h-full">
-          <CardHeader className="pb-2 pt-4 px-3 md:px-6">
-            <CardDescription className="text-xs md:text-sm">
-              {t("stats.exportReadiness")}
-            </CardDescription>
-            <CardTitle className="text-2xl md:text-3xl font-bold text-primary mt-1">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>{t("dashboard.exportReadiness")}</CardDescription>
+            <CardTitle className="text-3xl font-bold text-primary">
               {stats.exportReadiness}%
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 md:px-6 pb-4">
+          <CardContent>
             <Progress value={stats.exportReadiness} className="h-2" />
           </CardContent>
         </Card>
 
-        <Card className="h-full">
-          <CardHeader className="pb-2 pt-4 px-3 md:px-6">
-            <CardDescription className="text-xs md:text-sm">
-              {t("stats.dataReliability")}
-            </CardDescription>
-            <CardTitle className="text-2xl md:text-3xl font-bold text-accent mt-1">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Độ tin cậy dữ liệu</CardDescription>
+            <CardTitle className="text-3xl font-bold text-accent">
               {stats.confidenceScore}%
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-3 md:px-6 pb-4">
-            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-              <Gauge className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="truncate">{t("stats.basedOnSKUs", { count: stats.skuCount })}</span>
+          <CardContent>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Gauge className="w-4 h-4" />
+              <span>Dựa trên {stats.skuCount} SKU</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Row (client component) */}
+      {/* Charts Row */}
       <OverviewCharts />
 
       {/* Export Readiness & Recommendations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Export Readiness by Market */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
-              {t("marketReadiness.title")}
+              Mức độ sẵn sàng xuất khẩu
             </CardTitle>
-            <CardDescription>{t("marketReadiness.subtitle")}</CardDescription>
+            <CardDescription>
+              Đánh giá theo từng thị trường mục tiêu
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {marketReadiness.map((market) => (
@@ -186,17 +239,16 @@ export default function OverviewPageClient({
           </CardContent>
         </Card>
 
+        {/* Recommendations */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg md:text-base">
-              <Lightbulb className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="truncate">{t("recommendations.title")}</span>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5" />
+              Khuyến nghị cải thiện
             </CardTitle>
-            <CardDescription className="text-xs md:text-sm">
-              {t("recommendations.subtitle")}
-            </CardDescription>
+            <CardDescription>Đề xuất dựa trên phân tích AI</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3 md:space-y-4">
+          <CardContent className="space-y-4">
             {recommendations.map((rec) => (
               <div
                 key={rec.id}
@@ -221,74 +273,64 @@ export default function OverviewPageClient({
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-        <Card className="hover:border-primary/50 transition-colors flex flex-col">
-          <Link href="/products" className="flex-1 flex flex-col">
-            <CardHeader className="pb-2">
-              <PlusCircle className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2" />
-              <CardTitle className="text-base md:text-lg">
-                {t("quickActions.addProduct.title")}
-              </CardTitle>
-              <CardDescription className="text-xs md:text-sm line-clamp-2">
-                {t("quickActions.addProduct.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex items-end">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs md:text-sm"
-              >
-                {t("quickActions.getStarted")} <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </CardContent>
-          </Link>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card
+          className="hover:border-primary/50 transition-colors cursor-pointer"
+          onClick={() => navigate.push("/dashboard/products")}
+        >
+          <CardHeader>
+            <PlusCircle className="w-8 h-8 text-primary mb-2" />
+            <CardTitle className="text-lg">
+              {t("dashboard.addProduct")}
+            </CardTitle>
+            <CardDescription>{t("dashboard.addProductDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" size="sm" className="w-full">
+              {t("dashboard.getStarted")}{" "}
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </CardContent>
         </Card>
 
-        <Card className="hover:border-primary/50 transition-colors flex flex-col">
-          <Link href="/logistics" className="flex-1 flex flex-col">
-            <CardHeader className="pb-2">
-              <Truck className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2" />
-              <CardTitle className="text-base md:text-lg">
-                {t("quickActions.trackShipment.title")}
-              </CardTitle>
-              <CardDescription className="text-xs md:text-sm line-clamp-2">
-                {t("quickActions.trackShipment.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex items-end">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs md:text-sm"
-              >
-                {t("quickActions.getStarted")} <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </CardContent>
-          </Link>
+        <Card
+          className="hover:border-primary/50 transition-colors cursor-pointer"
+          onClick={() => navigate.push("/dashboard/logistics")}
+        >
+          <CardHeader>
+            <Truck className="w-8 h-8 text-primary mb-2" />
+            <CardTitle className="text-lg">
+              {t("dashboard.trackShipment")}
+            </CardTitle>
+            <CardDescription>
+              {t("dashboard.trackShipmentDesc")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" size="sm" className="w-full">
+              {t("dashboard.getStarted")}{" "}
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </CardContent>
         </Card>
 
-        <Card className="hover:border-primary/50 transition-colors flex flex-col sm:col-span-2 lg:col-span-1">
-          <Link href="/reports" className="flex-1 flex flex-col">
-            <CardHeader className="pb-2">
-              <FileCheck className="w-6 h-6 md:w-8 md:h-8 text-primary mb-2" />
-              <CardTitle className="text-base md:text-lg">
-                {t("quickActions.generateReport.title")}
-              </CardTitle>
-              <CardDescription className="text-xs md:text-sm line-clamp-2">
-                {t("quickActions.generateReport.description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex items-end">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs md:text-sm"
-              >
-                {t("quickActions.getStarted")} <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </CardContent>
-          </Link>
+        <Card
+          className="hover:border-primary/50 transition-colors cursor-pointer"
+          onClick={() => navigate.push("/dashboard/reports")}
+        >
+          <CardHeader>
+            <FileCheck className="w-8 h-8 text-primary mb-2" />
+            <CardTitle className="text-lg">
+              {t("dashboard.exportReport")}
+            </CardTitle>
+            <CardDescription>{t("dashboard.exportReportDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" size="sm" className="w-full">
+              {t("dashboard.getStarted")}{" "}
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </CardContent>
         </Card>
       </div>
 
@@ -296,11 +338,9 @@ export default function OverviewPageClient({
       {company?.target_markets && company.target_markets.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg md:text-base">
-              {t("targetMarkets.title")}
-            </CardTitle>
-            <CardDescription className="text-xs md:text-sm">
-              {t("targetMarkets.description")}
+            <CardTitle>{t("dashboard.targetMarkets")}</CardTitle>
+            <CardDescription>
+              {t("dashboard.targetMarketsDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -314,16 +354,17 @@ export default function OverviewPageClient({
           </CardContent>
         </Card>
       )}
-    </div>
 
-      {/* Product Overview Modal - shows when coming from assessment */}
+      {/* Product Overview Modal - shown after product creation */}
       {pendingProductData && (
         <ProductOverviewModal
-          open={!!pendingProductData}
+          open={showProductModal}
           onClose={handleCloseModal}
           productData={pendingProductData}
         />
       )}
-    </>
+    </div>
   );
-}
+};
+
+export default OverviewPage;

@@ -25,9 +25,9 @@ export const carbonTrendData = [
 
 export const emissionBreakdown = [
   { name: "chart.pie.material", value: 45, color: "hsl(150 60% 20%)" },
-  { name: "chart.pie.manufacture", value: 25, color: "hsl(30 45% 60%)" },
-  { name: "chart.pie.transport", value: 20, color: "hsl(150, 40%, 50%)" },
-  { name: "chart.pie.package", value: 10, color: "hsl(35, 50%, 60%)" },
+  { name: "chart.pie.manufacture", value: 25, color: "hsl(210 60% 40%)" },
+  { name: "chart.pie.transport", value: 20, color: "hsl(35 70% 55%)" },
+  { name: "chart.pie.package", value: 10, color: "hsl(280 60% 60%)" },
 ];
 
 export const marketReadiness = [
