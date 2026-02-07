@@ -37,6 +37,7 @@ import { useTranslations } from "next-intl";
 import ProductOverviewModal from "../assessment/ProductOverviewModal";
 import OverviewCharts from "../OverviewCharts";
 import { useRouter } from "next/navigation";
+import { useDashboardTitle } from "@/contexts/DashboardContext";
 
 interface Company {
   target_markets: string[] | null;
@@ -57,6 +58,11 @@ const OverviewPage: React.FC = () => {
   const [company, setCompany] = useState<Company | null>(null);
   const isDemo = useIsDemo();
   const [showProductModal, setShowProductModal] = useState(false);
+  const { setPageTitle } = useDashboardTitle();
+
+  useEffect(() => {
+    setPageTitle(t("pageTitle"), t("pageSubtitle"));
+  }, [setPageTitle, t]);
 
   // Show modal when there's pending product data from assessment
   useEffect(() => {
@@ -144,35 +150,35 @@ const OverviewPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>{t("dashboard.totalCO2")}</CardDescription>
+            <CardDescription>{t("stats.totalCO2")}</CardDescription>
             <CardTitle className="text-3xl font-bold">
               {stats.totalCO2.toLocaleString()}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              kg CO₂e {t("dashboard.thisMonth")}
+              {t("stats.kgCO2eThisMonth")}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>{t("dashboard.skuTracking")}</CardDescription>
+            <CardDescription>{t("stats.skuTracking")}</CardDescription>
             <CardTitle className="text-3xl font-bold">
               {stats.skuCount}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {t("dashboard.activeProducts")}
+              {t("stats.activeProducts")}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>{t("dashboard.exportReadiness")}</CardDescription>
+            <CardDescription>{t("stats.exportReadiness")}</CardDescription>
             <CardTitle className="text-3xl font-bold text-primary">
               {stats.exportReadiness}%
             </CardTitle>
@@ -184,7 +190,7 @@ const OverviewPage: React.FC = () => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Độ tin cậy dữ liệu</CardDescription>
+            <CardDescription>{t("stats.dataReliability")}</CardDescription>
             <CardTitle className="text-3xl font-bold text-accent">
               {stats.confidenceScore}%
             </CardTitle>
@@ -192,7 +198,7 @@ const OverviewPage: React.FC = () => {
           <CardContent>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Gauge className="w-4 h-4" />
-              <span>Dựa trên {stats.skuCount} SKU</span>
+              <span>{t("stats.basedOnSKUs")}</span>
             </div>
           </CardContent>
         </Card>
@@ -208,11 +214,9 @@ const OverviewPage: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
-              Mức độ sẵn sàng xuất khẩu
+              {t("marketReadiness.title")}
             </CardTitle>
-            <CardDescription>
-              Đánh giá theo từng thị trường mục tiêu
-            </CardDescription>
+            <CardDescription>{t("marketReadiness.subtitle")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {marketReadiness.map((market) => (
@@ -244,9 +248,9 @@ const OverviewPage: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lightbulb className="w-5 h-5" />
-              Khuyến nghị cải thiện
+              {t("recommendations.title")}
             </CardTitle>
-            <CardDescription>Đề xuất dựa trên phân tích AI</CardDescription>
+            <CardDescription>{t("recommendations.subtitle")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {recommendations.map((rec) => (
@@ -281,13 +285,15 @@ const OverviewPage: React.FC = () => {
           <CardHeader>
             <PlusCircle className="w-8 h-8 text-primary mb-2" />
             <CardTitle className="text-lg">
-              {t("dashboard.addProduct")}
+              {t("quickActions.addProduct.title")}
             </CardTitle>
-            <CardDescription>{t("dashboard.addProductDesc")}</CardDescription>
+            <CardDescription>
+              {t("quickActions.addProduct.description")}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" size="sm" className="w-full">
-              {t("dashboard.getStarted")}{" "}
+              {t("quickActions.getStarted")}{" "}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </CardContent>
@@ -300,15 +306,15 @@ const OverviewPage: React.FC = () => {
           <CardHeader>
             <Truck className="w-8 h-8 text-primary mb-2" />
             <CardTitle className="text-lg">
-              {t("dashboard.trackShipment")}
+              {t("quickActions.trackShipment.title")}
             </CardTitle>
             <CardDescription>
-              {t("dashboard.trackShipmentDesc")}
+              {t("quickActions.trackShipment.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" size="sm" className="w-full">
-              {t("dashboard.getStarted")}{" "}
+              {t("quickActions.getStarted")}{" "}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </CardContent>
@@ -321,20 +327,22 @@ const OverviewPage: React.FC = () => {
           <CardHeader>
             <FileCheck className="w-8 h-8 text-primary mb-2" />
             <CardTitle className="text-lg">
-              {t("dashboard.exportReport")}
+              {t("quickActions.generateReport.title")}
             </CardTitle>
-            <CardDescription>{t("dashboard.exportReportDesc")}</CardDescription>
+            <CardDescription>
+              {t("quickActions.generateReport.description")}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" size="sm" className="w-full">
-              {t("dashboard.getStarted")}{" "}
+              {t("quickActions.getStarted")}{" "}
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </CardContent>
         </Card>
       </div>
 
-      {/* Target Markets */}
+      {/* Target Markets
       {company?.target_markets && company.target_markets.length > 0 && (
         <Card>
           <CardHeader>
@@ -353,7 +361,7 @@ const OverviewPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* Product Overview Modal - shown after product creation */}
       {pendingProductData && (

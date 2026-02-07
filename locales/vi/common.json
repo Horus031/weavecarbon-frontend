@@ -29,7 +29,8 @@
     "b2cDesc": "Người tiêu dùng muốn đóng góp vào kinh tế tuần hoàn",
     "orTry": "hoặc dùng thử",
     "demoB2B": "Demo B2B",
-    "demoB2C": "Demo B2C"
+    "demoB2C": "Demo B2C",
+    "viewHistory": "Xem lịch sử demo"
   },
 
   "features": {
@@ -310,7 +311,7 @@
     },
     "recommendations": {
       "title": "Khuyến nghị",
-      "subtitle": "Đề xuất từ AI"
+      "subtitle": "Đề xuất dựa trên phân tích AI"
     },
     "quickActions": {
       "addProduct": {

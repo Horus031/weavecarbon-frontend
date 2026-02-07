@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useBatches } from "@/contexts/BatchContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { getDemoProducts } from "@/lib/demoProductHelper";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,15 +52,36 @@ const STATUS_CONFIG: Record<
 const ProductsClient: React.FC = () => {
   const router = useRouter();
   const { batches } = useBatches();
-  const [products] = useState<StoredProduct[]>(() => {
+  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"draft" | "published" | "all">("all");
+
+  const loadProducts = useCallback((): StoredProduct[] => {
     if (typeof window === "undefined") return [];
+
     const storedProducts = JSON.parse(
       localStorage.getItem("weavecarbonProducts") || "[]"
     ) as StoredProduct[];
+
+    // Check demo status from localStorage only (stable across renders)
+    const isDemoUser = localStorage.getItem("weavecarbonDemoUser") === "true";
+
+    // Merge demo products with any locally created products
+    if (isDemoUser) {
+      const demoProducts = getDemoProducts() as StoredProduct[];
+      const demoIds = new Set(demoProducts.map((p) => p.id));
+      const uniqueStored = storedProducts.filter((p) => !demoIds.has(p.id));
+      return [...demoProducts, ...uniqueStored];
+    }
+
     return storedProducts;
-  });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"draft" | "published" | "all">("all");
+  }, []);
+
+  const products = useMemo<StoredProduct[]>(() => {
+    return loadProducts();
+  }, [loadProducts]);
+
+
   const [selectedProductForQR, setSelectedProductForQR] = useState<{
     id: string;
     name: string;

@@ -262,6 +262,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     userType: "b2b" | "b2c" = "b2b",
   ): Promise<{ error: Error | null; needsConfirmation?: boolean }> => {
     try {
+      localStorage.removeItem("weavecarbonDemoUser");
       // Use auth email with type suffix to allow same email for both B2B and B2C
       const authEmail = createAuthEmail(email, userType);
 
@@ -329,6 +330,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     userType: "b2b" | "b2c" = "b2b",
   ): Promise<{ error: Error | null }> => {
     try {
+      localStorage.removeItem("weavecarbonDemoUser");
       // Use auth email with type suffix to login to the correct account type
       const authEmail = createAuthEmail(email, userType);
 
@@ -353,6 +355,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     userType: "b2b" | "b2c" = "b2b",
   ): Promise<{ error: Error | null }> => {
     try {
+      localStorage.removeItem("weavecarbonDemoUser");
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -416,6 +419,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       }
 
+      localStorage.setItem("weavecarbonDemoUser", "true");
+
       await refreshUser();
       return { error: null };
     } catch (error) {
@@ -429,6 +434,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await supabase.auth.signOut();
       setUser(null);
       setSupabaseUser(null);
+      localStorage.removeItem("weavecarbonDemoUser");
     } catch (error) {
       console.error("Sign out error:", error);
     }

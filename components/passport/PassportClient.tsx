@@ -43,6 +43,7 @@ import {
   MARKET_LABELS,
   TRANSPORT_MODE_LABELS,
 } from "@/lib/demoData";
+import { getDemoProductById } from "@/lib/demoProductHelper";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
 import {
   ProductAssessmentData,
@@ -183,10 +184,25 @@ const PassportClient: React.FC = () => {
         return;
       }
 
-      // Check demo products first
-      let foundProduct = DEMO_PRODUCTS.find((p) => p.id === productId);
+      // Check demo products (including synthetic) first
+      const demoStoredProduct = getDemoProductById(productId);
+      let foundProduct = demoStoredProduct
+        ? convertToProductData(demoStoredProduct)
+        : null;
       let foundTransport: TransportData | null = null;
       let foundCalc: CalculationHistory | null = null;
+
+      // Prefer detailed demo data for the base demo set
+      const demoProduct = DEMO_PRODUCTS.find((p) => p.id === productId);
+      if (demoProduct) {
+        foundProduct = demoProduct;
+        foundTransport =
+          DEMO_TRANSPORTS.find((t) => t.productId === productId) || null;
+        foundCalc = DEMO_HISTORY.find((h) => h.productId === productId) || null;
+      } else if (demoStoredProduct) {
+        foundTransport = generateTransportFromProduct(demoStoredProduct);
+        foundCalc = generateCalculationFromProduct(demoStoredProduct);
+      }
 
       // If not found in demo, check localStorage (new format)
       if (!foundProduct) {
@@ -207,7 +223,7 @@ const PassportClient: React.FC = () => {
         const oldStoredProducts = localStorage.getItem("weavecarbon_products");
         if (oldStoredProducts) {
           const userProducts = JSON.parse(oldStoredProducts) as ProductData[];
-          foundProduct = userProducts.find((p) => p.id === productId);
+          foundProduct = userProducts.find((p) => p.id === productId) || null;
         }
       }
 

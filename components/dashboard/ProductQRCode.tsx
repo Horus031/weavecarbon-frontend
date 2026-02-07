@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Dialog,
@@ -50,10 +50,13 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
   const [copied, setCopied] = useState(false);
 
   // Generate the public URL for the Green Passport
-  const baseUrl = window.location.origin;
-  const passportUrl = `${baseUrl}/passport?id=${productId}`;
+  const passportUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    return `${window.location.origin}/passport?id=${productId}`;
+  }, [productId]);
 
   const handleCopyLink = async () => {
+    if (!passportUrl) return;
     try {
       await navigator.clipboard.writeText(passportUrl);
       setCopied(true);
