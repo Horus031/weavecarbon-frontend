@@ -3,6 +3,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import {
   Tooltip,
   TooltipContent,
@@ -45,6 +46,7 @@ const ComplianceStatus: React.FC<ComplianceStatusProps> = ({
   onDownloadReport,
   onGenerateQR,
 }) => {
+  const t = useTranslations("productDetail.compliance");
   const passedCount = compliance.filter((c) => c.status === "passed").length;
   const totalCount = compliance.length;
 
@@ -54,7 +56,7 @@ const ComplianceStatus: React.FC<ComplianceStatusProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <ShieldCheck className="w-5 h-5 text-primary" />
-            Trạng thái tuân thủ xuất khẩu
+            {t("title")}
           </CardTitle>
           <Badge
             className={
@@ -66,12 +68,12 @@ const ComplianceStatus: React.FC<ComplianceStatusProps> = ({
             {exportReady ? (
               <>
                 <CheckCircle2 className="w-3 h-3 mr-1" />
-                Sẵn sàng xuất khẩu
+                {t("exportReady")}
               </>
             ) : (
               <>
                 <AlertCircle className="w-3 h-3 mr-1" />
-                Cần bổ sung dữ liệu
+                {t("needMoreData")}
               </>
             )}
           </Badge>
@@ -112,10 +114,7 @@ const ComplianceStatus: React.FC<ComplianceStatusProps> = ({
 
         {/* Summary */}
         <div className="text-sm text-muted-foreground text-center py-2">
-          <span className="font-medium">
-            {passedCount}/{totalCount}
-          </span>{" "}
-          tiêu chí đạt yêu cầu
+          {t("criteriaCount", { passed: passedCount, total: totalCount })}
         </div>
 
         {/* Actions */}
@@ -126,7 +125,7 @@ const ComplianceStatus: React.FC<ComplianceStatusProps> = ({
             onClick={onDownloadReport}
           >
             <FileDown className="w-4 h-4 mr-2" />
-            Tải Carbon Report
+            {t("downloadReport")}
           </Button>
           <Button
             variant={exportReady ? "default" : "secondary"}
@@ -135,13 +134,13 @@ const ComplianceStatus: React.FC<ComplianceStatusProps> = ({
             disabled={!exportReady}
           >
             <QrCode className="w-4 h-4 mr-2" />
-            Tạo QR Code
+            {t("generateQR")}
           </Button>
         </div>
 
         {!exportReady && (
           <p className="text-xs text-center text-muted-foreground">
-            QR Code chỉ khả dụng khi sản phẩm đạt đủ tiêu chí xuất khẩu
+            {t("qrNotAvailable")}
           </p>
         )}
       </CardContent>

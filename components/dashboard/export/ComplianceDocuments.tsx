@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ const ComplianceDocuments: React.FC<ComplianceDocumentsProps> = ({
   onRemove,
   onView,
 }) => {
+  const t = useTranslations("export.documents");
   const requiredDocs = documents.filter((d) => d.required);
   const optionalDocs = documents.filter((d) => !d.required);
   const completedRequired = requiredDocs.filter(
@@ -51,10 +53,10 @@ const ComplianceDocuments: React.FC<ComplianceDocumentsProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <FileText className="w-5 h-5 text-primary" />
-            Chứng chỉ & Giấy tờ
+            {t("title")}
           </CardTitle>
           <Badge variant="outline">
-            {completedRequired}/{requiredDocs.length} bắt buộc
+            {t("requiredComplete", { completed: completedRequired, total: requiredDocs.length })}
           </Badge>
         </div>
       </CardHeader>
@@ -63,7 +65,7 @@ const ComplianceDocuments: React.FC<ComplianceDocumentsProps> = ({
         <div>
           <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-500"></span>
-            Tài liệu bắt buộc
+            {t("requiredDocs")}
           </h4>
           <div className="space-y-2">
             {requiredDocs.map((doc) => (
@@ -84,7 +86,7 @@ const ComplianceDocuments: React.FC<ComplianceDocumentsProps> = ({
           <div>
             <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-              Tài liệu khuyến nghị
+              {t("recommendedDocs")}
             </h4>
             <div className="space-y-2">
               {optionalDocs.map((doc) => (
@@ -120,6 +122,7 @@ const DocumentRow: React.FC<DocumentRowProps> = ({
   onRemove,
   onView,
 }) => {
+  const t = useTranslations("export.documents");
   const statusConfig = DOCUMENT_STATUS_CONFIG[document.status];
   const StatusIcon = STATUS_ICONS[document.status];
 
@@ -143,9 +146,9 @@ const DocumentRow: React.FC<DocumentRowProps> = ({
         {document.status !== "missing" && (
           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
             {document.uploadedBy && (
-              <span>Tải lên bởi: {document.uploadedBy}</span>
+              <span>{t("uploadedBy", { user: document.uploadedBy })}</span>
             )}
-            {document.validTo && <span>Hết hạn: {document.validTo}</span>}
+            {document.validTo && <span>{t("validUntil", { date: document.validTo })}</span>}
           </div>
         )}
       </div>
@@ -154,7 +157,7 @@ const DocumentRow: React.FC<DocumentRowProps> = ({
         {document.status === "missing" ? (
           <Button size="sm" className="w-full" onClick={() => onUpload(document.id)}>
             <Upload className="w-4 h-4 mr-1" />
-            Tải lên
+            {t("upload")}
           </Button>
         ) : (
           <>

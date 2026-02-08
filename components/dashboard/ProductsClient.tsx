@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useBatches } from "@/contexts/BatchContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { getDemoProducts } from "@/lib/demoProductHelper";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,18 +41,18 @@ interface StoredProduct extends ProductAssessmentData {
   status: "draft" | "published";
 }
 
-const STATUS_CONFIG: Record<
-  "draft" | "published",
-  { label: string; className: string }
-> = {
-  draft: { label: "Nháp", className: "bg-gray-100 text-gray-700" },
-  published: { label: "Đã xuất bản", className: "bg-green-100 text-green-700" },
-};
-
 const ProductsClient: React.FC = () => {
   const router = useRouter();
   const { batches } = useBatches();
-  const { user } = useAuth();
+  const t = useTranslations("products");
+
+  const STATUS_CONFIG: Record<
+    "draft" | "published",
+    { label: string; className: string }
+  > = {
+    draft: { label: t("statusLabel.draft"), className: "bg-gray-100 text-gray-700" },
+    published: { label: t("statusLabel.published"), className: "bg-green-100 text-green-700" },
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"draft" | "published" | "all">("all");
 
@@ -124,10 +124,14 @@ const ProductsClient: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold">Quản lý sản phẩm</h2>
+            <h2 className="text-xl font-bold">{t("title")}</h2>
             <p className="text-muted-foreground">
-              Tổng cộng {stats.total} sản phẩm • {stats.draft} nháp •{" "}
-              {stats.published} đã xuất bản • {batches.length} lô hàng
+              {t("summary", {
+                total: stats.total,
+                draft: stats.draft,
+                published: stats.published,
+                batches: batches.length
+              })}
             </p>
           </div>
           <div className="flex gap-2">
@@ -136,20 +140,20 @@ const ProductsClient: React.FC = () => {
               onClick={() => setShowBatchModal(true)}
               className="gap-2"
             >
-              <Layers className="w-4 h-4" /> Quản lý lô hàng
+              <Layers className="w-4 h-4" /> {t("manageBatches")}
             </Button>
             <Button
               variant="outline"
               onClick={() => setShowBulkUpload(true)}
               className="gap-2"
             >
-              <Upload className="w-4 h-4" /> Tải file
+              <Upload className="w-4 h-4" /> {t("uploadFile")}
             </Button>
             <Button
               onClick={() => router.push("/assessment")}
               className="gap-2"
             >
-              <PlusCircle className="w-4 h-4" /> Thêm SP
+              <PlusCircle className="w-4 h-4" /> {t("addProduct")}
             </Button>
           </div>
         </div>
@@ -167,7 +171,7 @@ const ProductsClient: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-xs text-muted-foreground">Tất cả</p>
+                  <p className="text-xs text-muted-foreground">{t("stats.all")}</p>
                 </div>
               </div>
             </CardContent>
@@ -184,7 +188,7 @@ const ProductsClient: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.draft}</p>
-                  <p className="text-xs text-muted-foreground">Nháp</p>
+                  <p className="text-xs text-muted-foreground">{t("stats.draft")}</p>
                 </div>
               </div>
             </CardContent>
@@ -201,7 +205,7 @@ const ProductsClient: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.published}</p>
-                  <p className="text-xs text-muted-foreground">Đã xuất bản</p>
+                  <p className="text-xs text-muted-foreground">{t("stats.published")}</p>
                 </div>
               </div>
             </CardContent>
@@ -213,7 +217,7 @@ const ProductsClient: React.FC = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Tìm kiếm theo tên hoặc SKU..."
+              placeholder={t("searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -226,12 +230,12 @@ const ProductsClient: React.FC = () => {
           >
             <SelectTrigger className="w-full md:w-45">
               <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Trạng thái" />
+              <SelectValue placeholder={t("statusFilter")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tất cả trạng thái</SelectItem>
-              <SelectItem value="draft">Nháp</SelectItem>
-              <SelectItem value="published">Đã xuất bản</SelectItem>
+              <SelectItem value="all">{t("allStatusFilter")}</SelectItem>
+              <SelectItem value="draft">{t("draftStatus")}</SelectItem>
+              <SelectItem value="published">{t("publishedStatus")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -242,15 +246,15 @@ const ProductsClient: React.FC = () => {
             <Card>
               <CardContent className="p-8 text-center">
                 <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-medium mb-2">Không tìm thấy sản phẩm</h3>
+                <h3 className="font-medium mb-2">{t("notFound")}</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Thử thay đổi bộ lọc hoặc tạo sản phẩm mới
+                  {t("tryChangeFilter")}
                 </p>
                 <Button
                   onClick={() => router.push("/assessment")}
                   variant="outline"
                 >
-                  <PlusCircle className="w-4 h-4 mr-2" /> Tạo sản phẩm mới
+                  <PlusCircle className="w-4 h-4 mr-2" /> {t("createNew")}
                 </Button>
               </CardContent>
             </Card>
@@ -296,7 +300,7 @@ const ProductsClient: React.FC = () => {
                           {product.carbonResults?.perProduct.total.toFixed(2) || "—"} kg
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          CO₂e / đơn vị
+                          {t("co2PerUnit")}
                         </p>
                       </div>
 
@@ -318,7 +322,7 @@ const ProductsClient: React.FC = () => {
                               sku: product.productCode,
                             });
                           }}
-                          title="Tạo QR Code"
+                          title={t("createQR")}
                         >
                           <QrCode className="w-4 h-4 text-green-600" />
                         </Button>
@@ -338,7 +342,10 @@ const ProductsClient: React.FC = () => {
         {/* Results count */}
         {filteredProducts.length > 0 && (
           <p className="text-sm text-muted-foreground text-center">
-            Hiển thị {filteredProducts.length} / {products.length} sản phẩm
+            {t("showing", {
+              filtered: filteredProducts.length,
+              total: products.length
+            })}
           </p>
         )}
       </div>

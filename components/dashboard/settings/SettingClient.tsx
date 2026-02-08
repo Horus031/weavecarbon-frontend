@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Settings as SettingsIcon, Users, Bell } from "lucide-react";
@@ -8,21 +9,22 @@ import SystemSettings from "./SystemSettings";
 import UsersSettings from "./UsersSettings";
 import NotificationSettings from "./NotificationSettings";
 
-const SETTINGS_TABS = [
-  { id: "system", label: "Hệ thống", icon: SettingsIcon },
-  { id: "users", label: "Người dùng", icon: Users },
-  { id: "notifications", label: "Thông báo", icon: Bell },
-];
-
 const SettingsPage: React.FC = () => {
+  const t = useTranslations("settings");
   const [activeTab, setActiveTab] = useState("system");
+
+  const SETTINGS_TABS = [
+    { id: "system", label: t("tabs.system"), icon: SettingsIcon },
+    { id: "users", label: t("tabs.users"), icon: Users },
+    { id: "notifications", label: t("tabs.notifications"), icon: Bell },
+  ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold">Cài đặt</h2>
+        <h2 className="text-xl font-bold">{t("title")}</h2>
         <p className="text-muted-foreground">
-          Quản lý hệ thống, người dùng và thông báo
+          {t("subtitle")}
         </p>
       </div>
 

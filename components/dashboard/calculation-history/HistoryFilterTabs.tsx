@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -19,19 +20,20 @@ const HistoryFilterTabs: React.FC<HistoryFilterTabsProps> = ({
   demoCount,
   realCount,
 }) => {
+  const t = useTranslations("calculationHistory");
   return (
     <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as "all" | "demo" | "real")} className="mb-6">
       <TabsList>
-        <TabsTrigger value="all">Tất cả ({totalCount})</TabsTrigger>
+        <TabsTrigger value="all">{t("filterAll")} ({totalCount})</TabsTrigger>
         <TabsTrigger value="demo">
           <Badge variant="outline" className="mr-2">
-            Demo
+            {t("filterDemo")}
           </Badge>
           ({demoCount})
         </TabsTrigger>
         <TabsTrigger value="real">
           <Badge variant="default" className="mr-2">
-            Thực
+            {t("filterReal")}
           </Badge>
           ({realCount})
         </TabsTrigger>

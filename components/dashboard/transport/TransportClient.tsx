@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Route, Plus, Map } from "lucide-react";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
-import { useCalculationHistory } from "@/hooks/useCalculationHistory";
 import TransportScopeSelector from "./TransportScopeSelector";
 import TransportLegCard from "./TransportLegCard";
 import TransportResultsSidebar from "./TransportResultsSidebar";
@@ -67,9 +67,9 @@ const TransportClient: React.FC<TransportClientProps> = ({
   productCode,
   isDemo = false,
 }) => {
+  const t = useTranslations("transport");
   const router = useRouter();
   const { setPageTitle } = useDashboardTitle();
-  const { addCalculation } = useCalculationHistory();
   const [transportScope, setTransportScope] = useState<
     "domestic" | "international"
   >("international");
@@ -107,10 +107,10 @@ const TransportClient: React.FC<TransportClientProps> = ({
 
   useEffect(() => {
     setPageTitle(
-      "Vận chuyển & Logistics",
-      "Nhập thông tin vận chuyển và tính toán phát thải",
+      t("title"),
+      t("subtitle"),
     );
-  }, [setPageTitle]);
+  }, [setPageTitle, t]);
 
   const handleAddLeg = () => {
     const newLeg: LegInput = {
@@ -159,26 +159,26 @@ const TransportClient: React.FC<TransportClientProps> = ({
 
   const handleSubmit = () => {
     // Calculate total CO2 with breakdown
-    const materialsCO2 = 2.5; // Simplified
-    const manufacturingCO2 = 1.5; // Simplified
-    const transportCO2 = getTotalCO2();
-    const packagingCO2 = 0.15; // Simplified
-    const totalCO2 =
-      materialsCO2 + manufacturingCO2 + transportCO2 + packagingCO2;
+    // const materialsCO2 = 2.5; // Simplified
+    // const manufacturingCO2 = 1.5; // Simplified
+    // const transportCO2 = getTotalCO2();
+    // const packagingCO2 = 0.15; // Simplified
+    // const totalCO2 =
+    //   materialsCO2 + manufacturingCO2 + transportCO2 + packagingCO2;
 
     // Save to calculation history
-    const calculation = addCalculation({
-      productId: productId || `product-${Date.now()}`,
-      productName: productName || "Demo Product",
-      materialsCO2,
-      manufacturingCO2,
-      transportCO2,
-      packagingCO2,
-      totalCO2,
-      carbonVersion: "v2024.1-DEFRA",
-      createdBy: "current-user",
-      isDemo: isDemo,
-    });
+    // const calculation = addCalculation({
+    //   productId: productId || `product-${Date.now()}`,
+    //   productName: productName || "Demo Product",
+    //   materialsCO2,
+    //   manufacturingCO2,
+    //   transportCO2,
+    //   packagingCO2,
+    //   totalCO2,
+    //   carbonVersion: "v2024.1-DEFRA",
+    //   createdBy: "current-user",
+    //   isDemo: isDemo,
+    // });
 
     // Redirect to calculation history page
     router.push(`/calculation-history?productId=${productId}`);
@@ -251,13 +251,13 @@ const TransportClient: React.FC<TransportClientProps> = ({
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold flex items-center gap-2">
                     <Map className="w-5 h-5 text-primary" />
-                    Demo: Việt Nam → Los Angeles
+                    {t("demoMapTitle")}
                   </h2>
                   <Badge
                     variant="outline"
                     className="text-amber-600 border-amber-300 bg-amber-50"
                   >
-                    Demo - Chỉ để học hỏi
+                    {t("demoMapBadge")}
                   </Badge>
                 </div>
                 <TransportMap legs={DEMO_VIETNAM_LA_ROUTE} isDemo={true} />
@@ -267,7 +267,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
             {/* Add Leg Button */}
             <Button variant="outline" onClick={handleAddLeg} className="w-full">
               <Plus className="w-4 h-4 mr-2" />
-              Thêm chặng vận chuyển
+              {t("addLeg")}
             </Button>
 
             {/* Toggle Demo Map */}
@@ -277,7 +277,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
               className="w-full"
             >
               <Map className="w-4 h-4 mr-2" />
-              {showDemoMap ? "Ẩn bản đồ demo" : "Xem bản đồ demo Việt Nam → LA"}
+              {showDemoMap ? t("hideDemoMap") : t("showDemoMap")}
             </Button>
           </div>
 

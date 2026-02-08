@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Lock, User } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface EmailAuthTabsProps {
   activeTab: string;
@@ -40,17 +41,18 @@ export default function EmailAuthTabs({
   onLogin,
   onSignUp,
 }: EmailAuthTabsProps) {
+  const t = useTranslations("auth");
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="login">Sign In</TabsTrigger>
-        <TabsTrigger value="signup">Sign Up</TabsTrigger>
+        <TabsTrigger value="login">{t("login")}</TabsTrigger>
+        <TabsTrigger value="signup">{t("signup")}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="login" className="mt-4">
         <form onSubmit={onLogin} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="login-email">Email</Label>
+            <Label htmlFor="login-email">{t("email")}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -69,7 +71,7 @@ export default function EmailAuthTabs({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="login-password">Password</Label>
+            <Label htmlFor="login-password">{t("password")}</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -88,7 +90,7 @@ export default function EmailAuthTabs({
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Please wait..." : "Sign In"}
+            {isLoading ? t("loading") : t("loginButton")}
           </Button>
         </form>
       </TabsContent>
@@ -96,13 +98,13 @@ export default function EmailAuthTabs({
       <TabsContent value="signup" className="mt-4">
         <form onSubmit={onSignUp} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="signup-name">Full Name</Label>
+            <Label htmlFor="signup-name">{t("fullName")}</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="signup-name"
                 type="text"
-                placeholder="Enter your full name"
+                placeholder={t("fullNamePlaceholder")}
                 className="pl-10"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -115,7 +117,7 @@ export default function EmailAuthTabs({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="signup-email">Email</Label>
+            <Label htmlFor="signup-email">{t("email")}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -134,7 +136,7 @@ export default function EmailAuthTabs({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="signup-password">Password</Label>
+            <Label htmlFor="signup-password">{t("password")}</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -153,7 +155,7 @@ export default function EmailAuthTabs({
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Please wait..." : "Create Account"}
+            {isLoading ? t("loading") : t("signupButton")}
           </Button>
         </form>
       </TabsContent>

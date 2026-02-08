@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Card,
@@ -97,6 +98,7 @@ const ROLES = [
 ];
 
 const UsersSettings: React.FC = () => {
+  const t = useTranslations("settings.users");
   const { user } = useAuth();
   const isDemoTenant = user?.is_demo_user || false;
   const [members, setMembers] = useState<TeamMember[]>(DEMO_TEAM);
@@ -107,7 +109,7 @@ const UsersSettings: React.FC = () => {
 
   const handleInvite = () => {
     if (!inviteEmail) {
-      toast.error("Vui lòng nhập email");
+      toast.error(t("emailRequired"));
       return;
     }
 
@@ -127,16 +129,16 @@ const UsersSettings: React.FC = () => {
     setInviteOpen(false);
     setInviteEmail("");
     setInviteName("");
-    toast.success(`Đã tạo tài khoản cho ${inviteEmail}`);
+    toast.success(t("inviteSuccess", { email: inviteEmail }));
   };
 
   const handleResendInvite = (member: TeamMember) => {
-    toast.success(`Đã gửi lại lời mời đến ${member.email}`);
+    toast.success(t("resendSuccess", { email: member.email || "" }));
   };
 
   const handleToggleStatus = (member: TeamMember) => {
     if (member.role === "admin") {
-      toast.error("Không thể vô hiệu hóa tài khoản Admin");
+      toast.error(t("cannotDisableAdmin"));
       return;
     }
     setMembers((prev) =>
@@ -150,17 +152,17 @@ const UsersSettings: React.FC = () => {
       ),
     );
     toast.success(
-      `Đã ${member.status === "active" ? "vô hiệu hóa" : "kích hoạt"} tài khoản ${member.email}`,
+      t("toggleSuccess", { action: member.status === "active" ? t("toggleDisabled") : t("toggleEnabled"), email: member.email || "" }),
     );
   };
 
   const handleRemove = (member: TeamMember) => {
     if (member.role === "admin") {
-      toast.error("Không thể xóa tài khoản Admin");
+      toast.error(t("cannotRemoveAdmin"));
       return;
     }
     setMembers((prev) => prev.filter((m) => m.id !== member.id));
-    toast.success(`Đã xóa ${member.email} khỏi hệ thống`);
+    toast.success(t("removeSuccess", { email: member.email || "" }));
   };
 
   const getStatusBadge = (status: string) => {
@@ -168,19 +170,19 @@ const UsersSettings: React.FC = () => {
       case "active":
         return (
           <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-            Hoạt động
+            {t("active")}
           </Badge>
         );
       case "invited":
         return (
           <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">
-            Chờ xác nhận
+            {t("invited")}
           </Badge>
         );
       case "disabled":
         return (
           <Badge className="bg-red-500/10 text-red-600 border-red-500/20">
-            Vô hiệu
+            {t("disabled")}
           </Badge>
         );
       default:
@@ -193,13 +195,13 @@ const UsersSettings: React.FC = () => {
       case "admin":
         return (
           <Badge className="bg-primary/10 text-primary border-primary/20">
-            Admin (Root)
+            {t("admin")}
           </Badge>
         );
       case "member":
-        return <Badge variant="secondary">Member</Badge>;
+        return <Badge variant="secondary">{t("member")}</Badge>;
       case "viewer":
-        return <Badge variant="outline">Viewer</Badge>;
+        return <Badge variant="outline">{t("viewer")}</Badge>;
       default:
         return <Badge variant="secondary">{role}</Badge>;
     }
@@ -214,45 +216,44 @@ const UsersSettings: React.FC = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                Người dùng ({members.length})
+                {t("teamMembersCount", { count: members.length })}
               </CardTitle>
               <CardDescription>
-                Admin tạo tài khoản cho thành viên với vai trò Member hoặc
-                Viewer
+                {t("teamMembersDesc")}
               </CardDescription>
             </div>
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <UserPlus className="w-4 h-4 mr-2" />
-                  Tạo tài khoản
+                  {t("createAccount")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Tạo tài khoản mới</DialogTitle>
+                  <DialogTitle>{t("createAccountTitle")}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>Họ tên</Label>
+                    <Label>{t("fullName")}</Label>
                     <Input
                       type="text"
-                      placeholder="Nguyễn Văn A"
+                      placeholder={t("fullNamePlaceholder")}
                       value={inviteName}
                       onChange={(e) => setInviteName(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Email</Label>
+                    <Label>{t("email")}</Label>
                     <Input
                       type="email"
-                      placeholder="email@company.com"
+                      placeholder={t("emailPlaceholder")}
                       value={inviteEmail}
                       onChange={(e) => setInviteEmail(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Vai trò</Label>
+                    <Label>{t("role")}</Label>
                     <Select
                       value={inviteRole}
                       onValueChange={(v: "member" | "viewer") =>
@@ -263,21 +264,26 @@ const UsersSettings: React.FC = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {ROLES.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            <div>
-                              <span className="font-medium">{role.label}</span>
-                              <span className="text-muted-foreground ml-2">
-                                - {role.description}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="member">
+                          <div>
+                            <span className="font-medium">{t("member")}</span>
+                            <span className="text-muted-foreground ml-2">
+                              - {t("memberDesc")}
+                            </span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="viewer">
+                          <div>
+                            <span className="font-medium">{t("viewer")}</span>
+                            <span className="text-muted-foreground ml-2">
+                              - {t("viewerDesc")}
+                            </span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Member: Có thể xem và chỉnh sửa dữ liệu. Viewer: Chỉ có
-                      thể xem.
+                      {t("roleDescription")}
                     </p>
                   </div>
                 </div>
@@ -286,11 +292,11 @@ const UsersSettings: React.FC = () => {
                     variant="outline"
                     onClick={() => setInviteOpen(false)}
                   >
-                    Hủy
+                    {t("cancel")}
                   </Button>
                   <Button onClick={handleInvite}>
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Tạo tài khoản
+                    {t("createAccount")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -301,10 +307,10 @@ const UsersSettings: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Thành viên</TableHead>
-                <TableHead>Vai trò</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead>Đăng nhập gần nhất</TableHead>
+                <TableHead>{t("memberHeaderName")}</TableHead>
+                <TableHead>{t("memberHeaderRole")}</TableHead>
+                <TableHead>{t("memberHeaderStatus")}</TableHead>
+                <TableHead>{t("memberHeaderLastLogin")}</TableHead>
                 <TableHead className="w-12.5"></TableHead>
               </TableRow>
             </TableHeader>
@@ -314,7 +320,7 @@ const UsersSettings: React.FC = () => {
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {member.full_name || "Chưa có tên"}
+                        {member.full_name || t("noName")}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {member.email}
@@ -326,7 +332,7 @@ const UsersSettings: React.FC = () => {
                   <TableCell className="text-muted-foreground">
                     {member.last_login
                       ? format(new Date(member.last_login), "dd/MM/yyyy HH:mm")
-                      : "Chưa đăng nhập"}
+                      : t("neverLogged")}
                   </TableCell>
                   <TableCell>
                     {member.role !== "admin" && (
@@ -342,7 +348,7 @@ const UsersSettings: React.FC = () => {
                               onClick={() => handleResendInvite(member)}
                             >
                               <Mail className="w-4 h-4 mr-2" />
-                              Gửi lại email kích hoạt
+                              {t("resendInvite")}
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
@@ -351,12 +357,12 @@ const UsersSettings: React.FC = () => {
                             {member.status === "active" ? (
                               <>
                                 <X className="w-4 h-4 mr-2" />
-                                Vô hiệu hóa
+                                {t("disable")}
                               </>
                             ) : (
                               <>
                                 <Check className="w-4 h-4 mr-2" />
-                                Kích hoạt
+                                {t("enable")}
                               </>
                             )}
                           </DropdownMenuItem>
@@ -365,7 +371,7 @@ const UsersSettings: React.FC = () => {
                             className="text-destructive"
                           >
                             <X className="w-4 h-4 mr-2" />
-                            Xóa tài khoản
+                            {t("removeAccount")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -381,8 +387,7 @@ const UsersSettings: React.FC = () => {
       {isDemoTenant && (
         <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
           <p className="text-sm text-amber-600">
-            ⚠️ Tài khoản Demo: Các thay đổi về người dùng chỉ được lưu trong
-            phiên làm việc này.
+            {t("demoAccountWarning")}
           </p>
         </div>
       )}

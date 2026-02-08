@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -34,6 +35,7 @@ interface CompanyData {
 }
 
 const SystemSettings: React.FC = () => {
+  const t = useTranslations("settings.system");
   const { user } = useAuth();
   const [company, setCompany] = useState<CompanyData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +96,7 @@ const SystemSettings: React.FC = () => {
         })
         .eq("id", companyId);
 
-      toast.success("Đã cập nhật thông tin hệ thống");
+      toast.success(t("updateSuccess"));
       setEditMode(false);
       setCompany((prev) =>
         prev
@@ -107,7 +109,7 @@ const SystemSettings: React.FC = () => {
       );
     } catch (error) {
       console.error("Error saving company:", error);
-      toast.error("Không thể cập nhật thông tin");
+      toast.error(t("updateError"));
     } finally {
       setSaving(false);
     }
@@ -131,23 +133,23 @@ const SystemSettings: React.FC = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="w-5 h-5" />
-                Thông tin công ty
+                {t("companyInfo")}
               </CardTitle>
               <CardDescription>
-                Quản lý thông tin cơ bản của doanh nghiệp
+                {t("companyInfoDesc")}
               </CardDescription>
             </div>
             {!editMode ? (
               <Button variant="outline" onClick={() => setEditMode(true)}>
-                Chỉnh sửa
+                {t("edit")}
               </Button>
             ) : (
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={() => setEditMode(false)}>
-                  <X className="w-4 h-4 mr-1" /> Hủy
+                  <X className="w-4 h-4 mr-1" /> {t("cancel")}
                 </Button>
                 <Button onClick={handleSave} disabled={saving}>
-                  <Save className="w-4 h-4 mr-1" /> Lưu
+                  <Save className="w-4 h-4 mr-1" /> {t("save")}
                 </Button>
               </div>
             )}
@@ -156,7 +158,7 @@ const SystemSettings: React.FC = () => {
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Tên công ty / Brand</Label>
+              <Label>{t("companyName")}</Label>
               {editMode ? (
                 <Input
                   value={formData.name}
@@ -166,13 +168,13 @@ const SystemSettings: React.FC = () => {
                 />
               ) : (
                 <p className="text-sm text-muted-foreground p-2 bg-muted rounded">
-                  {company?.name || "Chưa cập nhật"}
+                  {company?.name || t("notUpdated")}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label>Loại hình kinh doanh</Label>
+              <Label>{t("businessType")}</Label>
               {editMode ? (
                 <Select
                   value={formData.business_type}
@@ -184,25 +186,24 @@ const SystemSettings: React.FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="brand">Thương hiệu (Brand)</SelectItem>
+                    <SelectItem value="brand">{t("businessTypeBrand")}</SelectItem>
                     <SelectItem value="factory">
-                      Nhà máy sản xuất (Factory)
+                      {t("businessTypeFactory")}
                     </SelectItem>
-                    <SelectItem value="shop_online">Shop Online</SelectItem>
+                    <SelectItem value="shop_online">{t("businessTypeShop")}</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
                 <p className="text-sm text-muted-foreground p-2 bg-muted rounded">
-                  {company?.business_type === "brand" && "Thương hiệu (Brand)"}
-                  {company?.business_type === "factory" &&
-                    "Nhà máy sản xuất (Factory)"}
-                  {company?.business_type === "shop_online" && "Shop Online"}
+                  {company?.business_type === "brand" && t("businessTypeBrand")}
+                  {company?.business_type === "factory" && t("businessTypeFactory")}
+                  {company?.business_type === "shop_online" && t("businessTypeShop")}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label>Gói dịch vụ</Label>
+              <Label>{t("servicePlan")}</Label>
               <p className="text-sm text-muted-foreground p-2 bg-muted rounded">
                 {company?.current_plan?.toUpperCase() || "STARTER"}
               </p>
@@ -211,7 +212,7 @@ const SystemSettings: React.FC = () => {
 
           {isDemoTenant && (
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-600">
-              ⚠️ Đây là tài khoản Demo. Một số thay đổi có thể bị giới hạn.
+              {t("demoWarning")}
             </div>
           )}
         </CardContent>
@@ -222,17 +223,17 @@ const SystemSettings: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Server className="w-5 h-5" />
-            Thông tin hệ thống
+            {t("systemInfo")}
           </CardTitle>
           <CardDescription>
-            Chi tiết về môi trường và trạng thái
+            {t("systemInfoDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">Loại tài khoản</Label>
+                <Label className="text-muted-foreground">{t("accountType")}</Label>
                 <Badge
                   className={
                     isDemoTenant
@@ -240,38 +241,38 @@ const SystemSettings: React.FC = () => {
                       : "bg-primary/10 text-primary border-primary/20"
                   }
                 >
-                  {isDemoTenant ? "DEMO" : "PRODUCTION"}
+                  {isDemoTenant ? t("demo") : t("production")}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">Ngày tạo</Label>
+                <Label className="text-muted-foreground">{t("createdDate")}</Label>
                 <span className="text-sm">
                   {format(new Date("2024-01-15"), "dd/MM/yyyy")}
                 </span>
               </div>
 
               <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">Phiên bản API</Label>
+                <Label className="text-muted-foreground">{t("apiVersion")}</Label>
                 <span className="text-sm font-mono">v1.0.0</span>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">Region</Label>
-                <span className="text-sm">Asia Pacific (Singapore)</span>
+                <Label className="text-muted-foreground">{t("region")}</Label>
+                <span className="text-sm">{t("asiaPacific")}</span>
               </div>
 
               <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">Status</Label>
+                <Label className="text-muted-foreground">{t("status")}</Label>
                 <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                  Active
+                  {t("active")}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">Uptime</Label>
+                <Label className="text-muted-foreground">{t("uptime")}</Label>
                 <span className="text-sm">99.9%</span>
               </div>
             </div>
@@ -284,17 +285,17 @@ const SystemSettings: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="w-5 h-5" />
-            Giới hạn sử dụng
+            {t("usageLimits")}
           </CardTitle>
           <CardDescription>
-            Thông tin về giới hạn của gói dịch vụ hiện tại
+            {t("usageLimitsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
             <div className="p-4 border rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <Label className="text-muted-foreground">Sản phẩm</Label>
+                <Label className="text-muted-foreground">{t("products")}</Label>
                 <span className="text-sm font-medium">12 / 100</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -304,7 +305,7 @@ const SystemSettings: React.FC = () => {
 
             <div className="p-4 border rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <Label className="text-muted-foreground">Thành viên</Label>
+                <Label className="text-muted-foreground">{t("members")}</Label>
                 <span className="text-sm font-medium">3 / 5</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -314,7 +315,7 @@ const SystemSettings: React.FC = () => {
 
             <div className="p-4 border rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <Label className="text-muted-foreground">API Calls/tháng</Label>
+                <Label className="text-muted-foreground">{t("apiCalls")}</Label>
                 <span className="text-sm font-medium">1,234 / 10,000</span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -328,12 +329,12 @@ const SystemSettings: React.FC = () => {
 
           <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg flex items-center justify-between">
             <div>
-              <p className="font-medium">Nâng cấp lên Standard</p>
+              <p className="font-medium">{t("upgradeTitle")}</p>
               <p className="text-sm text-muted-foreground">
-                Mở khóa nhiều tính năng và giới hạn cao hơn
+                {t("upgradeDesc")}
               </p>
             </div>
-            <Button>Nâng cấp ngay</Button>
+            <Button>{t("upgradeNow")}</Button>
           </div>
         </CardContent>
       </Card>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Leaf, Factory, Truck } from "lucide-react";
 
@@ -15,6 +16,7 @@ interface HistorySummaryStatsProps {
 const HistorySummaryStats: React.FC<HistorySummaryStatsProps> = ({
   history,
 }) => {
+  const t = useTranslations("calculationHistory");
   const totalMaterials = history.reduce((sum, h) => sum + h.materialsCO2, 0);
   const totalManufacturing = history.reduce(
     (sum, h) => sum + h.manufacturingCO2,
@@ -32,7 +34,7 @@ const HistorySummaryStats: React.FC<HistorySummaryStatsProps> = ({
             </div>
             <div>
               <p className="text-2xl font-bold">{history.length}</p>
-              <p className="text-sm text-muted-foreground">Tổng bản ghi</p>
+              <p className="text-sm text-muted-foreground">{t("totalRecords")}</p>
             </div>
           </div>
         </CardContent>
@@ -47,7 +49,7 @@ const HistorySummaryStats: React.FC<HistorySummaryStatsProps> = ({
             <div>
               <p className="text-2xl font-bold">{totalMaterials.toFixed(1)}</p>
               <p className="text-sm text-muted-foreground">
-                Vật liệu (kg CO₂)
+                {t("materialsLabel")}
               </p>
             </div>
           </div>
@@ -63,7 +65,7 @@ const HistorySummaryStats: React.FC<HistorySummaryStatsProps> = ({
             <div>
               <p className="text-2xl font-bold">{totalManufacturing.toFixed(1)}</p>
               <p className="text-sm text-muted-foreground">
-                Sản xuất (kg CO₂)
+                {t("manufacturingLabel")}
               </p>
             </div>
           </div>
@@ -79,7 +81,7 @@ const HistorySummaryStats: React.FC<HistorySummaryStatsProps> = ({
             <div>
               <p className="text-2xl font-bold">{totalTransport.toFixed(1)}</p>
               <p className="text-sm text-muted-foreground">
-                Vận chuyển (kg CO₂)
+                {t("transportLabel")}
               </p>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   Card,
@@ -162,6 +163,7 @@ function generateTransportFromProduct(stored: StoredProduct): TransportData | nu
 const PassportClient: React.FC = () => {
   const searchParams = useSearchParams();
   const productId = searchParams.get("id");
+  const t = useTranslations("passport");
 
   const [product, setProduct] = useState<ProductData | null>(null);
   const [transport, setTransport] = useState<TransportData | null>(null);
@@ -296,16 +298,16 @@ const PassportClient: React.FC = () => {
   };
 
   const getComplianceStatus = (market: string) => {
-    if (!product) return { status: "pending", label: "Chưa đánh giá" };
+    if (!product) return { status: "pending", label: t("statusNotEvaluated") };
 
     const exportReadiness = getExportReadiness();
     if (market === product.destinationMarket) {
       if (exportReadiness >= 80)
-        return { status: "compliant", label: "Đạt chuẩn" };
+        return { status: "compliant", label: t("statusCompliant") };
       if (exportReadiness >= 60)
-        return { status: "partial", label: "Đạt một phần" };
+        return { status: "partial", label: t("statusPartial") };
     }
-    return { status: "pending", label: "Cần bổ sung" };
+    return { status: "pending", label: t("statusPending") };
   };
 
   if (loading) {
@@ -323,15 +325,15 @@ const PassportClient: React.FC = () => {
           <CardContent className="pt-8 pb-6">
             <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">
-              Không tìm thấy sản phẩm
+              {t("notFoundTitle")}
             </h2>
             <p className="text-muted-foreground mb-4">
-              Mã QR này không liên kết với sản phẩm nào trong hệ thống.
+              {t("notFoundDescription")}
             </p>
             <Link href="/">
               <Button>
                 <Home className="w-4 h-4 mr-2" />
-                Về trang chủ
+                {t("backHome")}
               </Button>
             </Link>
           </CardContent>
@@ -366,17 +368,17 @@ const PassportClient: React.FC = () => {
           <div className="bg-linear-to-r from-green-600 to-emerald-600 p-4 text-white">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-green-100 text-sm mb-1">Sản phẩm</p>
+                <p className="text-green-100 text-sm mb-1">{t("productLabel")}</p>
                 <h1 className="text-xl font-bold">{product.productName}</h1>
                 <p className="text-green-100 text-sm mt-1">
-                  SKU: {product.productCode}
+                  {t("skuLabel")} {product.productCode}
                 </p>
               </div>
               <div className="text-right">
                 <Badge className="bg-white/20 text-white border-white/30">
                   {product.sourceType === "documented"
-                    ? "Có chứng từ"
-                    : "Ước tính"}
+                    ? t("documentedSource")
+                    : t("estimatedSource")}
                 </Badge>
               </div>
             </div>
@@ -393,7 +395,7 @@ const PassportClient: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Leaf className="w-4 h-4 text-green-600" />
-              Dấu chân Carbon
+              {t("carbonFootprintTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -404,7 +406,7 @@ const PassportClient: React.FC = () => {
                     {calculation.totalCO2.toFixed(2)}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    kg CO₂e / sản phẩm
+                    {t("perProductUnit")}
                   </p>
                 </div>
 
@@ -412,7 +414,7 @@ const PassportClient: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
                       <Recycle className="w-4 h-4 text-blue-500" />
-                      Nguyên liệu
+                      {t("materialsLabel")}
                     </span>
                     <span className="font-medium">
                       {calculation.materialsCO2.toFixed(2)} kg
@@ -421,7 +423,7 @@ const PassportClient: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
                       <Factory className="w-4 h-4 text-orange-500" />
-                      Sản xuất
+                      {t("productionLabel")}
                     </span>
                     <span className="font-medium">
                       {calculation.manufacturingCO2.toFixed(2)} kg
@@ -430,7 +432,7 @@ const PassportClient: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
                       <Truck className="w-4 h-4 text-purple-500" />
-                      Vận chuyển
+                      {t("transportLabel")}
                     </span>
                     <span className="font-medium">
                       {calculation.transportCO2.toFixed(2)} kg
@@ -439,7 +441,7 @@ const PassportClient: React.FC = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
                       <Package className="w-4 h-4 text-amber-500" />
-                      Đóng gói
+                      {t("packagingLabel")}
                     </span>
                     <span className="font-medium">
                       {calculation.packagingCO2.toFixed(2)} kg
@@ -448,12 +450,12 @@ const PassportClient: React.FC = () => {
                 </div>
 
                 <p className="text-xs text-muted-foreground text-center pt-2">
-                  Phương pháp: {calculation.carbonVersion}
+                  {t("methodologyLabel")} {calculation.carbonVersion}
                 </p>
               </>
             ) : (
               <div className="text-center py-4 text-muted-foreground">
-                <p>Chưa có dữ liệu tính toán carbon</p>
+                <p>{t("noCalculationData")}</p>
               </div>
             )}
           </CardContent>
@@ -465,10 +467,10 @@ const PassportClient: React.FC = () => {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <Globe className="w-4 h-4 text-blue-600" />
-                Hành trình vận chuyển
+                {t("transportJourneyTitle")}
               </CardTitle>
               <CardDescription>
-                Tổng: {transport.totalDistanceKm.toLocaleString()} km •{" "}
+                {t("totalLabel")} {transport.totalDistanceKm.toLocaleString()} km •{" "}
                 {transport.totalCO2Kg.toFixed(1)} kg CO₂e
               </CardDescription>
             </CardHeader>
@@ -522,13 +524,13 @@ const PassportClient: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Shield className="w-4 h-4 text-emerald-600" />
-              Sẵn sàng xuất khẩu
+              {t("exportReadinessTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Điểm đánh giá</span>
+                <span className="text-sm font-medium">{t("evaluationScoreLabel")}</span>
                 <span className="text-lg font-bold text-green-600">
                   {exportReadiness}%
                 </span>
@@ -539,7 +541,7 @@ const PassportClient: React.FC = () => {
             <Separator />
 
             <div className="space-y-3">
-              <p className="text-sm font-medium">Tuân thủ theo thị trường</p>
+              <p className="text-sm font-medium">{t("complianceByMarketLabel")}</p>
               {["eu", "us", "jp", "kr"].map((market) => {
                 const compliance = getComplianceStatus(market);
                 return (
@@ -575,12 +577,12 @@ const PassportClient: React.FC = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Award className="w-4 h-4 text-amber-600" />
-              Nguồn gốc & Chứng nhận
+              {t("originCertificationTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm font-medium mb-2">Nguyên liệu</p>
+              <p className="text-sm font-medium mb-2">{t("materialsSection")}</p>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">
                   {MATERIAL_LABELS[product.primaryMaterial] ||
@@ -599,7 +601,7 @@ const PassportClient: React.FC = () => {
                 parseInt(product.recycledContent) > 0 && (
                   <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
                     <Recycle className="w-3 h-3" />
-                    {product.recycledContent}% nguyên liệu tái chế
+                    {product.recycledContent}% {t("recycledContentLabel")}
                   </p>
                 )}
             </div>
@@ -607,7 +609,7 @@ const PassportClient: React.FC = () => {
             <Separator />
 
             <div>
-              <p className="text-sm font-medium mb-2">Chứng nhận</p>
+              <p className="text-sm font-medium mb-2">{t("certificationsSection")}</p>
               <div className="flex flex-wrap gap-2">
                 {product.certifications.length > 0 ? (
                   product.certifications.map((cert) => (
@@ -618,7 +620,7 @@ const PassportClient: React.FC = () => {
                   ))
                 ) : (
                   <span className="text-sm text-muted-foreground">
-                    Chưa có chứng nhận
+                    {t("noCertifications")}
                   </span>
                 )}
               </div>
@@ -628,14 +630,14 @@ const PassportClient: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground">Nơi sản xuất</p>
+                <p className="text-muted-foreground">{t("manufacturingLocationLabel")}</p>
                 <p className="font-medium flex items-center gap-1 mt-1">
                   <MapPin className="w-3 h-3" />
                   {product.manufacturingLocation}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Thị trường</p>
+                <p className="text-muted-foreground">{t("marketLabel")}</p>
                 <p className="font-medium mt-1">
                   {MARKET_LABELS[product.destinationMarket] ||
                     product.destinationMarket}
@@ -650,12 +652,12 @@ const PassportClient: React.FC = () => {
           <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Clock className="w-4 h-4" />
             <span>
-              Cập nhật:{" "}
+              {t("updatedLabel")}{" "}
               {new Date(product.createdAt).toLocaleDateString("vi-VN")}
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Powered by{" "}
+            {t("poweredBy")}{" "}
             <span className="font-semibold text-green-600">WeaveCarbon</span>
           </p>
         </div>

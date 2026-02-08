@@ -1,7 +1,8 @@
 /* eslint-disable react-hooks/purity */
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useProducts } from "@/contexts/ProductContext";
 import { useProductStore } from "@/hooks/useProductStore";
 import { useIsDemo } from "@/hooks/useTenantData";
@@ -64,47 +65,48 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileFilterSheet from "./mobile/MobileFilterSheet";
 import MobileDataCard from "./mobile/MobileDataCard";
 
-// Report types for quick actions
-const REPORT_TYPES = [
-  {
-    id: "product",
-    label: "Sản phẩm",
-    icon: Package,
-    description: "Danh sách sản phẩm & CO2",
-  },
-  {
-    id: "activity",
-    label: "Hoạt động",
-    icon: Activity,
-    description: "Log hoạt động hệ thống",
-  },
-  {
-    id: "audit",
-    label: "Audit Log",
-    icon: Shield,
-    description: "Nhật ký kiểm toán",
-  },
-  {
-    id: "users",
-    label: "Người dùng",
-    icon: Users,
-    description: "Danh sách & vai trò",
-  },
-  {
-    id: "analytics",
-    label: "Analytics",
-    icon: BarChart3,
-    description: "Tổng hợp & thống kê",
-  },
-  {
-    id: "history",
-    label: "Lịch sử",
-    icon: History,
-    description: "Lịch sử tính toán",
-  },
-];
-
 const ReportsPage: React.FC = () => {
+  const t = useTranslations("reports");
+  
+  // Report types for quick actions
+  const REPORT_TYPES = [
+    {
+      id: "product",
+      label: t("types.product.label"),
+      icon: Package,
+      description: t("types.product.description"),
+    },
+    {
+      id: "activity",
+      label: t("types.activity.label"),
+      icon: Activity,
+      description: t("types.activity.description"),
+    },
+    {
+      id: "audit",
+      label: t("types.audit.label"),
+      icon: Shield,
+      description: t("types.audit.description"),
+    },
+    {
+      id: "users",
+      label: t("types.users.label"),
+      icon: Users,
+      description: t("types.users.description"),
+    },
+    {
+      id: "analytics",
+      label: t("types.analytics.label"),
+      icon: BarChart3,
+      description: t("types.analytics.description"),
+    },
+    {
+      id: "history",
+      label: t("types.history.label"),
+      icon: History,
+      description: t("types.history.description"),
+    },
+  ];
   const isMobile = useIsMobile();
   const isDemo = useIsDemo();
   const { products } = useProducts();
@@ -113,6 +115,12 @@ const ReportsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"report" | "export">("report");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Ensure hydration consistency by only rendering date-dependent content after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Generate data from context
   const activityLogs = useMemo(() => generateDemoActivityLogs(), []);
@@ -121,15 +129,17 @@ const ReportsPage: React.FC = () => {
 
   // Dynamically generate reports based on real data
   const reports = useMemo(() => {
+    if (!isMounted) return [];
+    
     const now = new Date();
     const totalCO2 = products.reduce((sum, p) => sum + p.co2, 0);
 
     return [
       {
         id: "report-company-monthly",
-        title: `Báo cáo Carbon tháng ${now.getMonth() + 1}/${now.getFullYear()}`,
+        title: t("monthlyReport", { month: now.getMonth() + 1, year: now.getFullYear() }),
         type: "company",
-        typeLabel: "Doanh nghiệp",
+        typeLabel: t("filterOptions.company"),
         format: "XLSX",
         date: now.toISOString().split("T")[0],
         size: `${(products.length * 0.05 + 0.5).toFixed(1)} MB`,
@@ -139,9 +149,9 @@ const ReportsPage: React.FC = () => {
       },
       {
         id: "report-products-all",
-        title: "Báo cáo toàn bộ sản phẩm",
+        title: t("allProductsReport"),
         type: "product",
-        typeLabel: "Sản phẩm",
+        typeLabel: t("filterOptions.product"),
         format: "CSV/XLSX",
         date: now.toISOString().split("T")[0],
         size: `${(products.length * 0.02).toFixed(1)} MB`,
@@ -151,9 +161,9 @@ const ReportsPage: React.FC = () => {
       },
       {
         id: "report-activity",
-        title: "Báo cáo hoạt động hệ thống",
+        title: t("systemActivityReport"),
         type: "activity",
-        typeLabel: "Hoạt động",
+        typeLabel: t("filterOptions.activity"),
         format: "CSV/XLSX",
         date: now.toISOString().split("T")[0],
         size: "0.3 MB",
@@ -163,9 +173,9 @@ const ReportsPage: React.FC = () => {
       },
       {
         id: "report-audit",
-        title: "Audit Log Report",
+        title: t("auditLogReport"),
         type: "audit",
-        typeLabel: "Kiểm toán",
+        typeLabel: t("filterOptions.audit"),
         format: "CSV/XLSX",
         date: now.toISOString().split("T")[0],
         size: "0.2 MB",
@@ -175,9 +185,9 @@ const ReportsPage: React.FC = () => {
       },
       {
         id: "report-users",
-        title: "Báo cáo người dùng & quyền truy cập",
+        title: t("usersPermissionReport"),
         type: "users",
-        typeLabel: "Người dùng",
+        typeLabel: t("filterOptions.users"),
         format: "CSV/XLSX",
         date: now.toISOString().split("T")[0],
         size: "0.1 MB",
@@ -187,9 +197,9 @@ const ReportsPage: React.FC = () => {
       },
       {
         id: "report-analytics",
-        title: "Báo cáo tổng hợp Analytics",
+        title: t("analyticsReport"),
         type: "analytics",
-        typeLabel: "Analytics",
+        typeLabel: t("filterOptions.analytics"),
         format: "XLSX",
         date: now.toISOString().split("T")[0],
         size: "0.5 MB",
@@ -199,9 +209,9 @@ const ReportsPage: React.FC = () => {
       },
       {
         id: "report-history",
-        title: "Lịch sử tính toán Carbon",
+        title: t("calculationHistoryReport"),
         type: "history",
-        typeLabel: "Lịch sử",
+        typeLabel: t("filterOptions.history"),
         format: "CSV/XLSX",
         date: now.toISOString().split("T")[0],
         size: "0.3 MB",
@@ -210,7 +220,7 @@ const ReportsPage: React.FC = () => {
         records: calculationHistory.length,
       },
     ];
-  }, [products, activityLogs, auditLogs, users, calculationHistory]);
+  }, [products, activityLogs, auditLogs, users, calculationHistory, t, isMounted]);
 
   // Export history (recent exports)
   const [exportHistory, setExportHistory] = useState<
@@ -256,7 +266,7 @@ const ReportsPage: React.FC = () => {
       "product",
     );
     toast.success(
-      `Đã xuất ${products.length} sản phẩm sang ${format.toUpperCase()}`,
+      t("toasts.success", { count: products.length, type: t("stats.products"), format: format.toUpperCase() }),
     );
   };
 
@@ -273,7 +283,7 @@ const ReportsPage: React.FC = () => {
       "activity",
     );
     toast.success(
-      `Đã xuất ${activityLogs.length} hoạt động sang ${format.toUpperCase()}`,
+      t("toasts.success", { count: activityLogs.length, type: t("stats.activities"), format: format.toUpperCase() }),
     );
   };
 
@@ -290,7 +300,7 @@ const ReportsPage: React.FC = () => {
       "audit",
     );
     toast.success(
-      `Đã xuất ${auditLogs.length} audit logs sang ${format.toUpperCase()}`,
+      t("toasts.success", { count: auditLogs.length, type: t("filterOptions.audit"), format: format.toUpperCase() }),
     );
   };
 
@@ -307,7 +317,7 @@ const ReportsPage: React.FC = () => {
       "users",
     );
     toast.success(
-      `Đã xuất ${users.length} người dùng sang ${format.toUpperCase()}`,
+      t("toasts.success", { count: users.length, type: t("stats.users"), format: format.toUpperCase() }),
     );
   };
 
@@ -324,7 +334,7 @@ const ReportsPage: React.FC = () => {
       "history",
     );
     toast.success(
-      `Đã xuất ${calculationHistory.length} bản ghi lịch sử sang ${format.toUpperCase()}`,
+      t("toasts.success", { count: calculationHistory.length, type: t("stats.calculationHistory"), format: format.toUpperCase() }),
     );
   };
 
@@ -336,7 +346,7 @@ const ReportsPage: React.FC = () => {
       "XLSX",
       "analytics",
     );
-    toast.success("Đã xuất báo cáo Analytics tổng hợp");
+    toast.success(t("toasts.analyticsSuccess"));
   };
 
   const handleExportFullReport = () => {
@@ -353,7 +363,7 @@ const ReportsPage: React.FC = () => {
       "XLSX",
       "company",
     );
-    toast.success("Đã xuất báo cáo doanh nghiệp đầy đủ");
+    toast.success(t("toasts.fullReportSuccess"));
   };
 
   // Quick export by type
@@ -441,16 +451,16 @@ const ReportsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6 no-horizontal-scroll">
+    <div className="space-y-4 md:space-y-6 no-horizontal-scroll" suppressHydrationWarning>
       {/* Header */}
       <div className="flex flex-col gap-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <h2 className="text-lg md:text-xl font-bold">
-              Báo cáo & Xuất dữ liệu
+              {t("title")}
             </h2>
             <p className="text-sm text-muted-foreground line-clamp-2">
-              Tạo báo cáo hoặc xuất dữ liệu CSV/Excel với đầy đủ metadata
+              {t("subtitle")}
             </p>
           </div>
           <Button
@@ -459,7 +469,7 @@ const ReportsPage: React.FC = () => {
             size={isMobile ? "sm" : "default"}
           >
             <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Báo cáo đầy đủ</span>
+            <span className="hidden sm:inline">{t("fullReport")}</span>
           </Button>
         </div>
 
@@ -473,8 +483,7 @@ const ReportsPage: React.FC = () => {
               Demo
             </Badge>
             <span className="text-amber-700">
-              Tenant: {DEMO_METADATA.tenant_name} • Dữ liệu export sẽ có
-              metadata demo
+              {t("demoIndicator", { tenantName: DEMO_METADATA.tenant_name })}
             </span>
           </div>
         )}
@@ -486,28 +495,28 @@ const ReportsPage: React.FC = () => {
           <CardContent className="p-4 text-center">
             <Package className="w-6 h-6 text-primary mx-auto mb-2" />
             <p className="text-2xl font-bold">{products.length}</p>
-            <p className="text-xs text-muted-foreground">Sản phẩm</p>
+            <p className="text-xs text-muted-foreground">{t("stats.products")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <Activity className="w-6 h-6 text-primary/80 mx-auto mb-2" />
             <p className="text-2xl font-bold">{activityLogs.length}</p>
-            <p className="text-xs text-muted-foreground">Hoạt động</p>
+            <p className="text-xs text-muted-foreground">{t("stats.activities")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <Users className="w-6 h-6 text-primary/70 mx-auto mb-2" />
             <p className="text-2xl font-bold">{users.length}</p>
-            <p className="text-xs text-muted-foreground">Người dùng</p>
+            <p className="text-xs text-muted-foreground">{t("stats.users")}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <History className="w-6 h-6 text-destructive/70 mx-auto mb-2" />
             <p className="text-2xl font-bold">{calculationHistory.length}</p>
-            <p className="text-xs text-muted-foreground">Lịch sử tính</p>
+            <p className="text-xs text-muted-foreground">{t("stats.calculationHistory")}</p>
           </CardContent>
         </Card>
       </div>
@@ -520,11 +529,11 @@ const ReportsPage: React.FC = () => {
         <TabsList className="grid w-full max-w-100 grid-cols-2">
           <TabsTrigger value="report" className="gap-2">
             <FileText className="w-4 h-4" />
-            <span>Báo cáo</span>
+            <span>{t("tabs.reports")}</span>
           </TabsTrigger>
           <TabsTrigger value="export" className="gap-2">
             <Download className="w-4 h-4" />
-            <span>Xuất dữ liệu</span>
+            <span>{t("tabs.export")}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -535,7 +544,7 @@ const ReportsPage: React.FC = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Tìm báo cáo..."
+                placeholder={t("search")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 h-10"
@@ -544,7 +553,7 @@ const ReportsPage: React.FC = () => {
 
             {/* Mobile filter */}
             <MobileFilterSheet
-              title="Lọc báo cáo"
+              title={t("filterLabel")}
               onReset={handleResetFilters}
               trigger={
                 <Button
@@ -559,21 +568,21 @@ const ReportsPage: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm font-medium mb-2 block">
-                    Loại báo cáo
+                    {t("filterType")}
                   </Label>
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
                     <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Chọn loại" />
+                      <SelectValue placeholder={t("filterPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tất cả</SelectItem>
-                      <SelectItem value="product">Sản phẩm</SelectItem>
-                      <SelectItem value="activity">Hoạt động</SelectItem>
-                      <SelectItem value="audit">Audit Log</SelectItem>
-                      <SelectItem value="users">Người dùng</SelectItem>
-                      <SelectItem value="analytics">Analytics</SelectItem>
-                      <SelectItem value="history">Lịch sử</SelectItem>
-                      <SelectItem value="company">Doanh nghiệp</SelectItem>
+                      <SelectItem value="all">{t("filterOptions.all")}</SelectItem>
+                      <SelectItem value="product">{t("filterOptions.product")}</SelectItem>
+                      <SelectItem value="activity">{t("filterOptions.activity")}</SelectItem>
+                      <SelectItem value="audit">{t("filterOptions.audit")}</SelectItem>
+                      <SelectItem value="users">{t("filterOptions.users")}</SelectItem>
+                      <SelectItem value="analytics">{t("filterOptions.analytics")}</SelectItem>
+                      <SelectItem value="history">{t("filterOptions.history")}</SelectItem>
+                      <SelectItem value="company">{t("filterOptions.company")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -583,17 +592,17 @@ const ReportsPage: React.FC = () => {
             {/* Desktop filters */}
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-37.5 hidden md:flex">
-                <SelectValue placeholder="Loại" />
+                <SelectValue placeholder={t("filterType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tất cả loại</SelectItem>
-                <SelectItem value="product">Sản phẩm</SelectItem>
-                <SelectItem value="activity">Hoạt động</SelectItem>
-                <SelectItem value="audit">Audit Log</SelectItem>
-                <SelectItem value="users">Người dùng</SelectItem>
-                <SelectItem value="analytics">Analytics</SelectItem>
-                <SelectItem value="history">Lịch sử</SelectItem>
-                <SelectItem value="company">Doanh nghiệp</SelectItem>
+                <SelectItem value="all">{t("filterOptions.all")}</SelectItem>
+                <SelectItem value="product">{t("filterOptions.product")}</SelectItem>
+                <SelectItem value="activity">{t("filterOptions.activity")}</SelectItem>
+                <SelectItem value="audit">{t("filterOptions.audit")}</SelectItem>
+                <SelectItem value="users">{t("filterOptions.users")}</SelectItem>
+                <SelectItem value="analytics">{t("filterOptions.analytics")}</SelectItem>
+                <SelectItem value="history">{t("filterOptions.history")}</SelectItem>
+                <SelectItem value="company">{t("filterOptions.company")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -604,9 +613,9 @@ const ReportsPage: React.FC = () => {
               <Card>
                 <CardContent className="p-8 text-center">
                   <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-medium mb-2">Không tìm thấy báo cáo</h3>
+                  <h3 className="font-medium mb-2">{t("notFound")}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Thử thay đổi bộ lọc hoặc tạo báo cáo mới
+                    {t("notFoundDesc")}
                   </p>
                 </CardContent>
               </Card>
@@ -615,10 +624,10 @@ const ReportsPage: React.FC = () => {
                 <MobileDataCard
                   key={report.id}
                   title={report.title}
-                  subtitle={`${report.date} • ${report.records} bản ghi`}
+                  subtitle={`${report.date} • ${t("records", { count: report.records })}`}
                   icon={getTypeIcon(report.type)}
                   status={{
-                    label: "Sẵn sàng",
+                    label: t("ready"),
                     className: "bg-green-100 text-green-700",
                   }}
                   tags={[report.typeLabel, report.format]}
@@ -643,7 +652,7 @@ const ReportsPage: React.FC = () => {
                         onClick={() => handleDownloadReport(report)}
                       >
                         <Download className="w-4 h-4 mr-1" />
-                        Tải
+                        {t("download")}
                       </Button>
                     </div>
                   }
@@ -658,7 +667,7 @@ const ReportsPage: React.FC = () => {
         <TabsContent value="export" className="mt-4 space-y-4">
           {/* Quick Export Actions */}
           <div>
-            <h3 className="text-sm font-medium mb-3">Xuất nhanh theo loại</h3>
+            <h3 className="text-sm font-medium mb-3">{t("quickExport")}</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {REPORT_TYPES.map((type) => {
                 const Icon = type.icon;
@@ -690,9 +699,9 @@ const ReportsPage: React.FC = () => {
           {/* Export Format Options */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Chọn định dạng xuất</CardTitle>
+              <CardTitle className="text-base">{t("selectFormat")}</CardTitle>
               <CardDescription>
-                Chọn loại dữ liệu và định dạng file
+                {t("selectFormatDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -702,10 +711,10 @@ const ReportsPage: React.FC = () => {
                   <Package className="w-5 h-5 text-primary" />
                   <div>
                     <p className="font-medium text-sm">
-                      Sản phẩm ({products.length})
+                      {t("formats.products.title", { count: products.length })}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Danh sách sản phẩm & CO2
+                      {t("formats.products.description")}
                     </p>
                   </div>
                 </div>
@@ -715,7 +724,7 @@ const ReportsPage: React.FC = () => {
                     size="sm"
                     onClick={() => handleExportProducts("csv")}
                   >
-                    CSV
+                    {t("csv")}
                   </Button>
                   <Button
                     variant="outline"
@@ -723,7 +732,7 @@ const ReportsPage: React.FC = () => {
                     onClick={() => handleExportProducts("xlsx")}
                   >
                     <FileSpreadsheet className="w-4 h-4 mr-1" />
-                    XLSX
+                    {t("xlsx")}
                   </Button>
                 </div>
               </div>
@@ -734,10 +743,10 @@ const ReportsPage: React.FC = () => {
                   <Activity className="w-5 h-5 text-primary/80" />
                   <div>
                     <p className="font-medium text-sm">
-                      Hoạt động ({activityLogs.length})
+                      {t("formats.activities.title", { count: activityLogs.length })}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Log CREATE, UPDATE, APPROVE
+                      {t("formats.activities.description")}
                     </p>
                   </div>
                 </div>
@@ -747,7 +756,7 @@ const ReportsPage: React.FC = () => {
                     size="sm"
                     onClick={() => handleExportActivity("csv")}
                   >
-                    CSV
+                    {t("csv")}
                   </Button>
                   <Button
                     variant="outline"
@@ -755,7 +764,7 @@ const ReportsPage: React.FC = () => {
                     onClick={() => handleExportActivity("xlsx")}
                   >
                     <FileSpreadsheet className="w-4 h-4 mr-1" />
-                    XLSX
+                    {t("xlsx")}
                   </Button>
                 </div>
               </div>
@@ -766,10 +775,10 @@ const ReportsPage: React.FC = () => {
                   <Shield className="w-5 h-5 text-destructive/70" />
                   <div>
                     <p className="font-medium text-sm">
-                      Audit Log ({auditLogs.length})
+                      {t("formats.audit.title", { count: auditLogs.length })}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      LOGIN, EXPORT, SIGNUP events
+                      {t("formats.audit.description")}
                     </p>
                   </div>
                 </div>
@@ -779,7 +788,7 @@ const ReportsPage: React.FC = () => {
                     size="sm"
                     onClick={() => handleExportAudit("csv")}
                   >
-                    CSV
+                    {t("csv")}
                   </Button>
                   <Button
                     variant="outline"
@@ -787,7 +796,7 @@ const ReportsPage: React.FC = () => {
                     onClick={() => handleExportAudit("xlsx")}
                   >
                     <FileSpreadsheet className="w-4 h-4 mr-1" />
-                    XLSX
+                    {t("xlsx")}
                   </Button>
                 </div>
               </div>
@@ -798,10 +807,10 @@ const ReportsPage: React.FC = () => {
                   <Users className="w-5 h-5 text-primary/70" />
                   <div>
                     <p className="font-medium text-sm">
-                      Người dùng ({users.length})
+                      {t("formats.users.title", { count: users.length })}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Admin, Member, Last login
+                      {t("formats.users.description")}
                     </p>
                   </div>
                 </div>
@@ -811,7 +820,7 @@ const ReportsPage: React.FC = () => {
                     size="sm"
                     onClick={() => handleExportUsers("csv")}
                   >
-                    CSV
+                    {t("csv")}
                   </Button>
                   <Button
                     variant="outline"
@@ -819,7 +828,7 @@ const ReportsPage: React.FC = () => {
                     onClick={() => handleExportUsers("xlsx")}
                   >
                     <FileSpreadsheet className="w-4 h-4 mr-1" />
-                    XLSX
+                    {t("xlsx")}
                   </Button>
                 </div>
               </div>
@@ -830,10 +839,10 @@ const ReportsPage: React.FC = () => {
                   <History className="w-5 h-5 text-accent-foreground/70" />
                   <div>
                     <p className="font-medium text-sm">
-                      Lịch sử tính ({calculationHistory.length})
+                      {t("formats.history.title", { count: calculationHistory.length })}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Chi tiết CO2 theo version
+                      {t("formats.history.description")}
                     </p>
                   </div>
                 </div>
@@ -843,7 +852,7 @@ const ReportsPage: React.FC = () => {
                     size="sm"
                     onClick={() => handleExportHistory("csv")}
                   >
-                    CSV
+                    {t("csv")}
                   </Button>
                   <Button
                     variant="outline"
@@ -851,7 +860,7 @@ const ReportsPage: React.FC = () => {
                     onClick={() => handleExportHistory("xlsx")}
                   >
                     <FileSpreadsheet className="w-4 h-4 mr-1" />
-                    XLSX
+                    {t("xlsx")}
                   </Button>
                 </div>
               </div>
@@ -861,15 +870,15 @@ const ReportsPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <BarChart3 className="w-5 h-5 text-primary" />
                   <div>
-                    <p className="font-medium text-sm">Analytics tổng hợp</p>
+                    <p className="font-medium text-sm">{t("formats.analytics.title")}</p>
                     <p className="text-xs text-muted-foreground">
-                      Summary + Category breakdown
+                      {t("formats.analytics.description")}
                     </p>
                   </div>
                 </div>
                 <Button size="sm" onClick={handleExportAnalytics}>
                   <FileSpreadsheet className="w-4 h-4 mr-1" />
-                  XLSX
+                  {t("xlsx")}
                 </Button>
               </div>
 
@@ -879,16 +888,16 @@ const ReportsPage: React.FC = () => {
                   <Building2 className="w-5 h-5 text-primary" />
                   <div>
                     <p className="font-medium text-sm">
-                      Báo cáo doanh nghiệp đầy đủ
+                      {t("formats.fullReport.title")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Tất cả dữ liệu trong 1 file
+                      {t("formats.fullReport.description")}
                     </p>
                   </div>
                 </div>
                 <Button size="sm" onClick={handleExportFullReport}>
                   <Download className="w-4 h-4 mr-1" />
-                  Export All
+                  {t("exportAll")}
                 </Button>
               </div>
             </CardContent>
@@ -900,7 +909,7 @@ const ReportsPage: React.FC = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  Lịch sử xuất dữ liệu
+                  {t("exportHistory")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -914,7 +923,7 @@ const ReportsPage: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm truncate">{exp.title}</p>
                         <p className="text-xs text-muted-foreground">
-                          {exp.records} bản ghi • {exp.date}
+                          {t("records", { count: exp.records })} • {exp.date}
                         </p>
                       </div>
                     </div>
@@ -930,7 +939,7 @@ const ReportsPage: React.FC = () => {
           {/* Mobile note */}
           {isMobile && (
             <p className="text-xs text-muted-foreground text-center py-2">
-              💡 File Excel/CSV phù hợp xem trên máy tính
+              {t("mobileNote")}
             </p>
           )}
         </TabsContent>

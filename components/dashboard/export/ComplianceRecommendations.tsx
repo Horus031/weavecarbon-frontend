@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ const ComplianceRecommendations: React.FC<ComplianceRecommendationsProps> = ({
   recommendations,
   onAction,
 }) => {
+  const t = useTranslations("export.recommendations");
   const activeRecommendations = recommendations.filter(
     (r) => r.status === "active",
   );
@@ -46,9 +48,9 @@ const ComplianceRecommendations: React.FC<ComplianceRecommendationsProps> = ({
       <Card className="border-green-200 bg-green-50">
         <CardContent className="p-6 text-center">
           <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-3" />
-          <h3 className="font-semibold text-green-800">Hoàn thiện đầy đủ!</h3>
+          <h3 className="font-semibold text-green-800">{t("allComplete")}</h3>
           <p className="text-sm text-green-600 mt-1">
-            Không có khuyến nghị nào cần thực hiện. Hồ sơ đã sẵn sàng xuất khẩu.
+            {t("allCompleteDesc")}
           </p>
         </CardContent>
       </Card>
@@ -60,14 +62,14 @@ const ComplianceRecommendations: React.FC<ComplianceRecommendationsProps> = ({
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-col md:flex-row md:items-center gap-2 text-lg">
           <Badge variant="secondary" className="static md:hidden">
-            {activeRecommendations.length} mục
+            {t("items", { count: activeRecommendations.length })}
           </Badge>
           <div className="flex gap-2 items-center">
             <AlertTriangle className="w-5 h-5 text-yellow-600" />
-            Khuyến nghị hoàn thiện hồ sơ
+            {t("title")}
           </div>
           <Badge variant="secondary" className="ml-auto hidden md:static">
-            {activeRecommendations.length} mục
+            {t("items", { count: activeRecommendations.length })}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -77,9 +79,9 @@ const ComplianceRecommendations: React.FC<ComplianceRecommendationsProps> = ({
           const priorityConfig = PRIORITY_CONFIG[rec.priority];
 
           return (
-            <Collapsible key={rec.id} className="max-w-xs mx-auto">
+            <Collapsible key={rec.id} className="max-w-xs md:max-w-full mx-auto">
               <div className="border rounded-lg overflow-hidden">
-                <CollapsibleTrigger className="max-w-xs">
+                <CollapsibleTrigger className="w-full">
                   <div className="flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors">
                     <div
                       className={`p-2 rounded-lg ${priorityConfig.bgColor} shrink-0`}
@@ -100,12 +102,12 @@ const ComplianceRecommendations: React.FC<ComplianceRecommendationsProps> = ({
                   </div>
                 </CollapsibleTrigger>
 
-                <CollapsibleContent className="max-w-xs">
+                <CollapsibleContent className="w-full">
                   <div className="px-4 pb-4 pt-0 space-y-4 border-t bg-muted/30">
                     {/* Regulatory Reason */}
                     <div className="pt-4">
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                        Lý do pháp lý
+                        {t("legalReason")}
                       </h4>
                       <p className="text-sm">{rec.regulatoryReason}</p>
                     </div>
@@ -113,7 +115,7 @@ const ComplianceRecommendations: React.FC<ComplianceRecommendationsProps> = ({
                     {/* Business Impact */}
                     <div>
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                        Ảnh hưởng nếu thiếu
+                        {t("impact")}
                       </h4>
                       <p className="text-sm text-orange-700 bg-orange-50 p-2 rounded">
                         {rec.businessImpact}
@@ -123,7 +125,7 @@ const ComplianceRecommendations: React.FC<ComplianceRecommendationsProps> = ({
                     {/* Recommended Actions */}
                     <div>
                       <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                        Hướng dẫn thực hiện
+                        {t("actionGuide")}
                       </h4>
                       <ul className="space-y-1">
                         {rec.recommendedAction.map((action, idx) => (
@@ -156,7 +158,7 @@ const ComplianceRecommendations: React.FC<ComplianceRecommendationsProps> = ({
                         variant="outline"
                         onClick={() => onAction("view_guide", rec.id)}
                       >
-                        Xem hướng dẫn
+                        {t("viewGuide")}
                       </Button>
                     </div>
                   </div>

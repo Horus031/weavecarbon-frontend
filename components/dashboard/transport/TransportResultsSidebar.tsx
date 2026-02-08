@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -30,6 +31,7 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
   calculateLegCO2,
   onSubmit,
 }) => {
+  const t = useTranslations("transport");
   const getModeIcon = (mode: string) => {
     switch (mode) {
       case "ship":
@@ -46,27 +48,27 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calculator className="w-5 h-5" />
-          Kết quả tạm tính
+          {t("resultsTitle")}
         </CardTitle>
-        <CardDescription>Cập nhật theo thời gian thực</CardDescription>
+        <CardDescription>{t("resultsDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="p-4 bg-muted rounded-lg space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Tổng quãng đường</span>
+            <span className="text-muted-foreground">{t("totalDistance")}</span>
             <span className="font-bold">{totalDistance.toLocaleString()} km</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Số chặng</span>
+            <span className="text-muted-foreground">{t("totalLegs")}</span>
             <span className="font-medium">{legs.length}</span>
           </div>
         </div>
 
         <div className="p-4 bg-primary/10 rounded-lg">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted-foreground">CO₂ ước tính</span>
+            <span className="text-sm text-muted-foreground">{t("estimatedCO2")}</span>
             <Badge variant="secondary">
-              {hasLocationPermission ? "High confidence" : "Estimate"}
+              {hasLocationPermission ? t("highConfidence") : t("estimate")}
             </Badge>
           </div>
           <p className="text-3xl font-bold text-primary">
@@ -78,7 +80,7 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
         {/* Breakdown */}
         {legs.length > 0 && (
           <div className="space-y-2">
-            <p className="text-sm font-medium">Chi tiết theo chặng:</p>
+            <p className="text-sm font-medium">{t("breakdown")}</p>
             {legs.map((leg, index) => (
               <div
                 key={leg.id}
@@ -86,7 +88,7 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
               >
                 <span className="flex items-center gap-2">
                   {getModeIcon(leg.mode)}
-                  Chặng {index + 1}
+                  {t("legLabel")} {index + 1}
                 </span>
                 <span>{calculateLegCO2(leg).toFixed(2)} kg</span>
               </div>
@@ -102,12 +104,12 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
             disabled={totalDistance === 0}
           >
             <CheckCircle2 className="w-4 h-4 mr-2" />
-            Lưu & Xem lịch sử
+            {t("saveAndView")}
           </Button>
         </div>
 
         <p className="text-xs text-muted-foreground text-center">
-          Carbon được tính dựa trên hệ số DEFRA/GHG Protocol
+          {t("carbonNote")}
         </p>
       </CardContent>
     </Card>

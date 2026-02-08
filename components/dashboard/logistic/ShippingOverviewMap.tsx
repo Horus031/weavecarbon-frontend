@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -562,6 +563,7 @@ const convertLegsToRoutes = (
 const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
   onViewDetails,
 }) => {
+  const t = useTranslations("logistics");
   const [allShipments, setAllShipments] = useState<Shipment[]>(DEMO_SHIPMENTS);
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [qrShipment, setQrShipment] = useState<Shipment | null>(null);
@@ -622,21 +624,21 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
         return (
           <Badge className="bg-green-100 text-green-700">
             <CheckCircle2 className="w-3 h-3 mr-1" />
-            Đã giao
+            {t("statuses.delivered")}
           </Badge>
         );
       case "in_transit":
         return (
           <Badge className="bg-blue-100 text-blue-700">
             <Ship className="w-3 h-3 mr-1" />
-            Đang vận chuyển
+            {t("statuses.inTransit")}
           </Badge>
         );
       case "pending":
         return (
           <Badge className="bg-yellow-100 text-yellow-700">
             <Clock className="w-3 h-3 mr-1" />
-            Chờ xử lý
+            {t("statuses.pending")}
           </Badge>
         );
       default:
@@ -746,7 +748,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
         <Card>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-            <p className="text-xs text-muted-foreground">Tổng shipments</p>
+            <p className="text-xs text-muted-foreground">{t("statuses.totalShipments")}</p>
           </CardContent>
         </Card>
         <Card>
@@ -754,7 +756,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
             <p className="text-2xl font-bold text-blue-500">
               {stats.inTransit}
             </p>
-            <p className="text-xs text-muted-foreground">Đang vận chuyển</p>
+            <p className="text-xs text-muted-foreground">{t("statuses.inTransit")}</p>
           </CardContent>
         </Card>
         <Card>
@@ -762,7 +764,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
             <p className="text-2xl font-bold text-green-500">
               {stats.delivered}
             </p>
-            <p className="text-xs text-muted-foreground">Đã giao</p>
+            <p className="text-xs text-muted-foreground">{t("statuses.delivered")}</p>
           </CardContent>
         </Card>
         <Card>
@@ -770,7 +772,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
             <p className="text-2xl font-bold text-yellow-500">
               {stats.pending}
             </p>
-            <p className="text-xs text-muted-foreground">Chờ xử lý</p>
+            <p className="text-xs text-muted-foreground">{t("statuses.pending")}</p>
           </CardContent>
         </Card>
         <Card>
@@ -778,7 +780,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
             <p className="text-2xl font-bold text-orange-500">
               {stats.totalCO2.toFixed(0)}
             </p>
-            <p className="text-xs text-muted-foreground">kg CO₂e tổng</p>
+            <p className="text-xs text-muted-foreground">{t("statuses.totalCO2")}</p>
           </CardContent>
         </Card>
       </div>
@@ -790,8 +792,8 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
             <CardTitle className="flex items-center gap-2 text-lg">
               <Globe className="w-5 h-5 text-primary" />
               {mapMode === "overview"
-                ? "Bản đồ vận chuyển toàn cầu"
-                : `Chi tiết tuyến: ${selectedShipment?.productName}`}
+                ? t("mapTitle")
+                : `${t("routeDetails")}: ${selectedShipment?.productName}`}
             </CardTitle>
             <div className="flex items-center gap-2">
               {mapMode === "detail" && (
@@ -804,7 +806,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
                   }}
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  ← Quay lại bản đồ toàn cầu
+                  {t("backToMap")}
                 </Button>
               )}
               {allShipments.some(s => !s.isDemo) ? (
@@ -826,7 +828,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
           </div>
           <p className="text-sm text-muted-foreground">
             {mapMode === "overview"
-              ? "Nhấn vào sản phẩm để xem chi tiết tuyến đường"
+              ? t("clickInstruction")
               : selectedShipment?.origin + " → " + selectedShipment?.destination}
           </p>
         </CardHeader>
@@ -875,7 +877,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
 
       {/* Shipment Cards with Mini Maps - Always visible as quick reference */}
       <div>
-        <h3 className="text-lg font-semibold mb-3">Tuyến vận chuyển</h3>
+        <h3 className="text-lg font-semibold mb-3">{t("routesSection")}</h3>
         <div className="grid lg:grid-cols-3 gap-4">
           {allShipments.map((shipment) => (
             <Card
@@ -897,7 +899,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
                       <p className="font-medium text-sm">{shipment.productName}</p>
                       {!shipment.isDemo && (
                         <Badge variant="outline" className="text-xs bg-green-50 text-green-600 border-green-200">
-                          Mới
+                          {t("new")}
                         </Badge>
                       )}
                     </div>
@@ -915,7 +917,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
                         e.stopPropagation();
                         setQrShipment(shipment);
                       }}
-                      title="Tạo QR Code"
+                      title={t("qrCodeTitle")}
                     >
                       <QrCode className="w-4 h-4 text-green-600" />
                     </Button>
@@ -967,7 +969,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
                     setMapMode("detail");
                   }}
                 >
-                  Xem chi tiết tuyến đường
+                  {t("viewRouteDetails")}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </CardContent>
@@ -979,7 +981,7 @@ const ShippingOverviewMap: React.FC<ShippingOverviewMapProps> = ({
       {/* Action Button */}
       <div className="flex justify-center">
         <Button onClick={onViewDetails} className="gap-2">
-          Xem chi tiết theo dõi vận chuyển
+          {t("viewTrackingDetails")}
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>

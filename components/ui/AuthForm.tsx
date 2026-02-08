@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/useToast";
 import SocialLogin from "@/components/auth/SocialLogin";
 import EmailAuthTabs from "@/components/auth/EmailAuthTabs";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const emailSchema = z.string().email("Invalid email address");
 const passwordSchema = z
@@ -21,14 +22,9 @@ const passwordSchema = z
   .min(6, "Password must be at least 6 characters");
 
 const AuthForm: React.FC = () => {
-  const {
-    signUp,
-    signIn,
-    signInWithGoogle,
-    signInAsDemo,
-    user,
-    loading,
-  } = useAuth();
+  const t = useTranslations("auth");
+  const { signUp, signIn, signInWithGoogle, signInAsDemo, user, loading } =
+    useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -49,9 +45,12 @@ const AuthForm: React.FC = () => {
     name?: string;
   }>({});
 
-  const getDashboardPath = useCallback((type: "b2b" | "b2c" | "admin" | undefined) => {
-    return type === "b2c" ? "/b2c" : "/overview";
-  }, []);
+  const getDashboardPath = useCallback(
+    (type: "b2b" | "b2c" | "admin" | undefined) => {
+      return type === "b2c" ? "/b2c" : "/overview";
+    },
+    [],
+  );
 
   // Redirect logic based on user type and company_id
   useEffect(() => {
@@ -128,7 +127,8 @@ const AuthForm: React.FC = () => {
       setIsLoading(false);
       let errorMessage = result.error.message;
       if (result.error.message.includes("already registered")) {
-        errorMessage = "This email is already registered. Please sign in instead.";
+        errorMessage =
+          "This email is already registered. Please sign in instead.";
       }
       toast({
         title: "Error",
@@ -137,12 +137,13 @@ const AuthForm: React.FC = () => {
       });
     } else {
       setIsLoading(false);
-      
+
       if (result.needsConfirmation) {
         // Email confirmation is required
         toast({
           title: "Check your email",
-          description: "We've sent you a confirmation link. Please check your email to continue.",
+          description:
+            "We've sent you a confirmation link. Please check your email to continue.",
           duration: 6000,
         });
         setActiveTab("login");
@@ -166,7 +167,7 @@ const AuthForm: React.FC = () => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     const { error } = await signInWithGoogle();
-    
+
     if (error) {
       setIsLoading(false);
       toast({
@@ -208,12 +209,12 @@ const AuthForm: React.FC = () => {
     );
   }
 
-  const getSubtitle = () => {
-    if (userType === "b2c") {
-      return "Sign in to track your fashion carbon footprint";
-    }
-    return "Sign in to access your business dashboard";
-  };
+  // const getSubtitle = () => {
+  //   if (userType === "b2c") {
+  //     return "Sign in to track your fashion carbon footprint";
+  //   }
+  //   return "Sign in to access your business dashboard";
+  // };
 
   const getDemoButtonText = () => {
     return userType === "b2c" ? "Try Consumer Demo" : "Try Business Demo";
@@ -223,9 +224,11 @@ const AuthForm: React.FC = () => {
     <Card className="border-border/50 shadow-xl">
       <CardHeader className="text-center pb-4">
         <CardTitle className="text-xl">
-          {userType === "b2c" ? "Welcome to WEAVECARBON" : "WEAVECARBON for Business"}
+          {userType === "b2c"
+            ? t("welcome")
+            : t("welcomeb2b")}
         </CardTitle>
-        <CardDescription>{getSubtitle()}</CardDescription>
+        <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">

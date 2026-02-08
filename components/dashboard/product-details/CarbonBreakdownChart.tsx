@@ -4,6 +4,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import {
   PieChart,
   Pie,
@@ -35,6 +36,7 @@ const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#64748b"];
 const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
   breakdown,
 }) => {
+  const t = useTranslations("productDetail.carbonBreakdown");
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
 
   // Filter items with data for the chart
@@ -70,7 +72,7 @@ const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <BarChart3 className="w-5 h-5 text-primary" />
-            Phân tích phát thải theo giai đoạn
+            {t("title")}
           </CardTitle>
           {hasAwaitingData && (
             <Badge
@@ -78,7 +80,7 @@ const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
               className="text-yellow-700 border-yellow-400"
             >
               <Clock className="w-3 h-3 mr-1" />
-              Đang chờ dữ liệu
+              {t("awaitingData")}
             </Badge>
           )}
         </div>
@@ -86,7 +88,7 @@ const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
       <CardContent>
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Donut Chart */}
-          <div className="h-[280px]">
+          <div className="h-70">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -117,7 +119,7 @@ const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
               <div className="h-full flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
                   <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Đang chờ dữ liệu...</p>
+                  <p>{t("waitingForData")}</p>
                 </div>
               </div>
             )}
@@ -159,13 +161,13 @@ const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
                           className="text-xs text-yellow-600 border-yellow-400"
                         >
                           <Clock className="w-3 h-3 mr-1" />
-                          Awaiting data
+                          {t("awaitingDataBadge")}
                         </Badge>
                       )}
                       {item.hasData && item.isProxy && (
                         <Badge variant="outline" className="text-xs">
                           <AlertCircle className="w-3 h-3 mr-1" />
-                          Proxy
+                          {t("proxyBadge")}
                         </Badge>
                       )}
                     </div>
@@ -193,7 +195,7 @@ const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
                     className={`px-3 py-2 text-sm rounded-b-lg -mt-1 ${item.hasData ? "text-muted-foreground bg-muted/30" : "text-yellow-700 bg-yellow-50"}`}
                   >
                     <p className="flex items-center gap-2">
-                      <span className="font-medium">Ghi chú:</span> {item.note}
+                      <span className="font-medium">{t("note")}</span> {item.note}
                     </p>
                   </div>
                 </CollapsibleContent>

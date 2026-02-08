@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -30,6 +31,7 @@ interface ShipmentDetailsProps {
 }
 
 const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
+  const t = useTranslations("trackShipment");
   const router = useRouter();
 
   const getStatusBadge = (status: string) => {
@@ -38,25 +40,25 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
         return (
           <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
             <CheckCircle2 className="w-3 h-3 mr-1" />
-            Đã giao
+            {t("statuses.delivered")}
           </Badge>
         );
       case "in_transit":
         return (
           <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
             <Truck className="w-3 h-3 mr-1" />
-            Đang vận chuyển
+            {t("statuses.inTransit")}
           </Badge>
         );
       case "pending":
         return (
           <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
             <Clock className="w-3 h-3 mr-1" />
-            Chờ xuất phát
+            {t("statuses.pending")}
           </Badge>
         );
       default:
-        return <Badge variant="secondary">Không xác định</Badge>;
+        return <Badge variant="secondary">{t("statuses.unknown")}</Badge>;
     }
   };
 
@@ -77,7 +79,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
         <Card className="h-96 flex items-center justify-center">
           <div className="text-center text-muted-foreground">
             <Package className="w-12 h-12 mx-auto mb-4" />
-            <p>Chọn một lô hàng để xem chi tiết</p>
+            <p>{t("selectShipment")}</p>
           </div>
         </Card>
       </div>
@@ -113,7 +115,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
           <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-3 h-3 bg-primary rounded-full animate-pulse" />
-              <span className="font-medium">Vị trí hiện tại</span>
+              <span className="font-medium">{t("currentLocation")}</span>
             </div>
             <p className="text-lg font-semibold text-primary">
               {shipment.currentLocation}
@@ -124,14 +126,14 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-muted rounded-lg">
               <Calendar className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Ngày xuất phát</p>
+              <p className="text-xs text-muted-foreground">{t("departureDate")}</p>
               <p className="font-medium">
                 {new Date(shipment.departureDate).toLocaleDateString("vi-VN")}
               </p>
             </div>
             <div className="text-center p-3 bg-muted rounded-lg">
               <Clock className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Dự kiến đến</p>
+              <p className="text-xs text-muted-foreground">{t("estimatedArrival")}</p>
               <p className="font-medium">
                 {new Date(shipment.estimatedArrival).toLocaleDateString(
                   "vi-VN",
@@ -140,14 +142,14 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
             </div>
             <div className="text-center p-3 bg-muted rounded-lg">
               <Anchor className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Nhà vận chuyển</p>
+              <p className="text-xs text-muted-foreground">{t("carrier")}</p>
               <p className="font-medium text-sm truncate">{shipment.carrier}</p>
             </div>
             <div className="text-center p-3 bg-orange-50 rounded-lg">
               <div className="w-5 h-5 mx-auto mb-1 text-orange-500 font-bold text-xs flex items-center justify-center">
                 CO₂
               </div>
-              <p className="text-xs text-muted-foreground">Phát thải</p>
+              <p className="text-xs text-muted-foreground">{t("emissions")}</p>
               <p className="font-medium text-orange-600">
                 {shipment.totalCO2.toFixed(1)} kg
               </p>
@@ -156,7 +158,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
 
           {/* Progress Timeline */}
           <div>
-            <h4 className="font-medium mb-4">Lịch trình vận chuyển</h4>
+            <h4 className="font-medium mb-4">{t("timeline")}</h4>
             <div className="space-y-4">
               {shipment.legs.map((leg, index) => {
                 const Icon = getModeIcon(leg.mode);
@@ -193,7 +195,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
                     <div className="flex-1 pb-4">
                       <div className="flex items-center justify-between">
                         <h5 className="font-medium">
-                          Chặng {leg.legNumber}:{" "}
+                          {t("legNumber")} {leg.legNumber}:{" "}
                           {TRANSPORT_MODE_LABELS[leg.mode]}
                         </h5>
                         <Badge
@@ -204,7 +206,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
                           }
                           className="text-xs"
                         >
-                          {leg.type === "international" ? "Quốc tế" : "Nội địa"}
+                          {leg.type === "international" ? t("international") : t("domestic")}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -232,7 +234,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
                 router.push(`/transport?productId=${shipment.productId}`)
               }
             >
-              Xem chi tiết logistics
+              {t("viewLogistics")}
             </Button>
             <Button
               className="flex-1"
@@ -242,7 +244,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
                 )
               }
             >
-              Xem lịch sử carbon
+              {t("viewCarbonHistory")}
             </Button>
           </div>
         </CardContent>

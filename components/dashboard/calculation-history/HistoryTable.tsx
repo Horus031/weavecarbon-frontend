@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -35,6 +36,7 @@ const HistoryTable: React.FC<HistoryTableProps> = ({
   history,
   onProductClick,
 }) => {
+  const t = useTranslations("calculationHistory");
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("vi-VN", {
       day: "2-digit",
@@ -50,16 +52,16 @@ const HistoryTable: React.FC<HistoryTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Sản phẩm</TableHead>
-            <TableHead className="text-right">Vật liệu</TableHead>
-            <TableHead className="text-right">Sản xuất</TableHead>
-            <TableHead className="text-right">Vận chuyển</TableHead>
-            <TableHead className="text-right">Đóng gói</TableHead>
-            <TableHead className="text-right">Tổng CO₂</TableHead>
-            <TableHead>Phiên bản</TableHead>
-            <TableHead>Ngày tạo</TableHead>
-            <TableHead>Người tạo</TableHead>
-            <TableHead>Loại</TableHead>
+            <TableHead>{t("columnProduct")}</TableHead>
+            <TableHead className="text-right">{t("columnMaterials")}</TableHead>
+            <TableHead className="text-right">{t("columnManufacturing")}</TableHead>
+            <TableHead className="text-right">{t("columnTransport")}</TableHead>
+            <TableHead className="text-right">{t("columnPackaging")}</TableHead>
+            <TableHead className="text-right">{t("columnTotalCO2")}</TableHead>
+            <TableHead>{t("columnVersion")}</TableHead>
+            <TableHead>{t("columnCreatedDate")}</TableHead>
+            <TableHead>{t("columnCreatedBy")}</TableHead>
+            <TableHead>{t("columnType")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -104,7 +106,7 @@ const HistoryTable: React.FC<HistoryTableProps> = ({
               </TableCell>
               <TableCell>
                 <Badge variant={item.isDemo ? "outline" : "default"}>
-                  {item.isDemo ? "Demo" : "Thực"}
+                  {item.isDemo ? t("typeDemo") : t("typeReal")}
                 </Badge>
               </TableCell>
             </TableRow>

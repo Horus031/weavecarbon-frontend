@@ -59,22 +59,22 @@ export const certificateList = [
 export const recommendations = [
   {
     id: 1,
-    title: "Chuyển sang cotton hữu cơ",
-    description: "Giảm 15% carbon footprint cho dòng sản phẩm áo thun",
+    title: "recommendations.rec1.title",
+    description: "recommendations.rec1.subtitle",
     impact: "high",
     reduction: "15%",
   },
   {
     id: 2,
-    title: "Tối ưu tuyến vận chuyển",
-    description: "Kết hợp đường biển + đường bộ thay vì đường hàng không",
+    title: "recommendations.rec2.title",
+    description: "recommendations.rec2.subtitle",
     impact: "medium",
     reduction: "8%",
   },
   {
     id: 3,
-    title: "Sử dụng bao bì tái chế",
-    description: "Thay thế bao bì nhựa bằng giấy tái chế",
+    title: "recommendations.rec3.title",
+    description: "recommendations.rec3.subtitle",
     impact: "low",
     reduction: "3%",
   },

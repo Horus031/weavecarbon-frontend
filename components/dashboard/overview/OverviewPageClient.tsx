@@ -55,7 +55,7 @@ const OverviewPage: React.FC = () => {
   const { user } = useAuth();
   const { products, pendingProductData, clearPendingProduct } = useProducts();
   const navigate = useRouter();
-  const [company, setCompany] = useState<Company | null>(null);
+  const [, setCompany] = useState<Company | null>(null);
   const isDemo = useIsDemo();
   const [showProductModal, setShowProductModal] = useState(false);
   const { setPageTitle } = useDashboardTitle();
@@ -198,7 +198,7 @@ const OverviewPage: React.FC = () => {
           <CardContent>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Gauge className="w-4 h-4" />
-              <span>{t("stats.basedOnSKUs")}</span>
+              <span>{t("stats.basedOnSKUs", { count: stats.skuCount })}</span>
             </div>
           </CardContent>
         </Card>
@@ -259,7 +259,7 @@ const OverviewPage: React.FC = () => {
                 className="p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-sm">{rec.title}</h4>
+                  <h4 className="font-medium text-sm">{t(rec.title)}</h4>
                   <Badge
                     className={getImpactColor(rec.impact)}
                     variant="secondary"
@@ -268,7 +268,7 @@ const OverviewPage: React.FC = () => {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {rec.description}
+                  {t(rec.description)}
                 </p>
               </div>
             ))}

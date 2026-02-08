@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -29,14 +30,6 @@ const EMISSION_FACTORS: Record<string, number> = {
   rail: 0.028,
 };
 
-const TRANSPORT_MODE_LABELS: Record<string, string> = {
-  truck_light: "Xe tải nhẹ",
-  truck_heavy: "Xe tải nặng",
-  ship: "Tàu biển",
-  air: "Máy bay",
-  rail: "Đường sắt",
-};
-
 interface TransportLegCardProps {
   leg: LegInput;
   index: number;
@@ -56,6 +49,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
   onRemove,
   calculateCO2,
 }) => {
+  const t = useTranslations("transport");
   const getModeIcon = (mode: string) => {
     switch (mode) {
       case "ship":
@@ -73,7 +67,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             {getModeIcon(leg.mode)}
-            Chặng {index + 1}
+            {t("legCardTitle")} {index + 1}
           </CardTitle>
           {canRemove && (
             <Button
@@ -90,7 +84,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
       <CardContent className="space-y-4">
         {/* Transport Mode */}
         <div>
-          <Label>Phương thức vận chuyển</Label>
+          <Label>{t("transportMode")}</Label>
           <Select
             value={leg.mode}
             onValueChange={(v) => onUpdate(leg.id, "mode", v)}
@@ -102,31 +96,31 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
               <SelectItem value="truck_light">
                 <div className="flex items-center gap-2">
                   <Truck className="w-4 h-4" />
-                  Xe tải nhẹ
+                  {t("truckLight")}
                 </div>
               </SelectItem>
               <SelectItem value="truck_heavy">
                 <div className="flex items-center gap-2">
                   <Truck className="w-4 h-4" />
-                  Xe tải nặng
+                  {t("truckHeavy")}
                 </div>
               </SelectItem>
               <SelectItem value="ship">
                 <div className="flex items-center gap-2">
                   <Ship className="w-4 h-4" />
-                  Tàu biển
+                  {t("ship")}
                 </div>
               </SelectItem>
               <SelectItem value="air">
                 <div className="flex items-center gap-2">
                   <Plane className="w-4 h-4" />
-                  Máy bay
+                  {t("air")}
                 </div>
               </SelectItem>
               <SelectItem value="rail">
                 <div className="flex items-center gap-2">
                   <Truck className="w-4 h-4" />
-                  Đường sắt
+                  {t("rail")}
                 </div>
               </SelectItem>
             </SelectContent>
@@ -137,7 +131,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium mb-3">
             <MapPin className="w-4 h-4 text-emerald-600" />
-            Điểm A - Điểm lấy hàng
+            {t("originLabel")}
           </div>
           <AddressSelection
             value={leg.origin}
@@ -150,7 +144,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium mb-3">
             <MapPin className="w-4 h-4 text-destructive" />
-            Điểm B - Điểm giao hàng
+            {t("destinationLabel")}
           </div>
           <AddressSelection
             value={leg.destination}
@@ -161,10 +155,10 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
 
         {/* Distance */}
         <div>
-          <Label>Khoảng cách (km)</Label>
+          <Label>{t("distance")}</Label>
           <Input
             type="number"
-            placeholder="Nhập khoảng cách"
+            placeholder={t("distancePlaceholder")}
             value={leg.distanceKm}
             onChange={(e) => onUpdate(leg.id, "distanceKm", e.target.value)}
             className="mt-1"
@@ -172,7 +166,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
           {!hasLocationPermission && (
             <p className="text-xs text-muted-foreground mt-1">
               <Info className="w-3 h-3 inline mr-1" />
-              Bật vị trí để tự động tính khoảng cách
+              {t("locationPermissionHint")}
             </p>
           )}
         </div>
@@ -181,14 +175,13 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
         {parseFloat(leg.distanceKm) > 0 && (
           <div className="p-3 bg-primary/5 rounded-lg">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">CO₂ chặng này</span>
+              <span className="text-muted-foreground">{t("legCO2")}</span>
               <span className="font-medium text-primary">
                 {calculateCO2(leg).toFixed(2)} kg CO₂e
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Hệ số: {EMISSION_FACTORS[leg.mode]} kg CO₂/km (
-              {TRANSPORT_MODE_LABELS[leg.mode]})
+              {t("emissionFactor")}: {EMISSION_FACTORS[leg.mode]} kg CO₂/km
             </p>
           </div>
         )}

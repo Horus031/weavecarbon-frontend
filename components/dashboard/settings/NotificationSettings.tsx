@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -21,52 +22,54 @@ interface NotificationSetting {
   email: boolean;
 }
 
-const DEFAULT_NOTIFICATIONS: NotificationSetting[] = [
-  {
-    id: "product_created",
-    label: "Sản phẩm mới",
-    description: "Thông báo khi có sản phẩm mới được tạo",
-    email: false,
-  },
-  {
-    id: "product_updated",
-    label: "Cập nhật sản phẩm",
-    description: "Thông báo khi sản phẩm được cập nhật",
-    email: false,
-  },
-  {
-    id: "shipment_status",
-    label: "Trạng thái vận chuyển",
-    description: "Thông báo khi shipment thay đổi trạng thái",
-    email: true,
-  },
-  {
-    id: "report_ready",
-    label: "Báo cáo sẵn sàng",
-    description: "Thông báo khi báo cáo được tạo xong",
-    email: true,
-  },
-  {
-    id: "export_completed",
-    label: "Export hoàn tất",
-    description: "Thông báo khi file export đã sẵn sàng",
-    email: false,
-  },
-  {
-    id: "user_invited",
-    label: "Tài khoản mới",
-    description: "Thông báo khi có tài khoản mới được tạo",
-    email: true,
-  },
-  {
-    id: "compliance_deadline",
-    label: "Deadline compliance",
-    description: "Nhắc nhở về các deadline compliance sắp đến",
-    email: true,
-  },
-];
-
 const NotificationSettings: React.FC = () => {
+  const t = useTranslations("settings.notifications");
+  
+  const DEFAULT_NOTIFICATIONS: NotificationSetting[] = [
+    {
+      id: "product_created",
+      label: t("productCreated"),
+      description: t("productCreatedDesc"),
+      email: false,
+    },
+    {
+      id: "product_updated",
+      label: t("productUpdated"),
+      description: t("productUpdatedDesc"),
+      email: false,
+    },
+    {
+      id: "shipment_status",
+      label: t("shipmentStatus"),
+      description: t("shipmentStatusDesc"),
+      email: true,
+    },
+    {
+      id: "report_ready",
+      label: t("reportReady"),
+      description: t("reportReadyDesc"),
+      email: true,
+    },
+    {
+      id: "export_completed",
+      label: t("exportCompleted"),
+      description: t("exportCompletedDesc"),
+      email: false,
+    },
+    {
+      id: "user_invited",
+      label: t("userInvited"),
+      description: t("userInvitedDesc"),
+      email: true,
+    },
+    {
+      id: "compliance_deadline",
+      label: t("complianceDeadline"),
+      description: t("complianceDeadlineDesc"),
+      email: true,
+    },
+  ];
+  
   const [notifications, setNotifications] = useState<NotificationSetting[]>(
     DEFAULT_NOTIFICATIONS,
   );
@@ -78,17 +81,17 @@ const NotificationSettings: React.FC = () => {
   };
 
   const handleSave = () => {
-    toast.success("Đã lưu cài đặt thông báo");
+    toast.success(t("saveSuccess"));
   };
 
   const handleEnableAll = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, email: true })));
-    toast.success("Đã bật tất cả thông báo email");
+    toast.success(t("enableAllSuccess"));
   };
 
   const handleDisableAll = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, email: false })));
-    toast.success("Đã tắt tất cả thông báo email");
+    toast.success(t("disableAllSuccess"));
   };
 
   return (
@@ -100,18 +103,18 @@ const NotificationSettings: React.FC = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="w-5 h-5" />
-                Thông báo Email
+                {t("emailNotifications")}
               </CardTitle>
               <CardDescription>
-                Cấu hình thông báo gửi qua email
+                {t("emailNotificationsDesc")}
               </CardDescription>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleEnableAll}>
-                Bật tất cả
+                {t("enableAll")}
               </Button>
               <Button variant="outline" size="sm" onClick={handleDisableAll}>
-                Tắt tất cả
+                {t("disableAll")}
               </Button>
             </div>
           </div>
@@ -141,7 +144,7 @@ const NotificationSettings: React.FC = () => {
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSave}>Lưu cài đặt thông báo</Button>
+        <Button onClick={handleSave}>{t("saveSettings")}</Button>
       </div>
     </div>
   );

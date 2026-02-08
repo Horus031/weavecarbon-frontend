@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
   onOpenChange,
   marketCode,
 }) => {
+  const t = useTranslations("export.modal");
   const [activeTab, setActiveTab] = useState("overview");
 
   // Get compliance data (demo data for now)
@@ -75,12 +77,10 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
 
   const handleExportReport = () => {
     if (compliance.status !== "ready" && compliance.status !== "verified") {
-      toast.error(
-        "Hồ sơ chưa đủ điều kiện để xuất báo cáo. Vui lòng hoàn thiện các mục còn thiếu.",
-      );
+      toast.error(t("notReadyError"));
       return;
     }
-    toast.success("Đang tạo báo cáo tuân thủ...");
+    toast.success(t("generatingReport"));
   };
 
   return (
@@ -97,7 +97,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
               </div>
               <div>
                 <DialogTitle className="text-lg md:text-xl">
-                  Thị trường {compliance.marketName}
+                  {t("market")} {compliance.marketName}
                 </DialogTitle>
                 <p className="text-sm text-muted-foreground mt-1">
                   {regulation.name} ({regulation.code})
@@ -115,7 +115,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
           <div className="mt-3 md:mt-4 p-3 md:p-4 rounded-lg bg-muted/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">
-                Mức độ sẵn sàng xuất khẩu
+                {t("readinessLevel")}
               </span>
               <span className="text-xl md:text-2xl font-bold text-primary">
                 {compliance.score}%
@@ -124,21 +124,21 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
             <Progress value={compliance.score} className="h-3" />
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mt-2 text-xs text-muted-foreground">
               <span>
-                Cập nhật:{" "}
-                {new Date(compliance.lastUpdated).toLocaleDateString("vi-VN")}
+                {t("updated")}{" "}
+                {new Date(compliance.lastUpdated).toLocaleDateString()}
               </span>
               <span>
                 {compliance.score >= 80 ? (
                   <span className="flex items-center gap-1 text-green-600">
-                    <CheckCircle2 className="w-3 h-3" /> Sẵn sàng xuất khẩu
+                    <CheckCircle2 className="w-3 h-3" /> {t("exportReady")}
                   </span>
                 ) : compliance.score >= 50 ? (
                   <span className="flex items-center gap-1 text-yellow-600">
-                    <Clock className="w-3 h-3" /> Cần bổ sung hồ sơ
+                    <Clock className="w-3 h-3" /> {t("needsWork")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-red-600">
-                    <AlertCircle className="w-3 h-3" /> Chưa đủ điều kiện
+                    <AlertCircle className="w-3 h-3" /> {t("notReady")}
                   </span>
                 )}
               </span>
@@ -155,19 +155,19 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
           <TabsList className="md:mx-8 mt-3 md:mt-4 w-96 md:w-fit flex flex-nowrap mx-auto ">
             <TabsTrigger value="overview" className="gap-1.5">
               <Globe className="w-4 h-4 hidden md:static" />
-              Tổng quan
+              {t("overviewTab")}
             </TabsTrigger>
             <TabsTrigger value="products" className="gap-1.5">
               <Package className="w-4 h-4 hidden md:static" />
-              Sản phẩm
+              {t("productsTab")}
             </TabsTrigger>
             <TabsTrigger value="carbon" className="gap-1.5">
               <Leaf className="w-4 h-4 hidden md:static" />
-              Carbon
+              {t("carbonTab")}
             </TabsTrigger>
             <TabsTrigger value="documents" className="gap-1.5">
               <FileText className="w-4 h-4 hidden md:static" />
-              Hồ sơ
+              {t("documentsTab")}
             </TabsTrigger>
           </TabsList>
 
@@ -188,18 +188,18 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-sm mb-2">
-                        Quy định áp dụng
+                        {t("regulationInfo")}
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                         <div>
                           <span className="text-muted-foreground">
-                            Mã quy định:{" "}
+                            {t("regulationCode")}{" "}
                           </span>
                           <span className="font-medium">{regulation.code}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">
-                            Tham chiếu:{" "}
+                            {t("reference")}{" "}
                           </span>
                           <span className="font-medium">
                             {regulation.legalReference}
@@ -207,7 +207,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
                         </div>
                         <div>
                           <span className="text-muted-foreground">
-                            Phạm vi:{" "}
+                            {t("scope")}{" "}
                           </span>
                           <span className="font-medium">
                             {regulation.reportingScope}
@@ -215,7 +215,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
                         </div>
                         <div>
                           <span className="text-muted-foreground">
-                            Tần suất báo cáo:{" "}
+                            {t("reportingFrequency")}{" "}
                           </span>
                           <span className="font-medium">
                             {regulation.reportingFrequency}
@@ -223,7 +223,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
                         </div>
                         <div className="col-span-2">
                           <span className="text-muted-foreground">
-                            Ngày hiệu lực:{" "}
+                            {t("enforcementDate")}{" "}
                           </span>
                           <span className="font-medium">
                             {regulation.enforcementDate}
@@ -250,10 +250,10 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
                         </div>
                         <div>
                           <h4 className="font-semibold text-sm">
-                            Trạng thái xác minh
+                            {t("verificationStatus")}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            Thị trường này yêu cầu xác minh độc lập
+                            {t("verificationRequired")}
                           </p>
                         </div>
                       </div>
@@ -265,10 +265,10 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
                         }
                       >
                         {compliance.verificationStatus === "verified"
-                          ? "Đã xác minh"
+                          ? t("verified")
                           : compliance.verificationStatus === "pending"
-                            ? "Chờ xác minh"
-                            : "Bị từ chối"}
+                            ? t("verificationPending")
+                            : t("rejected")}
                       </Badge>
                     </div>
                   </CardContent>
@@ -310,12 +310,12 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
         {/* Footer Actions */}
         <div className="p-4 md:p-6 pt-3 md:pt-4 border-t flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Đóng
+            {t("close")}
           </Button>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <Button variant="outline" className="w-full sm:w-auto">
               <ExternalLink className="w-4 h-4 mr-2" />
-              Xem hướng dẫn CBAM
+              {t("viewGuide")}
             </Button>
             <Button
               onClick={handleExportReport}
@@ -326,7 +326,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
               className="w-full sm:w-auto"
             >
               <FileDown className="w-4 h-4 mr-2" />
-              Xuất báo cáo tuân thủ
+              {t("exportReport")}
             </Button>
           </div>
         </div>

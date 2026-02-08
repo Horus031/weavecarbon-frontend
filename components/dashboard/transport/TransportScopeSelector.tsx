@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -20,11 +21,12 @@ const TransportScopeSelector: React.FC<TransportScopeSelectorProps> = ({
   value,
   onChange,
 }) => {
+  const t = useTranslations("transport");
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Phạm vi vận chuyển</CardTitle>
-        <CardDescription>Chọn loại vận chuyển chính</CardDescription>
+        <CardTitle>{t("scopeTitle")}</CardTitle>
+        <CardDescription>{t("scopeDescription")}</CardDescription>
       </CardHeader>
       <CardContent>
         <RadioGroup
@@ -34,11 +36,11 @@ const TransportScopeSelector: React.FC<TransportScopeSelectorProps> = ({
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="domestic" id="domestic" />
-            <Label htmlFor="domestic">Nội địa Việt Nam</Label>
+            <Label htmlFor="domestic">{t("scopeDomestic")}</Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="international" id="international" />
-            <Label htmlFor="international">Quốc tế</Label>
+            <Label htmlFor="international">{t("scopeInternational")}</Label>
           </div>
         </RadioGroup>
       </CardContent>

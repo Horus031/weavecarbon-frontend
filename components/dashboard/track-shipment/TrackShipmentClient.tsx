@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
@@ -271,6 +272,7 @@ const convertProductToShipment = (product: StoredProduct): Shipment | null => {
 };
 
 const TrackShipmentClient: React.FC = () => {
+  const t = useTranslations("trackShipment");
   const { setPageTitle } = useDashboardTitle();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -283,10 +285,10 @@ const TrackShipmentClient: React.FC = () => {
 
   useEffect(() => {
     setPageTitle(
-      "Theo dõi lô hàng",
-      "Xem trạng thái và vị trí của tất cả lô hàng",
+      t("title"),
+      t("subtitle"),
     );
-  }, [setPageTitle]);
+  }, [setPageTitle, t]);
 
   // Load published products from localStorage and convert to shipments
   useEffect(() => {
@@ -396,14 +398,14 @@ const TrackShipmentClient: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold">Theo dõi lô hàng</h2>
+          <h2 className="text-xl font-bold">{t("title")}</h2>
           <p className="text-muted-foreground">
-            Xem trạng thái và vị trí của tất cả lô hàng
+            {t("subtitle")}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={handleRefresh}>
           <RefreshCw className="w-4 h-4 mr-2" />
-          Làm mới
+          {t("refresh")}
         </Button>
       </div>
 

@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import ShippingOverviewMap from "./logistic/ShippingOverviewMap";
 import { useRouter } from "next/navigation";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
 
 const LogisticsPage: React.FC = () => {
+  const t = useTranslations("logistics");
   const navigate = useRouter();
 
   const { setPageTitle } = useDashboardTitle();
@@ -18,9 +20,9 @@ const LogisticsPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold">Quản lý vận chuyển</h2>
+          <h2 className="text-xl font-bold">{t("title")}</h2>
           <p className="text-muted-foreground">
-            Theo dõi tất cả các lô hàng trên bản đồ thế giới
+            {t("subtitle")}
           </p>
         </div>
       </div>

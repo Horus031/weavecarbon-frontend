@@ -3,6 +3,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Package, Globe, Scale, AlertTriangle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   ProductData,
   CATEGORY_LABELS,
@@ -35,6 +36,7 @@ const ProductOverviewHeader: React.FC<ProductOverviewHeaderProps> = ({
   product,
   carbonStatus,
 }) => {
+  const t = useTranslations("productDetail");
   const status = CARBON_STATUS_CONFIG[carbonStatus];
   const productStatus = product.status || "draft";
   const productStatusConfig =
@@ -48,9 +50,7 @@ const ProductOverviewHeader: React.FC<ProductOverviewHeaderProps> = ({
         <Alert variant="default" className="border-yellow-300 bg-yellow-50">
           <AlertTriangle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
-            <span className="font-medium">Dữ liệu chưa đầy đủ</span> – kết quả
-            carbon chỉ mang tính ước tính. Vui lòng bổ sung dữ liệu để có kết
-            quả chính xác hơn.
+            <span className="font-medium">{t("draftWarning")}</span>
           </AlertDescription>
         </Alert>
       )}

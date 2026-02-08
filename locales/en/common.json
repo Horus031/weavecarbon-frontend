@@ -206,7 +206,8 @@
 
   "auth": {
     "welcome": "Welcome to WEAVECARBON",
-    "description": "Sign in to access your B2B dashboard",
+    "welcomeb2b": "WEAVECARBON for Business",
+    "description": "Sign in to access your dashboard",
     "b2bSubtitle": "Carbon Tracking for Fashion Businesses",
     "demoLogin": "Try Demo Account",
     "googleLogin": "Continue with Google",
@@ -311,7 +312,19 @@
     },
     "recommendations": {
       "title": "Recommendations",
-      "subtitle": "AI-powered suggestions"
+      "subtitle": "AI-powered suggestions",
+      "rec1": {
+        "title": "Switch to organic cotton",
+        "subtitle": "Reduce carbon footprint by 15% on our t-shirt product line."
+      },
+      "rec2": {
+        "title": "Optimizing transportation routes",
+        "subtitle": "Combine sea and land transport instead of air transport."
+      },
+      "rec3": {
+        "title": "Use recycled packaging",
+        "subtitle": "Replace plastic packaging with recycled paper."
+      }
     },
     "quickActions": {
       "addProduct": {
@@ -340,50 +353,663 @@
     "logistics": "Logistics",
     "export": "Export",
     "reports": "Reports",
-    "settings": "Settings"
+    "settings": "Settings",
+    "signOut": "Sign Out"
+  },
+
+  "products": {
+    "title": "Product Management",
+    "summary": "Total {total} products • {draft} drafts • {published} published • {batches} batches",
+    "manageBatches": "Manage Batches",
+    "uploadFile": "Upload File",
+    "addProduct": "Add Product",
+    "allStatus": "All",
+    "draftStatus": "Draft",
+    "publishedStatus": "Published",
+    "searchPlaceholder": "Search by name or SKU...",
+    "statusFilter": "Status",
+    "allStatusFilter": "All Statuses",
+    "notFound": "No products found",
+    "tryChangeFilter": "Try changing filters or create a new product",
+    "createNew": "Create New Product",
+    "co2PerUnit": "CO₂e / unit",
+    "createQR": "Create QR Code",
+    "showing": "Showing {filtered} / {total} products",
+    "stats": {
+      "all": "All",
+      "draft": "Drafts",
+      "published": "Published"
+    },
+    "statusLabel": {
+      "draft": "Draft",
+      "published": "Published"
+    }
+  },
+
+  "summary": {
+    "backButton": "Back",
+    "draftNotice": "Product is in Draft status - Carbon results are preliminary estimates",
+    "notFoundTitle": "Product not found",
+    "notFoundDesc": "Please select a product from the list or create a new one.",
+    "notFoundWithId": "Product with ID \"{productId}\" does not exist in the system.",
+    "backToProducts": "Back to Products",
+    "productionInfo": {
+      "title": "Production Information",
+      "location": "Manufacturing Location",
+      "process": "Process",
+      "energySource": "Energy Source"
+    },
+    "logisticsInfo": {
+      "title": "Logistics Information",
+      "targetMarket": "Target Market",
+      "totalDistance": "Total Distance",
+      "transportLegs": "Transport Legs"
+    },
+    "transportMode": {
+      "road": "Road",
+      "sea": "Sea",
+      "air": "Air",
+      "rail": "Rail"
+    },
+    "additionalInfo": {
+      "title": "Additional Information",
+      "status": "Status:",
+      "version": "Version:",
+      "quantity": "Quantity:",
+      "createdAt": "Created:",
+      "updatedAt": "Updated:",
+      "products": "products"
+    },
+    "carbonBreakdown": {
+      "materials": "Materials",
+      "manufacturing": "Manufacturing",
+      "transport": "Transport",
+      "materialTypes": "{count} material types",
+      "transportLegs": "{count} transport legs",
+      "unknown": "Unknown"
+    },
+    "statusLabel": {
+      "draft": "Draft",
+      "published": "Published"
+    },
+    "calculationNote": "Calculated from assessment data",
+    "endOfLifeStrategy": "No take-back program yet",
+    "complianceNote": {
+      "passed": "Compliant",
+      "pending": "Pending completion"
+    }
+  },
+
+  "productDetail": {
+    "draftWarning": "Incomplete data – carbon results are preliminary estimates. Please supplement data for more accurate results.",
+    "carbonFootprint": {
+      "title": "Total Carbon Footprint",
+      "preliminary": "Preliminary",
+      "preliminaryNotice": "These are preliminary estimates. Update data for more accurate results.",
+      "preliminaryEstimate": "Preliminary estimate",
+      "totalEmissions": "Total emissions",
+      "perProduct": "kg CO₂e / product",
+      "estimatedRange": "Estimated range: ",
+      "confidenceLabel": "Data confidence",
+      "highConfidence": "Data from official, verified sources",
+      "mediumConfidence": "Some data using proxy factors",
+      "lowConfidence": "Most data are estimates, need more input",
+      "methodologyNote": "Calculated using LCA (Life Cycle Assessment) methodology, compliant with ISO 14067 and GHG Protocol."
+    },
+    "compliance": {
+      "title": "Export Compliance Status",
+      "exportReady": "Export Ready",
+      "needMoreData": "Need more data",
+      "criteriaCount": "{passed}/{total} criteria met",
+      "downloadReport": "Download Carbon Report",
+      "generateQR": "Generate QR Code",
+      "qrNotAvailable": "QR Code only available when product meets all export criteria"
+    },
+    "materialImpact": {
+      "title": "Material Emissions Breakdown",
+      "material": "Material",
+      "ratio": "Ratio",
+      "emissionFactor": "EF",
+      "emissionFactorTooltip": "Emission Factor (kg CO₂e/kg)",
+      "source": "Source",
+      "sourceLabel": "Source: ",
+      "verified": "Verified",
+      "proxy": "Proxy",
+      "total": "Total",
+      "factorNote": "Emission factors sourced from reputable databases: ecoinvent, ADEME Base Carbone, DEFRA UK."
+    },
+    "carbonBreakdown": {
+      "title": "Emissions Analysis by Stage",
+      "awaitingData": "Awaiting data",
+      "waitingForData": "Waiting for data...",
+      "note": "Note:",
+      "awaitingDataBadge": "Awaiting data",
+      "proxyBadge": "Proxy"
+    }
   },
 
   "export": {
     "title": "Export & Compliance",
-    "subtitle": "Managing export documentation and verifying compliance with international regulations.",
+    "subtitle": "Managing export documentation and verifying compliance with international regulations",
     "marketReadiness": "Market Readiness Level",
     "certificates": "Certificates and Documents",
-    "EU": {
-      "title": "Europe",
-      "location": "CBAM, EU Green Deal"
+    "market": "Market",
+    "exportReady": "Export Ready",
+    "needsWork": "items to complete",
+    "notReady": "Not ready",
+    "details": "Details",
+    "validCerts": "Valid certificates",
+    "pending": "Pending",
+    "readyMarkets": "Ready markets",
+    "needsSupport": "Need support",
+    "expires": "Expires:",
+    "status": {
+      "valid": "Valid",
+      "pending": "Pending",
+      "draft": "Draft"
     },
-    "US": {
-      "title": "United States",
-      "location": "California Climate"
+    "modal": {
+      "market": "Market",
+      "exportReady": "Export Ready",
+      "needsWork": "Items to complete",
+      "notReady": "Not ready",
+      "readinessLevel": "Export Readiness Level",
+      "updated": "Updated:",
+      "overviewTab": "Overview",
+      "productsTab": "Products",
+      "carbonTab": "Carbon",
+      "documentsTab": "Documents",
+      "regulationInfo": "Applicable Regulations",
+      "regulationCode": "Regulation Code:",
+      "reference": "Reference:",
+      "scope": "Scope:",
+      "reportingFrequency": "Reporting Frequency:",
+      "enforcementDate": "Enforcement Date:",
+      "verificationStatus": "Verification Status",
+      "verificationRequired": "This market requires independent verification",
+      "verified": "Verified",
+      "verificationPending": "Pending verification",
+      "rejected": "Rejected",
+      "close": "Close",
+      "viewGuide": "View CBAM Guidelines",
+      "exportReport": "Export Compliance Report",
+      "notReadyError": "Documentation not ready for report export. Please complete missing items.",
+      "generatingReport": "Generating compliance report..."
     },
-    "JP": {
-      "title": "Japan",
-      "location": "JIS Standards"
+    "recommendations": {
+      "title": "Documentation Completion Recommendations",
+      "items": "{count} items",
+      "completed": "Fully completed!",
+      "completedDesc": "No recommendations to implement. Documentation is export-ready.",
+      "allComplete": "Fully completed!",
+      "allCompleteDesc": "No recommendations to implement. Documentation is export-ready.",
+      "legalReason": "Legal Reason",
+      "impact": "Impact if Missing",
+      "actionGuide": "Implementation Guide",
+      "viewGuide": "View Guide",
+      "learnMore": "Learn More"
     },
-    "KR": {
-      "title": "Korea",
-      "location": "K-ETS"
+    "documents": {
+      "title": "Certificates & Documents",
+      "required": "required",
+      "requiredDocs": "Required Documents",
+      "recommendedDocs": "Recommended Documents",
+      "requiredComplete": "{completed}/{total} required",
+      "uploadedBy": "Uploaded by {user}",
+      "validUntil": "Valid until {date}",
+      "validTo": "Valid until {date}",
+      "upload": "Upload",
+      "view": "View",
+      "download": "Download",
+      "remove": "Remove"
     },
-
-    "certi1": {
-      "name": "GOTS Certificate",
-      "status": "valid",
-      "expires": "2024-12-31"
+    "carbonData": {
+      "title": "Carbon Emissions Data",
+      "complete": "{completed}/{total} completed",
+      "completed": "{completed}/{total} completed",
+      "totalEmissions": "Total Emissions",
+      "progress": "Reporting Progress: {percent}%",
+      "reportingProgress": "Reporting Progress:",
+      "scope1": "Scope 1 - Direct",
+      "scope1Desc": "Emissions from owned or controlled sources",
+      "scope2": "Scope 2 - Indirect (Energy)",
+      "scope2Desc": "Emissions from purchased energy",
+      "scope3": "Scope 3 - Indirect (Value Chain)",
+      "scope3Desc": "Emissions from supply chain and transport",
+      "value": "Value:",
+      "methodology": "Methodology:",
+      "source": "Source:",
+      "period": "Reporting Period:",
+      "reportingPeriod": "Reporting Period:",
+      "noData": "No data yet. Please declare to complete documentation.",
+      "edit": "Edit",
+      "declare": "Declare",
+      "factorsInUse": "Emission Factors in Use",
+      "emissionFactors": "Emission Factors in Use"
     },
-    "certi2": {
-      "name": "OEKO-TEX Standard 100",
-      "status": "valid",
-      "expires": "2024-08-15"
-    },
-    "certi3": {
-      "name": "Carbon Footprint Report",
-      "status": "pending",
-      "expires": null
-    },
-    "certi4": {
-      "name": "EU Product Passport",
-      "status": "draft",
-      "expires": null
+    "productScope": {
+      "title": "Export Products",
+      "products": "{count} products",
+      "productCount": "{count} products",
+      "add": "Add",
+      "noProducts": "No export products defined",
+      "noProductsDesc": "Please add export products to {market} to continue compliance assessment.",
+      "addProduct": "Add Product",
+      "productCode": "Product Code",
+      "productName": "Product Name",
+      "hsCode": "HS Code",
+      "productionSite": "Production Site",
+      "exportVolume": "Export Volume",
+      "totalExportVolume": "Total Export Volume"
     }
+  },
+
+  "reports": {
+    "title": "Reports & Data Export",
+    "subtitle": "Create reports or export CSV/Excel data with full metadata",
+    "fullReport": "Full Report",
+    "demoIndicator": "Tenant: {tenantName} • Exported data will have demo metadata",
+    "stats": {
+      "products": "Products",
+      "activities": "Activities",
+      "users": "Users",
+      "calculationHistory": "Calculation History"
+    },
+    "tabs": {
+      "reports": "Reports",
+      "export": "Export Data"
+    },
+    "types": {
+      "product": {
+        "label": "Products",
+        "description": "Product list & CO2"
+      },
+      "activity": {
+        "label": "Activities",
+        "description": "System activity logs"
+      },
+      "audit": {
+        "label": "Audit Logs",
+        "description": "Audit trail logs"
+      },
+      "users": {
+        "label": "Users",
+        "description": "User list & roles"
+      },
+      "analytics": {
+        "label": "Analytics",
+        "description": "Summary & statistics"
+      },
+      "history": {
+        "label": "History",
+        "description": "Calculation history"
+      },
+      "company": {
+        "label": "Company",
+        "description": "All company data"
+      }
+    },
+    "search": "Search reports...",
+    "filterLabel": "Filter reports",
+    "filterType": "Report type",
+    "filterPlaceholder": "Select type",
+    "filterAllTypes": "All types",
+    "filterOptions": {
+      "all": "All types",
+      "product": "Products",
+      "activity": "Activities",
+      "audit": "Audit Logs",
+      "users": "Users",
+      "analytics": "Analytics",
+      "history": "History",
+      "company": "Company"
+    },
+    "notFound": "No reports found",
+    "notFoundDesc": "Try changing filters or create a new report",
+    "ready": "Ready",
+    "download": "Download",
+    "quickExport": "Quick export by type",
+    "selectFormat": "Select export format",
+    "selectFormatDesc": "Choose data type and file format",
+    "formats": {
+      "products": {
+        "title": "Products ({count})",
+        "description": "Product list & CO2"
+      },
+      "activities": {
+        "title": "Activities ({count})",
+        "description": "CREATE, UPDATE, APPROVE logs"
+      },
+      "audit": {
+        "title": "Audit Logs ({count})",
+        "description": "LOGIN, EXPORT, SIGNUP events"
+      },
+      "users": {
+        "title": "Users ({count})",
+        "description": "Admin, Member, Last login"
+      },
+      "history": {
+        "title": "Calculation History ({count})",
+        "description": "CO2 details by version"
+      },
+      "analytics": {
+        "title": "Analytics Summary",
+        "description": "Summary + Category breakdown"
+      },
+      "fullReport": {
+        "title": "Full Company Report",
+        "description": "All data in one file"
+      }
+    },
+    "csv": "CSV",
+    "xlsx": "XLSX",
+    "exportAll": "Export All",
+    "exportHistory": "Export History",
+    "records": "{count} records",
+    "mobileNote": "💡 Excel/CSV files are best viewed on desktop",
+    "toasts": {
+      "success": "Exported {count} {type} to {format}",
+      "analyticsSuccess": "Exported analytics summary report",
+      "fullReportSuccess": "Exported full company report"
+    },
+    "monthlyReport": "Carbon Report {month}/{year}",
+    "allProductsReport": "All Products Report",
+    "systemActivityReport": "System Activity Report",
+    "auditLogReport": "Audit Log Report",
+    "usersPermissionReport": "Users & Permissions Report",
+    "analyticsReport": "Analytics Summary Report",
+    "calculationHistoryReport": "Carbon Calculation History"
+  },
+
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage system, users, and notifications",
+    "tabs": {
+      "system": "System",
+      "users": "Users",
+      "notifications": "Notifications"
+    },
+    "system": {
+      "companyInfo": "Company Information",
+      "companyInfoDesc": "Manage company basic information",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "save": "Save",
+      "companyName": "Company name / Brand",
+      "businessType": "Business type",
+      "businessTypeBrand": "Brand",
+      "businessTypeFactory": "Factory",
+      "businessTypeShop": "Shop Online",
+      "servicePlan": "Service Plan",
+      "demoWarning": "⚠️ This is a Demo account. Some changes may be limited.",
+      "systemInfo": "System Information",
+      "systemInfoDesc": "Details about environment and status",
+      "accountType": "Account Type",
+      "demo": "DEMO",
+      "production": "PRODUCTION",
+      "createdDate": "Created Date",
+      "apiVersion": "API Version",
+      "region": "Region",
+      "status": "Status",
+      "uptime": "Uptime",
+      "active": "Active",
+      "asiaPacific": "Asia Pacific (Singapore)",
+      "usageLimits": "Usage Limits",
+      "usageLimitsDesc": "Information about service plan limits",
+      "products": "Products",
+      "members": "Members",
+      "apiCalls": "API Calls/month",
+      "upgradeTitle": "Upgrade to Standard",
+      "upgradeDesc": "Unlock more features and higher limits",
+      "upgradeNow": "Upgrade now",
+      "notUpdated": "Not updated",
+      "updateSuccess": "System information updated",
+      "updateError": "Unable to update information"
+    },
+    "users": {
+      "teamMembers": "Users",
+      "teamMembersCount": "Users ({count})",
+      "teamMembersDesc": "Admin creates accounts for members with Member or Viewer roles",
+      "createAccount": "Create Account",
+      "createAccountTitle": "Create New Account",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Doe",
+      "email": "Email",
+      "emailPlaceholder": "email@company.com",
+      "role": "Role",
+      "roleDescription": "Member: Can view and edit data. Viewer: Can only view data.",
+      "member": "Member",
+      "memberDesc": "View and edit data",
+      "viewer": "Viewer",
+      "viewerDesc": "View only",
+      "admin": "Admin (Root)",
+      "memberHeaderName": "Member",
+      "memberHeaderRole": "Role",
+      "memberHeaderStatus": "Status",
+      "memberHeaderLastLogin": "Last Login",
+      "active": "Active",
+      "invited": "Pending",
+      "disabled": "Disabled",
+      "neverLogged": "Never logged in",
+      "noName": "No name",
+      "resendInvite": "Resend invite email",
+      "disable": "Disable",
+      "enable": "Enable",
+      "removeAccount": "Remove Account",
+      "cannotRemoveAdmin": "Cannot remove Admin account",
+      "cannotDisableAdmin": "Cannot disable Admin account",
+      "inviteSuccess": "Account created for {email}",
+      "resendSuccess": "Invitation resent to {email}",
+      "toggleSuccess": "Account {action} for {email}",
+      "toggleDisabled": "disabled",
+      "toggleEnabled": "enabled",
+      "removeSuccess": "Removed {email} from system",
+      "emailRequired": "Please enter email",
+      "demoWarning": "⚠️ Demo Account: User changes are saved only in this session.",
+      "cancel":"Cancel"
+    },
+    "notifications": {
+      "emailNotifications": "Email Notifications",
+      "emailNotificationsDesc": "Configure email notification settings",
+      "enableAll": "Enable All",
+      "disableAll": "Disable All",
+      "saveSettings": "Save Notification Settings",
+      "saveSuccess": "Notification settings saved",
+      "enableAllSuccess": "All email notifications enabled",
+      "disableAllSuccess": "All email notifications disabled",
+      "productCreated": "New Product",
+      "productCreatedDesc": "Notify when new product is created",
+      "productUpdated": "Product Updated",
+      "productUpdatedDesc": "Notify when product is updated",
+      "shipmentStatus": "Shipment Status",
+      "shipmentStatusDesc": "Notify when shipment status changes",
+      "reportReady": "Report Ready",
+      "reportReadyDesc": "Notify when report is generated",
+      "exportCompleted": "Export Completed",
+      "exportCompletedDesc": "Notify when export file is ready",
+      "userInvited": "New Account",
+      "userInvitedDesc": "Notify when new account is created",
+      "complianceDeadline": "Compliance Deadline",
+      "complianceDeadlineDesc": "Remind about upcoming compliance deadlines"
+    }
+  },
+
+  "logistics": {
+    "title": "Manage Shipping",
+    "subtitle": "Track all shipments on the world map",
+    "mapTitle": "Global Shipping Map",
+    "routeDetails": "Route Details",
+    "backToMap": "← Back to Global Map",
+    "clickInstruction": "Click on product to view route details",
+    "routesSection": "Shipment Routes",
+    "new": "New",
+    "qrCodeTitle": "Generate QR Code",
+    "viewRouteDetails": "View Route Details",
+    "viewTrackingDetails": "View Shipment Tracking Details",
+    "statuses": {
+      "delivered": "Delivered",
+      "inTransit": "In Transit",
+      "pending": "Pending",
+      "totalCO2": "Total kg CO₂e",
+      "totalShipments": "Total Shipments"
+    }
+  },
+
+  "trackShipment": {
+    "title": "Track Shipment",
+    "subtitle": "View status and location of all shipments",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search by ID, SKU, container...",
+    "filterAll": "All",
+    "filterInTransit": "In Transit",
+    "filterPending": "Pending",
+    "filterDelivered": "Delivered",
+    "progress": "Progress",
+    "selectShipment": "Select a shipment to view details",
+    "currentLocation": "Current Location",
+    "departureDate": "Departure Date",
+    "estimatedArrival": "Estimated Arrival",
+    "carrier": "Carrier",
+    "emissions": "Emissions",
+    "timeline": "Transport Timeline",
+    "legNumber": "Leg",
+    "international": "International",
+    "domestic": "Domestic",
+    "viewLogistics": "View Logistics Details",
+    "viewCarbonHistory": "View Carbon History",
+    "statuses": {
+      "delivered": "Delivered",
+      "inTransit": "In Transit",
+      "pending": "Pending",
+      "unknown": "Unknown"
+    }
+  },
+
+  "transport": {
+    "title": "Transport & Logistics",
+    "subtitle": "Enter transport information and calculate emissions",
+    "scopeTitle": "Transport Scope",
+    "scopeDescription": "Select primary transport type",
+    "scopeDomestic": "Domestic Vietnam",
+    "scopeInternational": "International",
+    "legCardTitle": "Leg",
+    "transportMode": "Transport Mode",
+    "truckLight": "Light Truck",
+    "truckHeavy": "Heavy Truck",
+    "ship": "Ship",
+    "air": "Air",
+    "rail": "Rail",
+    "originLabel": "Point A - Pickup Location",
+    "destinationLabel": "Point B - Delivery Location",
+    "distance": "Distance (km)",
+    "distancePlaceholder": "Enter distance",
+    "locationPermissionHint": "Enable location to auto-calculate distance",
+    "legCO2": "CO₂ for this leg",
+    "emissionFactor": "Factor",
+    "addLeg": "Add Transport Leg",
+    "hideDemoMap": "Hide Demo Map",
+    "showDemoMap": "View Demo Map Vietnam → LA",
+    "demoMapTitle": "Demo: Vietnam → Los Angeles",
+    "demoMapBadge": "Demo - For Learning Only",
+    "resultsTitle": "Preliminary Results",
+    "resultsDescription": "Updates in real time",
+    "totalDistance": "Total Distance",
+    "totalLegs": "Number of Legs",
+    "estimatedCO2": "Estimated CO₂",
+    "highConfidence": "High confidence",
+    "estimate": "Estimate",
+    "breakdown": "Breakdown by leg:",
+    "legLabel": "Leg",
+    "saveAndView": "Save & View History",
+    "carbonNote": "Carbon calculated using DEFRA/GHG Protocol factors"
+  },
+
+  "calculationHistory": {
+    "title": "Calculation History",
+    "subtitle": "View all carbon calculations",
+    "exportCSV": "Export CSV",
+    "demoDataDescription": "Demo data is marked separately and cannot be edited",
+    "demoDataNote": "Demo data is used to learn how to use the system. Real data will be saved separately.",
+    "detailsTitle": "History Details",
+    "productHistoryTitle": "Calculation history for product: ",
+    "allCalculations": "All carbon calculations",
+    "backToDashboard": "Back to Dashboard",
+    "addNewProduct": "Add New Product",
+    "csvExportFileName": "carbon-history",
+    "csvHeaders": {
+      "id": "ID",
+      "product": "Product",
+      "materials": "Materials CO2",
+      "manufacturing": "Manufacturing CO2",
+      "transport": "Transport CO2",
+      "packaging": "Packaging CO2",
+      "totalCO2": "Total CO2",
+      "version": "Version",
+      "createdDate": "Created Date",
+      "createdBy": "Created By",
+      "type": "Type"
+    },
+    "csvTypeDemo": "Demo",
+    "csvTypeReal": "Real",
+    "totalRecords": "Total Records",
+    "materialsLabel": "Materials (kg CO₂)",
+    "manufacturingLabel": "Manufacturing (kg CO₂)",
+    "transportLabel": "Transport (kg CO₂)",
+    "filterAll": "All",
+    "filterDemo": "Demo",
+    "filterReal": "Real",
+    "columnProduct": "Product",
+    "columnMaterials": "Materials",
+    "columnManufacturing": "Manufacturing",
+    "columnTransport": "Transport",
+    "columnPackaging": "Packaging",
+    "columnTotalCO2": "Total CO₂",
+    "columnVersion": "Version",
+    "columnCreatedDate": "Created Date",
+    "columnCreatedBy": "Created By",
+    "columnType": "Type",
+    "typeDemo": "Demo",
+    "typeReal": "Real",
+    "emptyStateTitle": "History Details",
+    "emptyStateSubtitle": "All carbon calculations",
+    "noHistoryMessage": "No history yet",
+    "noHistoryDescription": "Start by entering product and transport information",
+    "noHistoryButton": "Create New Product"
+  },
+
+  "passport": {
+    "notFoundTitle": "Product not found",
+    "notFoundDescription": "This QR code is not linked to any product in the system.",
+    "backHome": "Back to Home",
+    "productLabel": "Product",
+    "skuLabel": "SKU:",
+    "documentedSource": "Documented",
+    "estimatedSource": "Estimated",
+    "carbonFootprintTitle": "Carbon Footprint",
+    "perProductUnit": "kg CO₂e / product",
+    "materialsLabel": "Materials",
+    "productionLabel": "Manufacturing",
+    "transportLabel": "Transport",
+    "packagingLabel": "Packaging",
+    "methodologyLabel": "Methodology:",
+    "noCalculationData": "No carbon calculation data available",
+    "transportJourneyTitle": "Transport Journey",
+    "totalLabel": "Total:",
+    "exportReadinessTitle": "Export Readiness",
+    "evaluationScoreLabel": "Evaluation Score",
+    "complianceByMarketLabel": "Compliance by Market",
+    "statusCompliant": "Compliant",
+    "statusPartial": "Partially Compliant",
+    "statusPending": "Needs Completion",
+    "statusNotEvaluated": "Not Evaluated",
+    "originCertificationTitle": "Origin & Certifications",
+    "materialsSection": "Materials",
+    "recycledContentLabel": "recycled content",
+    "certificationsSection": "Certifications",
+    "noCertifications": "No certifications",
+    "manufacturingLocationLabel": "Manufacturing Location",
+    "marketLabel": "Market",
+    "updatedLabel": "Updated:",
+    "poweredBy": "Powered by"
   }
 }

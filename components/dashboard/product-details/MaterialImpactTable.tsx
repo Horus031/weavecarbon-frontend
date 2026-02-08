@@ -2,6 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import {
   Tooltip,
   TooltipContent,
@@ -26,6 +27,7 @@ interface MaterialImpactTableProps {
 const MaterialImpactTable: React.FC<MaterialImpactTableProps> = ({
   materials,
 }) => {
+  const t = useTranslations("productDetail.materialImpact");
   const totalCo2e = materials.reduce((sum, m) => sum + m.co2e, 0);
 
   return (
@@ -33,29 +35,29 @@ const MaterialImpactTable: React.FC<MaterialImpactTableProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Leaf className="w-5 h-5 text-primary" />
-          Chi tiết phát thải vật liệu
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Vật liệu</TableHead>
-              <TableHead className="text-center">Tỷ lệ</TableHead>
+              <TableHead>{t("material")}</TableHead>
+              <TableHead className="text-center">{t("ratio")}</TableHead>
               <TableHead className="text-center">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger className="flex items-center gap-1 justify-center">
-                      EF <Info className="w-3 h-3" />
+                      {t("emissionFactor")} <Info className="w-3 h-3" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Emission Factor (kg CO₂e/kg)</p>
+                      <p>{t("emissionFactorTooltip")}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </TableHead>
               <TableHead className="text-center">CO₂e (kg)</TableHead>
-              <TableHead className="text-center">Nguồn</TableHead>
+              <TableHead className="text-center">{t("source")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -77,7 +79,7 @@ const MaterialImpactTable: React.FC<MaterialImpactTableProps> = ({
                       </TooltipTrigger>
                       <TooltipContent>
                         <p className="text-xs">
-                          Nguồn: {material.factorSource}
+                          {t("sourceLabel")}{material.factorSource}
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -90,7 +92,7 @@ const MaterialImpactTable: React.FC<MaterialImpactTableProps> = ({
                   {material.source === "documented" ? (
                     <Badge className="bg-green-100 text-green-700">
                       <FileCheck className="w-3 h-3 mr-1" />
-                      Xác minh
+                      {t("verified")}
                     </Badge>
                   ) : (
                     <Badge
@@ -98,7 +100,7 @@ const MaterialImpactTable: React.FC<MaterialImpactTableProps> = ({
                       className="text-yellow-600 border-yellow-300"
                     >
                       <FileQuestion className="w-3 h-3 mr-1" />
-                      Proxy
+                      {t("proxy")}
                     </Badge>
                   )}
                 </TableCell>
@@ -106,7 +108,7 @@ const MaterialImpactTable: React.FC<MaterialImpactTableProps> = ({
             ))}
             {/* Total Row */}
             <TableRow className="bg-muted/50 font-bold">
-              <TableCell>Tổng cộng</TableCell>
+              <TableCell>{t("total")}</TableCell>
               <TableCell className="text-center">100%</TableCell>
               <TableCell className="text-center">-</TableCell>
               <TableCell className="text-center text-primary">
@@ -119,10 +121,7 @@ const MaterialImpactTable: React.FC<MaterialImpactTableProps> = ({
 
         <div className="mt-4 text-xs text-muted-foreground flex items-start gap-2">
           <Info className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>
-            Emission factors được lấy từ các nguồn uy tín: ecoinvent, ADEME Base
-            Carbone, DEFRA UK.
-          </span>
+          <span>{t("factorNote")}</span>
         </div>
       </CardContent>
     </Card>

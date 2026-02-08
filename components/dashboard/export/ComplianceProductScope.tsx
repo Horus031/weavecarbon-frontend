@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
   onEditProduct,
   onRemoveProduct,
 }) => {
+  const t = useTranslations("export.productScope");
   const totalVolume = products.reduce((sum, p) => sum + p.exportVolume, 0);
 
   if (products.length === 0) {
@@ -42,15 +44,14 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-yellow-800">
-                Chưa xác định sản phẩm xuất khẩu
+                {t("noProducts")}
               </h3>
               <p className="text-sm text-yellow-700 mt-1">
-                Vui lòng thêm sản phẩm xuất khẩu sang {marketName} để tiếp tục
-                đánh giá tuân thủ.
+                {t("noProductsDesc", { market: marketName })}
               </p>
               <Button className="mt-4" size="sm" onClick={onAddProduct}>
                 <Plus className="w-4 h-4 mr-1" />
-                Thêm sản phẩm
+                {t("addProduct")}
               </Button>
             </div>
           </div>
@@ -65,13 +66,13 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Package className="w-5 h-5 text-primary" />
-            Sản phẩm xuất khẩu
+            {t("title")}
           </CardTitle>
           <div className="flex items-center gap-2">
-            <Badge variant="outline">{products.length} sản phẩm</Badge>
+            <Badge variant="outline">{t("productCount", { count: products.length })}</Badge>
             <Button size="sm" variant="outline" onClick={onAddProduct}>
               <Plus className="w-4 h-4 mr-1" />
-              Thêm
+              {t("add")}
             </Button>
           </div>
         </div>
@@ -81,11 +82,11 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>Mã SP</TableHead>
-                <TableHead>Tên sản phẩm</TableHead>
-                <TableHead>Mã HS</TableHead>
-                <TableHead>Nơi sản xuất</TableHead>
-                <TableHead className="text-right">SL xuất khẩu</TableHead>
+                <TableHead>{t("productCode")}</TableHead>
+                <TableHead>{t("productName")}</TableHead>
+                <TableHead>{t("hsCode")}</TableHead>
+                <TableHead>{t("productionSite")}</TableHead>
+                <TableHead className="text-right">{t("exportVolume")}</TableHead>
                 <TableHead className="w-25"></TableHead>
               </TableRow>
             </TableHeader>
@@ -134,7 +135,7 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
         {/* Summary */}
         <div className="flex items-center justify-between mt-4 p-3 rounded-lg bg-muted/50">
           <span className="text-sm text-muted-foreground">
-            Tổng sản lượng xuất khẩu
+            {t("totalExportVolume")}
           </span>
           <span className="text-lg font-bold">
             {totalVolume.toLocaleString()} units

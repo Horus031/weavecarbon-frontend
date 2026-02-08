@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useTranslations } from "next-intl";
 import { getDemoProductById } from "@/lib/demoProductHelper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,11 +37,6 @@ interface SummaryClientProps {
   productId: string;
 }
 
-const STATUS_CONFIG = {
-  draft: { label: "Nháp", className: "bg-gray-100 text-gray-700" },
-  published: { label: "Đã xuất bản", className: "bg-green-100 text-green-700" },
-};
-
 // Helper to get material emission factor
 function getMaterialEmissionFactor(materialType: string): number {
   const material = MATERIAL_TYPES.find((m) => m.value === materialType);
@@ -56,16 +51,29 @@ function getMaterialLabel(materialType: string): string {
 
 export default function SummaryClient({ productId }: SummaryClientProps) {
   const router = useRouter();
+  const t = useTranslations("summary");
   const [showQRModal, setShowQRModal] = useState(false);
+
+  const STATUS_CONFIG = {
+    draft: {
+      label: t("statusLabel.draft"),
+      className: "bg-gray-100 text-gray-700",
+    },
+    published: {
+      label: t("statusLabel.published"),
+      className: "bg-green-100 text-green-700",
+    },
+  };
 
   // Load product from localStorage or demo data
   const product = useMemo(() => {
     if (!productId || typeof window === "undefined") return null;
 
     const storedProducts = JSON.parse(
-      localStorage.getItem("weavecarbonProducts") || "[]"
+      localStorage.getItem("weavecarbonProducts") || "[]",
     ) as StoredProduct[];
-    const storedProduct = storedProducts.find((p) => p.id === productId) || null;
+    const storedProduct =
+      storedProducts.find((p) => p.id === productId) || null;
 
     if (storedProduct) return storedProduct;
 
@@ -106,7 +114,12 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
       packagingType: "",
       packagingWeight: "",
       sourceType: "documented",
-      confidenceLevel: product.carbonResults?.confidenceLevel === "high" ? 90 : product.carbonResults?.confidenceLevel === "medium" ? 70 : 50,
+      confidenceLevel:
+        product.carbonResults?.confidenceLevel === "high"
+          ? 90
+          : product.carbonResults?.confidenceLevel === "medium"
+            ? 70
+            : 50,
       isDemo: false,
       createdAt: product.createdAt || new Date().toISOString(),
       createdBy: "User",
@@ -120,71 +133,90 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
     if (!product?.carbonResults) return [];
     const perProduct = product.carbonResults.perProduct;
     const total = perProduct.total || 1;
-    
+
     return [
       {
         stage: "materials" as const,
-        label: "Vật liệu",
+        label: t("carbonBreakdown.materials"),
         co2e: perProduct.materials || 0,
         percentage: Math.round(((perProduct.materials || 0) / total) * 100),
-        note: `${product.materials.length} loại vật liệu`,
+        note: t("carbonBreakdown.materialTypes", {
+          count: product.materials.length,
+        }),
         isProxy: false,
         hasData: true,
       },
       {
         stage: "manufacturing" as const,
-        label: "Sản xuất",
+        label: t("carbonBreakdown.manufacturing"),
         co2e: perProduct.production || 0,
         percentage: Math.round(((perProduct.production || 0) / total) * 100),
-        note: product.manufacturingLocation || "Không xác định",
+        note: product.manufacturingLocation || t("carbonBreakdown.unknown"),
         isProxy: false,
         hasData: true,
       },
       {
         stage: "transport" as const,
-        label: "Vận chuyển",
+        label: t("carbonBreakdown.transport"),
         co2e: perProduct.transport || 0,
         percentage: Math.round(((perProduct.transport || 0) / total) * 100),
-        note: `${product.transportLegs.length} chặng vận chuyển`,
+        note: t("carbonBreakdown.transportLegs", {
+          count: product.transportLegs.length,
+        }),
         isProxy: false,
         hasData: product.transportLegs.length > 0,
       },
     ];
-  }, [product]);
+  }, [product, t]);
 
   // Generate MaterialImpact from assessment data
   const materialImpact: MaterialImpactItem[] = useMemo(() => {
     if (!product?.materials) return [];
     const weightPerUnit = product.weightPerUnit || 1000; // default 1kg
-    
+
     return product.materials.map((m) => {
       const emissionFactor = getMaterialEmissionFactor(m.materialType);
       const weight = (weightPerUnit * (m.percentage / 100)) / 1000; // convert to kg
       const co2e = weight * emissionFactor;
-      
+
       return {
         material: getMaterialLabel(m.materialType),
         percentage: m.percentage,
         emissionFactor: emissionFactor,
         co2e: co2e,
-        source: m.source === "domestic" ? "documented" : "proxy" as "documented" | "proxy",
+        source:
+          m.source === "domestic"
+            ? "documented"
+            : ("proxy" as "documented" | "proxy"),
         factorSource: "IPCC 2021 / Industry Average",
       };
     });
   }, [product]);
+
+  // Get transport mode label
+  const getTransportModeLabel = (mode: string) => {
+    const modeKey = mode as "road" | "sea" | "air" | "rail";
+    return t(`transportMode.${modeKey}`);
+  };
 
   // Generate ProductCarbonDetail for CarbonFootprintCard
   const carbonDetail: ProductCarbonDetail | null = useMemo(() => {
     if (!product?.carbonResults) return null;
     const total = product.carbonResults.perProduct.total || 0;
     const confidenceLevel = product.carbonResults.confidenceLevel || "medium";
-    
+
     return {
       productId: product.id,
       totalCo2e: total,
       confidenceLevel: confidenceLevel,
-      confidenceScore: confidenceLevel === "high" ? 90 : confidenceLevel === "medium" ? 70 : 50,
-      calculationNote: product.carbonResults.proxyNotes?.join(", ") || "Tính toán từ dữ liệu đánh giá",
+      confidenceScore:
+        confidenceLevel === "high"
+          ? 90
+          : confidenceLevel === "medium"
+            ? 70
+            : 50,
+      calculationNote:
+        product.carbonResults.proxyNotes?.join(", ") || t("calculationNote"),
       isPreliminary: product.status === "draft",
       breakdown: carbonBreakdown,
       dataCompleteness: [],
@@ -192,7 +224,7 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
       versionHistory: [],
       endOfLife: {
         strategy: "no_takeback" as const,
-        strategyLabel: "Chưa có chương trình thu hồi",
+        strategyLabel: t("endOfLifeStrategy"),
         breakdown: { reuse: 0, recycle: 0, disposal: 100 },
         avoidedEmissions: 0,
         netImpact: 0,
@@ -201,17 +233,26 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
       compliance: [
         {
           criterion: "ISO 14067",
-          status: product.status === "published" ? "passed" : "partial" as "passed" | "partial" | "failed",
-          note: product.status === "published" ? "Đạt chuẩn" : "Đang chờ hoàn thiện",
+          status:
+            product.status === "published"
+              ? "passed"
+              : ("partial" as "passed" | "partial" | "failed"),
+          note:
+            product.status === "published"
+              ? t("complianceNote.passed")
+              : t("complianceNote.pending"),
         },
       ],
       exportReady: product.status === "published",
       suggestions: [],
     };
-  }, [product, carbonBreakdown, materialImpact]);
+  }, [product, carbonBreakdown, materialImpact, t]);
 
   // Determine carbon status
-  const getCarbonStatus = (): "carbon_ready" | "data_partial" | "missing_critical" => {
+  const getCarbonStatus = ():
+    | "carbon_ready"
+    | "data_partial"
+    | "missing_critical" => {
     if (!carbonDetail) return "missing_critical";
     if (carbonDetail.confidenceScore >= 85) return "carbon_ready";
     if (carbonDetail.confidenceScore >= 65) return "data_partial";
@@ -223,12 +264,10 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
       <Card className="max-w-2xl mx-auto">
         <CardContent className="p-8 text-center">
           <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Không tìm thấy sản phẩm</h2>
-          <p className="text-muted-foreground mb-4">
-            Vui lòng chọn sản phẩm từ danh sách hoặc tạo sản phẩm mới.
-          </p>
+          <h2 className="text-xl font-bold mb-2">{t("notFoundTitle")}</h2>
+          <p className="text-muted-foreground mb-4">{t("notFoundDesc")}</p>
           <Button onClick={() => router.push("/products")}>
-            Quay lại Products
+            {t("backToProducts")}
           </Button>
         </CardContent>
       </Card>
@@ -240,12 +279,12 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
       <Card className="max-w-2xl mx-auto">
         <CardContent className="p-8 text-center">
           <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-bold mb-2">Không tìm thấy sản phẩm</h2>
+          <h2 className="text-xl font-bold mb-2">{t("notFoundTitle")}</h2>
           <p className="text-muted-foreground mb-4">
-            Sản phẩm với ID &quot;{productId}&quot; không tồn tại trong hệ thống.
+            {t("notFoundWithId", { productId })}
           </p>
           <Button onClick={() => router.push("/products")}>
-            Quay lại Products
+            {t("backToProducts")}
           </Button>
         </CardContent>
       </Card>
@@ -265,7 +304,7 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
       {/* Back button */}
       <Button variant="ghost" className="mb-4" onClick={() => router.back()}>
         <ArrowLeft className="w-4 h-4 mr-2" />
-        Quay lại
+        {t("backButton")}
       </Button>
 
       {/* Status notice for draft */}
@@ -273,14 +312,17 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
           <Info className="w-5 h-5 text-amber-600" />
           <p className="text-amber-800 text-sm font-medium">
-            Sản phẩm đang ở trạng thái Nháp - Kết quả carbon chỉ mang tính ước tính
+            {t("draftNotice")}
           </p>
         </div>
       )}
 
       {/* Section A - Product Overview Header */}
       {productData && (
-        <ProductOverviewHeader product={productData} carbonStatus={getCarbonStatus()} />
+        <ProductOverviewHeader
+          product={productData}
+          carbonStatus={getCarbonStatus()}
+        />
       )}
 
       {/* Main Content Grid */}
@@ -302,15 +344,23 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
             {/* Production Info */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Thông tin sản xuất</CardTitle>
+                <CardTitle className="text-lg">
+                  {t("productionInfo.title")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Địa điểm sản xuất</p>
-                  <p className="font-medium">{product.manufacturingLocation || "—"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("productionInfo.location")}
+                  </p>
+                  <p className="font-medium">
+                    {product.manufacturingLocation || "—"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Quy trình</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("productionInfo.process")}
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {product.productionProcesses?.length > 0 ? (
                       product.productionProcesses.map((p, i) => (
@@ -324,7 +374,9 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Nguồn năng lượng</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("productionInfo.energySource")}
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {product.energySources?.length > 0 ? (
                       product.energySources.map((e, i) => (
@@ -343,28 +395,36 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
             {/* Logistics Info */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Thông tin vận chuyển</CardTitle>
+                <CardTitle className="text-lg">
+                  {t("logisticsInfo.title")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Thị trường đích</p>
-                  <p className="font-medium">{product.destinationMarket || "—"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("logisticsInfo.targetMarket")}
+                  </p>
+                  <p className="font-medium">
+                    {product.destinationMarket || "—"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Tổng khoảng cách</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("logisticsInfo.totalDistance")}
+                  </p>
                   <p className="font-medium">
                     {product.estimatedTotalDistance?.toLocaleString() || "—"} km
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Các chặng vận chuyển</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("logisticsInfo.transportLegs")}
+                  </p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {product.transportLegs?.length > 0 ? (
                       product.transportLegs.map((leg, i) => (
                         <Badge key={i} variant="outline" className="text-xs">
-                          {leg.mode === "road" ? "Đường bộ" : 
-                           leg.mode === "sea" ? "Đường biển" : 
-                           leg.mode === "air" ? "Đường hàng không" : "Đường sắt"}
+                          {getTransportModeLabel(leg.mode)}
                         </Badge>
                       ))
                     ) : (
@@ -395,34 +455,45 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
           {/* Metadata */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Thông tin bổ sung</CardTitle>
+              <CardTitle className="text-lg">
+                {t("additionalInfo.title")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Trạng thái:</span>
+                <span className="text-muted-foreground">
+                  {t("additionalInfo.status")}
+                </span>
                 <Badge className={STATUS_CONFIG[product.status].className}>
                   {STATUS_CONFIG[product.status].label}
                 </Badge>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Phiên bản:</span>
+                <span className="text-muted-foreground">
+                  {t("additionalInfo.version")}
+                </span>
                 <span>v{product.version || 1}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Số lượng:</span>
-                <span>{product.quantity?.toLocaleString() || "—"} sản phẩm</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tạo lúc:</span>
+                <span className="text-muted-foreground">
+                  {t("additionalInfo.quantity")}
+                </span>
                 <span>
-                  {new Date(product.createdAt).toLocaleDateString("vi-VN")}
+                  {product.quantity?.toLocaleString() || "—"}{" "}
+                  {t("additionalInfo.products")}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Cập nhật:</span>
-                <span>
-                  {new Date(product.updatedAt).toLocaleDateString("vi-VN")}
+                <span className="text-muted-foreground">
+                  {t("additionalInfo.createdAt")}
                 </span>
+                <span>{new Date(product.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {t("additionalInfo.updatedAt")}
+                </span>
+                <span>{new Date(product.updatedAt).toLocaleDateString()}</span>
               </div>
             </CardContent>
           </Card>

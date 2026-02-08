@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCalculationHistory } from "@/hooks/useCalculationHistory";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
   productId,
 }) => {
   const { loading } = useAuth();
+  const t = useTranslations("calculationHistory");
   const router = useRouter();
   const { history, isLoaded, getDemoHistory, getRealHistory } = useCalculationHistory();
   const [activeTab, setActiveTab] = useState<"all" | "demo" | "real">("all");
@@ -44,17 +46,17 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
 
   const handleExportCSV = () => {
     const headers = [
-      "ID",
-      "Sản phẩm",
-      "Vật liệu CO2",
-      "Sản xuất CO2",
-      "Vận chuyển CO2",
-      "Đóng gói CO2",
-      "Tổng CO2",
-      "Phiên bản",
-      "Ngày tạo",
-      "Người tạo",
-      "Loại",
+      t("csvHeaders.id"),
+      t("csvHeaders.product"),
+      t("csvHeaders.materials"),
+      t("csvHeaders.manufacturing"),
+      t("csvHeaders.transport"),
+      t("csvHeaders.packaging"),
+      t("csvHeaders.totalCO2"),
+      t("csvHeaders.version"),
+      t("csvHeaders.createdDate"),
+      t("csvHeaders.createdBy"),
+      t("csvHeaders.type"),
     ];
     const rows = filteredHistory.map((h) => [
       h.id,
@@ -67,7 +69,7 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
       h.carbonVersion,
       h.createdAt,
       h.createdBy,
-      h.isDemo ? "Demo" : "Real",
+      h.isDemo ? t("csvTypeDemo") : t("csvTypeReal"),
     ]);
 
     const csvContent = [headers, ...rows]
@@ -76,7 +78,7 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `carbon-history-${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `${t("csvExportFileName")}-${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
   };
 
@@ -95,15 +97,15 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
             <History className="w-6 h-6" />
-            Lịch sử tính toán
+            {t("title")}
           </h2>
           <p className="text-muted-foreground">
-            Xem tất cả các lần tính toán carbon
+            {t("subtitle")}
           </p>
         </div>
         <Button variant="outline" onClick={handleExportCSV}>
           <Download className="w-4 h-4 mr-2" />
-          Export CSV
+          {t("exportCSV")}
         </Button>
       </div>
 
@@ -112,11 +114,10 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
         <Info className="w-5 h-5 text-amber-600 shrink-0" />
         <div>
           <p className="text-amber-800 text-sm font-medium">
-            Demo data được đánh dấu riêng và không thể chỉnh sửa
+            {t("demoDataDescription")}
           </p>
           <p className="text-amber-700 text-xs mt-1">
-            Dữ liệu demo dùng để học cách sử dụng hệ thống. Dữ liệu thực sẽ được
-            lưu riêng.
+            {t("demoDataNote")}
           </p>
         </div>
       </div>
@@ -143,11 +144,11 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Chi tiết lịch sử</CardTitle>
+            <CardTitle>{t("detailsTitle")}</CardTitle>
             <CardDescription>
               {productId
-                ? `Lịch sử tính toán cho sản phẩm: ${getProductName(productId)}`
-                : "Tất cả các lần tính toán carbon"}
+                ? `${t("productHistoryTitle")}${getProductName(productId)}`
+                : t("allCalculations")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -162,11 +163,11 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
       {/* Actions */}
       <div className="flex justify-center gap-4">
         <Button variant="outline" onClick={() => router.push("/overview")}>
-          Quay lại Dashboard
+          {t("backToDashboard")}
         </Button>
         <Button onClick={() => router.push("/assessment")}>
           <Package className="w-4 h-4 mr-2" />
-          Thêm sản phẩm mới
+          {t("addNewProduct")}
         </Button>
       </div>
     </div>

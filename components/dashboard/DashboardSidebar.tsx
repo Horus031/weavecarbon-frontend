@@ -183,7 +183,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             onClick={handleSignOut}
           >
             <LogOut className="w-4 h-4" />
-            {sidebarOpen && <span className="ml-2">Sign Out</span>}
+            {sidebarOpen && <span className="ml-2">{t("signOut")}</span>}
           </Button>
         </div>
       </aside>

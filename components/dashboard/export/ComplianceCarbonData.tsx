@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ const ComplianceCarbonData: React.FC<ComplianceCarbonDataProps> = ({
   emissionFactors,
   onEditData,
 }) => {
+  const t = useTranslations("export.carbonData");
   const completedScopes = carbonData.filter((d) => d.isComplete).length;
   const totalScopes = carbonData.length;
   const completionPercentage = (completedScopes / totalScopes) * 100;
@@ -68,12 +70,12 @@ const ComplianceCarbonData: React.FC<ComplianceCarbonDataProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Leaf className="w-5 h-5 text-primary" />
-            Dữ liệu phát thải Carbon
+            {t("title")}
           </CardTitle>
           <Badge
             variant={completionPercentage === 100 ? "default" : "secondary"}
           >
-            {completedScopes}/{totalScopes} hoàn thiện
+            {t("complete", { completed: completedScopes, total: totalScopes })}
           </Badge>
         </div>
       </CardHeader>
@@ -81,7 +83,7 @@ const ComplianceCarbonData: React.FC<ComplianceCarbonDataProps> = ({
         {/* Summary */}
         <div className="p-4 rounded-lg bg-muted/50">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Tổng phát thải</span>
+            <span className="text-sm font-medium">{t("totalEmissions")}</span>
             <span className="text-2xl font-bold text-primary">
               {totalEmission.toFixed(1)}{" "}
               <span className="text-sm font-normal">kgCO₂e</span>
@@ -89,7 +91,7 @@ const ComplianceCarbonData: React.FC<ComplianceCarbonDataProps> = ({
           </div>
           <Progress value={completionPercentage} className="h-2" />
           <p className="text-xs text-muted-foreground mt-2">
-            Tiến độ khai báo: {completionPercentage.toFixed(0)}%
+            {t("progress", { percent: completionPercentage.toFixed(0) })}
           </p>
         </div>
 
@@ -126,7 +128,7 @@ const ComplianceCarbonData: React.FC<ComplianceCarbonDataProps> = ({
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
                           <span className="text-muted-foreground">
-                            Giá trị:{" "}
+                            {t("value")}{" "}
                           </span>
                           <span className="font-medium">
                             {data.value} {data.unit}
@@ -134,19 +136,19 @@ const ComplianceCarbonData: React.FC<ComplianceCarbonDataProps> = ({
                         </div>
                         <div>
                           <span className="text-muted-foreground">
-                            Phương pháp:{" "}
+                            {t("methodology")}{" "}
                           </span>
                           <span className="font-medium">
                             {data.methodology}
                           </span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Nguồn: </span>
+                          <span className="text-muted-foreground">{t("source")} </span>
                           <span className="font-medium">{data.dataSource}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">
-                            Kỳ báo cáo:{" "}
+                            {t("period")}{" "}
                           </span>
                           <span className="font-medium">
                             {data.reportingPeriod}
@@ -155,7 +157,7 @@ const ComplianceCarbonData: React.FC<ComplianceCarbonDataProps> = ({
                       </div>
                     ) : (
                       <p className="text-sm text-yellow-700">
-                        Chưa có dữ liệu. Vui lòng khai báo để hoàn thiện hồ sơ.
+                        {t("noData")}
                       </p>
                     )}
                   </div>
@@ -168,12 +170,12 @@ const ComplianceCarbonData: React.FC<ComplianceCarbonDataProps> = ({
                     {data.isComplete ? (
                       <>
                         <Edit className="w-3 h-3 mr-1" />
-                        Sửa
+                        {t("edit")}
                       </>
                     ) : (
                       <>
                         <Plus className="w-3 h-3 mr-1" />
-                        Khai báo
+                        {t("declare")}
                       </>
                     )}
                   </Button>
@@ -186,7 +188,7 @@ const ComplianceCarbonData: React.FC<ComplianceCarbonDataProps> = ({
         {/* Emission Factors */}
         <div className="pt-4 border-t">
           <h4 className="text-sm font-semibold mb-3">
-            Hệ số phát thải đang sử dụng
+            {t("factorsInUse")}
           </h4>
           <div className="space-y-2">
             {emissionFactors.map((factor, idx) => (

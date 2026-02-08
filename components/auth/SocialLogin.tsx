@@ -3,6 +3,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface SocialLoginProps {
   onDemoLogin: () => void;
@@ -17,17 +18,18 @@ export default function SocialLogin({
   isLoading,
   demoButtonText = "Try Demo Account",
 }: SocialLoginProps) {
+  const t = useTranslations("auth");
   return (
     <>
       {/* Demo Login Button */}
       <Button
         variant="outline"
-        className="w-full h-12 border-primary/30 hover:bg-primary/5 hover:border-primary"
+        className="w-full h-12 border-primary/30 hover:bg-primary/5 hover:border-primary hover:text-primary"
         onClick={onDemoLogin}
         disabled={isLoading}
       >
         <Play className="w-5 h-5 mr-2 text-primary" />
-        {demoButtonText}
+        {t("demoLogin")}
       </Button>
 
       {/* Google Login Button */}
@@ -55,7 +57,7 @@ export default function SocialLogin({
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
           />
         </svg>
-        Continue with Google
+        {t("googleLogin")}
       </Button>
 
       <div className="relative">
@@ -64,7 +66,7 @@ export default function SocialLogin({
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-card px-2 text-muted-foreground">
-            or continue with email
+            {t("orContinueWith")}
           </span>
         </div>
       </div>

@@ -82,7 +82,7 @@ const mockStorage = {
 
   loadFromLocalStorage() {
     try {
-      const data = localStorage.getItem("weavey_conversations");
+      const data = localStorage.getItem("weavey_conversations") || null;
       if (data) {
         this.conversations = JSON.parse(data).map((c: ChatConversation) => ({
           ...c,
