@@ -8,8 +8,10 @@ import { Button } from "../ui/button";
 import UserTypeDialog from "./UserTypeDialog";
 import { LanguageToggle } from "../ui/LanguageToggle";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 const Header = () => {
+  const navigate = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showUserTypeDialog, setShowUserTypeDialog] = useState(false);
   const t = useTranslations("navigation");
@@ -18,7 +20,6 @@ const Header = () => {
     { labelKey: "features", href: "#features" },
     { labelKey: "howItWorks", href: "#how-it-works" },
     { labelKey: "impact", href: "#impact" },
-    { labelKey: "calculator", href: "/calculator" },
     { labelKey: "contact", href: "#contact" },
   ];
 
@@ -27,15 +28,15 @@ const Header = () => {
       <motion.header
         initial={{ y: -100 }}
         animate={{
-          y: [null, null, 0],
-          transition: { duration: 1.5, times: [0, 0.5, 1] },
+          y: [null, 0],
+          transition: { duration: 0.5, times: [0, 1] },
         }}
         className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50"
       >
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link href="/" className="flex items-center gap-2 group max-w-96 w-full">
               <div className="w-10 h-10 rounded-xl bg-gradient-forest flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
                 <Leaf className="w-5 h-5 text-primary-foreground" />
               </div>
@@ -45,7 +46,7 @@ const Header = () => {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-8">
+            <nav className="hidden lg:flex items-center gap-8">
               {navLinks.map((link) =>
                 link.href.startsWith("/") ? (
                   <Link
@@ -68,8 +69,15 @@ const Header = () => {
             </nav>
 
             {/* CTA Buttons */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3 max-w-96 w-full">
               <LanguageToggle />
+              <Button
+                variant="link"
+                className="w-fit justify-center"
+                onClick={() => navigate.push("/calculator")}
+              >
+                {t("calculator")}
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -87,23 +95,26 @@ const Header = () => {
             </div>
 
             {/* Mobile Menu Button */}
-            <button
-              className="md:hidden p-2 text-foreground"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
-            </button>
+            <div className="flex gap-2 lg:hidden">
+              <LanguageToggle />
+              <button
+                className="lg:hidden p-2 text-foreground"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden bg-background border-b border-border animate-fade-in">
+          <div className="lg:hidden bg-background border-b border-border animate-fade-in">
             <nav className="container mx-auto px-6 py-4 flex flex-col gap-4">
               {navLinks.map((link) =>
                 link.href.startsWith("/") ? (
@@ -128,6 +139,13 @@ const Header = () => {
               )}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 <Button
+                  variant="accent"
+                  className="w-full justify-center"
+                  onClick={() => navigate.push("/calculator")}
+                >
+                  Tính toán
+                </Button>
+                <Button
                   variant="ghost"
                   className="w-full justify-center"
                   onClick={() => {
@@ -145,7 +163,7 @@ const Header = () => {
                     setShowUserTypeDialog(true);
                   }}
                 >
-                  {t("login")}
+                  {t("getStarted")}
                 </Button>
               </div>
             </nav>
