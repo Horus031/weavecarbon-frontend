@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/purity */
 "use client";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   BarChart3,
   Globe,
@@ -12,125 +13,303 @@ import {
   Users,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
 const Features = () => {
   const t = useTranslations("features");
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const features = [
     {
-      icon: <Scale className="w-7 h-7" />,
+      icon: <Scale className="w-6 h-6" />,
       titleKey: "carbonProxy.title",
       descKey: "carbonProxy.desc",
-      highlight: true,
+      color: "from-emerald-500 to-teal-600",
+      position: { x: 150, y: 120 },
     },
     {
-      icon: <Package className="w-7 h-7" />,
+      icon: <Package className="w-6 h-6" />,
       titleKey: "materialDb.title",
       descKey: "materialDb.desc",
+      color: "from-green-500 to-emerald-600",
+      position: { x: 380, y: 80 },
     },
     {
-      icon: <Globe className="w-7 h-7" />,
+      icon: <Globe className="w-6 h-6" />,
       titleKey: "transportCalc.title",
       descKey: "transportCalc.desc",
+      color: "from-teal-500 to-cyan-600",
+      position: { x: 650, y: 140 },
     },
     {
-      icon: <Recycle className="w-7 h-7" />,
+      icon: <Recycle className="w-6 h-6" />,
       titleKey: "circularHub.title",
       descKey: "circularHub.desc",
-      highlight: true,
+      color: "from-emerald-600 to-green-700",
+      position: { x: 900, y: 100 },
     },
     {
-      icon: <Users className="w-7 h-7" />,
+      icon: <Users className="w-6 h-6" />,
       titleKey: "ngoPartner.title",
       descKey: "ngoPartner.desc",
+      color: "from-green-600 to-emerald-700",
+      position: { x: 200, y: 350 },
     },
     {
-      icon: <Leaf className="w-7 h-7" />,
+      icon: <Leaf className="w-6 h-6" />,
       titleKey: "carbonCredits.title",
       descKey: "carbonCredits.desc",
+      color: "from-lime-500 to-green-600",
+      position: { x: 500, y: 380 },
     },
     {
-      icon: <PieChart className="w-7 h-7" />,
+      icon: <PieChart className="w-6 h-6" />,
       titleKey: "exportReady.title",
       descKey: "exportReady.desc",
-      highlight: true,
+      color: "from-teal-600 to-emerald-700",
+      position: { x: 820, y: 340 },
     },
     {
-      icon: <TrendingUp className="w-7 h-7" />,
+      icon: <TrendingUp className="w-6 h-6" />,
       titleKey: "recommendations.title",
       descKey: "recommendations.desc",
+      color: "from-emerald-500 to-green-600",
+      position: { x: 280, y: 620 },
     },
     {
-      icon: <BarChart3 className="w-7 h-7" />,
+      icon: <BarChart3 className="w-6 h-6" />,
       titleKey: "esgReports.title",
       descKey: "esgReports.desc",
+      color: "from-green-500 to-teal-600",
+      position: { x: 700, y: 600 },
     },
   ];
 
   return (
-    <section id="features" className="py-24 md:py-32 bg-muted/30">
+    <section
+      id="features"
+      className="relative z-30 py-24 md:py-32 bg-linear-to-b from-muted/30 to-background overflow-hidden"
+    >
       <div className="container mx-auto px-6">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.6 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="max-w-3xl mx-auto text-center mb-16"
-        >
-          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            {t("badge")}
-          </span>
-          <h2 className="text-3xl md:text-5xl font-display font-bold text-foreground mb-6">
-            {t("title")}
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            {t("subtitle")}
-          </p>
-        </motion.div>
+        {/* Interactive circular constellation */}
+        <div className="relative max-w-5xl mx-auto h-225 flex items-center justify-center">
+          {/* Circular path SVG */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <linearGradient
+                id="circle-gradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                <stop
+                  offset="0%"
+                  stopColor="hsl(var(--primary))"
+                  stopOpacity="0.3"
+                />
+                <stop
+                  offset="50%"
+                  stopColor="hsl(var(--primary))"
+                  stopOpacity="0.6"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="hsl(var(--primary))"
+                  stopOpacity="0.3"
+                />
+              </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
 
-        {/* Features grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {features.map((feature, index) => (
+            {/* Main circle */}
+            <motion.circle
+              cx="50%"
+              cy="50%"
+              r="340"
+              stroke="url(#circle-gradient)"
+              strokeWidth="2"
+              fill="none"
+              filter="url(#glow)"
+              initial={{ pathLength: 0, opacity: 0 }}
+              whileInView={{ pathLength: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{
+                duration: 2,
+                ease: "easeInOut",
+              }}
+            />
+
+            {/* Animated dots traveling around the circle */}
+            {[0, 0.33, 0.66].map((offset, i) => (
+              <motion.circle
+                key={`orbit-dot-${i}`}
+                r="4"
+                fill="hsl(var(--primary))"
+                opacity="0.7"
+                filter="url(#glow)"
+              >
+                <animateMotion
+                  dur="12s"
+                  repeatCount="indefinite"
+                  begin={`${offset * 12}s`}
+                >
+                  <mpath href="#circle-path" />
+                </animateMotion>
+              </motion.circle>
+            ))}
+
+            {/* Hidden path for animation */}
+            <path
+              id="circle-path"
+              d="M 50%,50% m -340,0 a 340,340 0 1,0 680,0 a 340,340 0 1,0 -680,0"
+              fill="none"
+            />
+          </svg>
+
+          {/* Center content */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+            className="relative z-10 max-w-2xl text-center px-8"
+          >
+            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+              {t("badge")}
+            </span>
+            <h2 className="text-3xl md:text-5xl font-display font-bold text-foreground mb-6">
+              {t("title")}
+            </h2>
+            <p className="text-lg text-muted-foreground">{t("subtitle")}</p>
+          </motion.div>
+
+          {/* Feature icons positioned around the circle */}
+          {features.map((feature, index) => {
+            const angle = (index / features.length) * 2 * Math.PI - Math.PI / 2; // Start from top
+            const radius = 340; // Match the SVG circle radius
+            const x = Math.cos(angle) * radius;
+            const y = Math.sin(angle) * radius;
+
+            return (
+              <motion.div
+                key={feature.titleKey}
+                className="absolute"
+                style={{
+                  left: `calc(47.5% + ${x}px)`,
+                  top: `calc(47% + ${y}px)`,
+                  transform: "translate(-50%, -50%)",
+                }}
+                initial={{ scale: 0, opacity: 0 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{
+                  duration: 0.6,
+                  delay: 0.5 + index * 0.1,
+                  ease: "backOut",
+                }}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              >
+                {/* Pulsing glow ring */}
+                <motion.div
+                  className={`absolute inset-0 w-20 h-20 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 rounded-full bg-linear-to-br ${feature.color} opacity-30 blur-xl`}
+                  animate={{
+                    scale: hoveredIndex === index ? [1, 1.5, 1] : 1,
+                    opacity: hoveredIndex === index ? [0.3, 0.7, 0.3] : 0.2,
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+
+                {/* Icon container */}
+                <motion.div
+                  className={`relative z-10 w-16 h-16 rounded-2xl bg-linear-to-br ${feature.color} flex items-center justify-center text-white shadow-lg cursor-pointer`}
+                  whileHover={{ scale: 1.2, rotate: 8 }}
+                  whileTap={{ scale: 0.9 }}
+                  animate={{
+                    y: hoveredIndex === index ? -6 : 0,
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                  {feature.icon}
+                </motion.div>
+
+                {/* Hover card - positioned intelligently based on angle */}
+                <AnimatePresence>
+                  {hoveredIndex === index && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="absolute z-50 w-80"
+                      style={{
+                        // Position card away from center based on angle
+                        left:
+                          Math.cos(angle) > 0 ? "calc(100% + 20px)" : "auto",
+                        right:
+                          Math.cos(angle) <= 0 ? "calc(100% + 20px)" : "auto",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                      }}
+                    >
+                      <motion.div
+                        className="relative p-6 rounded-2xl bg-card/95 backdrop-blur-md border border-primary/20 shadow-2xl"
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        {/* Gradient accent bar */}
+                        <div
+                          className={`absolute top-0 left-0 right-0 h-1 bg-linear-to-r ${feature.color} rounded-t-2xl`}
+                        />
+
+                        <h3 className="text-xl font-bold text-foreground mb-3 mt-2">
+                          {t(feature.titleKey)}
+                        </h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {t(feature.descKey)}
+                        </p>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })}
+
+          {/* Decorative floating particles */}
+          {[...Array(20)].map((_, i) => (
             <motion.div
-              key={feature.titleKey}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.05 }}
-              whileHover={{ y: -4 }}
-              className={`
-                group relative p-8 rounded-2xl transition-all duration-300
-                ${
-                  feature.highlight
-                    ? "bg-gradient-forest text-primary-foreground shadow-lg hover:shadow-xl hover:scale-[1.02]"
-                    : "bg-card border border-border hover:border-primary/30 hover:shadow-md"
-                }
-              `}
-            >
-              <div
-                className={`
-                  w-14 h-14 rounded-xl flex items-center justify-center mb-5
-                  ${
-                    feature.highlight
-                      ? "bg-primary-foreground/20"
-                      : "bg-primary/10 text-primary"
-                  }
-                `}
-              >
-                {feature.icon}
-              </div>
-              <h3
-                className={`text-xl font-semibold mb-3 ${feature.highlight ? "" : "text-foreground"}`}
-              >
-                {t(feature.titleKey)}
-              </h3>
-              <p
-                className={`text-sm leading-relaxed ${feature.highlight ? "text-primary-foreground/80" : "text-muted-foreground"}`}
-              >
-                {t(feature.descKey)}
-              </p>
-            </motion.div>
+              key={`particle-${i}`}
+              className="absolute w-1 h-1 bg-primary/30 rounded-full"
+              style={{
+                left: `${50 + (Math.random() - 0.5) * 80}%`,
+                top: `${50 + (Math.random() - 0.5) * 80}%`,
+              }}
+              animate={{
+                y: [0, -20, 0],
+                opacity: [0.2, 0.5, 0.2],
+                scale: [1, 1.3, 1],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+                ease: "easeInOut",
+              }}
+            />
           ))}
         </div>
       </div>

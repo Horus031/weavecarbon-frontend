@@ -31,12 +31,15 @@ const Header = () => {
           y: [null, 0],
           transition: { duration: 0.5, times: [0, 1] },
         }}
-        className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50"
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-3xl bg-white/60"
       >
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group max-w-96 w-full">
+            <Link
+              href="/"
+              className="flex items-center gap-2 group max-w-96 w-full"
+            >
               <div className="w-10 h-10 rounded-xl bg-gradient-forest flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
                 <Leaf className="w-5 h-5 text-primary-foreground" />
               </div>

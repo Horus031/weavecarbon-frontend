@@ -49,15 +49,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 <DashboardSidebarShell company={company} />
 
                 {/* Main Content */}
-                <main className="flex-1 lg:pl-64 overflow-auto flex flex-col h-full">
+                <main className="flex-1 pt-12 md:pt-0 lg:pl-64 overflow-auto flex flex-col h-full">
                   <DashboardLayoutContent>{children}</DashboardLayoutContent>
                 </main>
 
                 {/* Pricing Modal (client gate) */}
                 <PricingModalGate />
-
-                {/* Weavey AI Assistant - Dashboard variant */}
-                <WeaveyChat variant="dashboard" />
               </div>
             </ShipmentProvider>
           </BatchProvider>

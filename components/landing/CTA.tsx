@@ -17,7 +17,7 @@ const CTA = () => {
   };
 
   return (
-    <section className="py-24 md:py-32 bg-muted/30">
+    <section className="py-24 md:py-32 relative bg-primary-foreground">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
@@ -108,6 +108,14 @@ const CTA = () => {
           </motion.div>
         </div>
       </div>
+      <div
+        className="absolute top-0 left-0 w-1/3 h-full bg-cover bg-left bg-no-repeat opacity-100 pointer-events-none z-0"
+        style={{ backgroundImage: "url('/CTA-BG-left.png')" }}
+      />
+      <div
+        className="absolute top-0 right-0 w-1/3 h-full bg-cover bg-right bg-no-repeat opacity-100 pointer-events-none z-0"
+        style={{ backgroundImage: "url('/CTA-BG-right.png')" }}
+      />
     </section>
   );
 };

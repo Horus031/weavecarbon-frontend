@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
+import StatsWave from "@/components/icons/StatsWave";
 
 const Stats = () => {
   const t = useTranslations("stats");
@@ -29,15 +30,10 @@ const Stats = () => {
     },
   ];
 
-  const getLabel = (key: string) => {
-    const translated = key;
-    return translated !== key ? translated : key;
-  };
-
   return (
     <section
       id="impact"
-      className="py-24 md:py-32 bg-gradient-forest text-primary-foreground relative overflow-hidden"
+      className="py-24 md:py-32 relative bg-linear-to-b from-primary to-forest-dark text-primary-foreground overflow-hidden"
     >
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
@@ -90,6 +86,10 @@ const Stats = () => {
             </motion.div>
           ))}
         </div>
+      </div>
+
+      <div className="absolute -bottom-96 left-0 right-0 z-0">
+        <StatsWave />
       </div>
     </section>
   );

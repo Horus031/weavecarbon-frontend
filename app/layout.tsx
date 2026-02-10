@@ -27,7 +27,7 @@ export default async function RootLayout({
             <LanguageProvider>
               {children}
               <Toaster />
-              <WeaveyChat variant="landing" />
+              <WeaveyChat variant="dashboard" />
             </LanguageProvider>
           </NextIntlClientProvider>
         </AuthProvider>

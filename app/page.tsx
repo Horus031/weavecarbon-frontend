@@ -7,6 +7,7 @@ import Features from "@/components/landing/Features";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Stats from "@/components/landing/Stats";
 import CTA from "@/components/landing/CTA";
+// import LeafHero3D from "@/components/landing/LeafHero3D";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <HomeClient>
         <Header />
         <main>
+          {/* <LeafHero3D /> */}
           <Hero />
           <Features />
           <HowItWorks />

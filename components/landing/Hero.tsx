@@ -2,40 +2,58 @@
 
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
-import { ArrowRight, BarChart3, Recycle, Shield } from "lucide-react";
+import { ArrowRight, Shield } from "lucide-react";
 import { useState } from "react";
 import UserTypeDialog from "./UserTypeDialog";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import LeafHero3D from "./LeafHero3D";
+import Waves from "../icons/Waves";
 
 const Hero = () => {
   const [showUserTypeDialog, setShowUserTypeDialog] = useState(false);
   const t = useTranslations("hero");
-  const tFeatures = useTranslations("features");
+  // const tFeatures = useTranslations("features");
 
   return (
-    <section className="relative h-fit flex items-center justify-center pt-32 pb-20 overflow-hidden bg-gradient-hero">
+    <section className="relative h-screen flex items-center justify-center pt-32 pb-20 overflow-hidden bg-gradient-hero">
       {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-soft" />
-        <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-pulse-soft delay-500" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 bg-primary/3 rounded-full blur-3xl" />
+      <div className="absolute inset-0 bg-linear-to-tr from-primary-foreground to-secondary overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute top-16 left-20 w-96 h-96 bg-primary/50 rounded-full blur-3xl"
+          initial={{ scale: 0.8, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 0.5 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        />
+        <motion.div
+          className="absolute top-1/4 right-20 w-80 h-80 bg-accent/50 rounded-full blur-3xl"
+          initial={{ scale: 0.8, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 0.5 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 bg-primary/3 rounded-full blur-3xl"
+          initial={{ scale: 0.8, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 0.3 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+        />
       </div>
 
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
+      <div className="container px-6 relative z-10">
+        <div className="max-w-4xl">
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8"
+            className="inline-flex gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-8"
           >
             <Shield className="w-4 h-4" />
-            <span className="text-sm font-medium">
-              {t("badge")}
-            </span>
+            <span className="text-sm font-medium">{t("badge")}</span>
           </motion.div>
 
           {/* Main heading */}
@@ -56,7 +74,7 @@ const Hero = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10"
           >
             {t("subtitle")}
           </motion.p>
@@ -67,7 +85,7 @@ const Hero = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.15 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
+            className="flex flex-col sm:flex-row items-center  gap-4 mb-16"
           >
             <Button
               variant="hero"
@@ -90,7 +108,7 @@ const Hero = () => {
           </motion.div>
 
           {/* Feature highlights */}
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.4 }}
@@ -112,7 +130,7 @@ const Hero = () => {
               title={tFeatures("exportReady.title")}
               description={tFeatures("exportReady.desc")}
             />
-          </motion.div>
+          </motion.div> */}
 
           {/* Trust badge */}
           <motion.p
@@ -127,8 +145,12 @@ const Hero = () => {
         </div>
       </div>
 
+      <LeafHero3D/>
+
       {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-linear-to-t from-background to-transparent" />
+      <div className="absolute top-0 left-0 right-0">
+        <Waves />
+      </div>
 
       {/* User Type Selection Dialog */}
       <UserTypeDialog
@@ -139,29 +161,29 @@ const Hero = () => {
   );
 };
 
-const FeatureCard = ({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 18 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, amount: 0.5 }}
-    transition={{ duration: 0.6, ease: "easeOut" }}
-    whileHover={{ y: -4, scale: 1.02 }}
-    className="glass-card rounded-2xl p-6 text-left transition-transform duration-300"
-  >
-    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
-      {icon}
-    </div>
-    <h3 className="font-semibold text-foreground mb-2">{title}</h3>
-    <p className="text-sm text-muted-foreground">{description}</p>
-  </motion.div>
-);
+// const FeatureCard = ({
+//   icon,
+//   title,
+//   description,
+// }: {
+//   icon: React.ReactNode;
+//   title: string;
+//   description: string;
+// }) => (
+//   <motion.div
+//     initial={{ opacity: 0, y: 18 }}
+//     whileInView={{ opacity: 1, y: 0 }}
+//     viewport={{ once: true, amount: 0.5 }}
+//     transition={{ duration: 0.6, ease: "easeOut" }}
+//     whileHover={{ y: -4, scale: 1.02 }}
+//     className="glass-card rounded-2xl p-6 text-left transition-transform duration-300"
+//   >
+//     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+//       {icon}
+//     </div>
+//     <h3 className="font-semibold text-foreground mb-2">{title}</h3>
+//     <p className="text-sm text-muted-foreground">{description}</p>
+//   </motion.div>
+// );
 
 export default Hero;

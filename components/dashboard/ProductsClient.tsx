@@ -50,17 +50,25 @@ const ProductsClient: React.FC = () => {
     "draft" | "published",
     { label: string; className: string }
   > = {
-    draft: { label: t("statusLabel.draft"), className: "bg-gray-100 text-gray-700" },
-    published: { label: t("statusLabel.published"), className: "bg-green-100 text-green-700" },
+    draft: {
+      label: t("statusLabel.draft"),
+      className: "bg-gray-100 text-gray-700",
+    },
+    published: {
+      label: t("statusLabel.published"),
+      className: "bg-green-100 text-green-700",
+    },
   };
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"draft" | "published" | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "draft" | "published" | "all"
+  >("all");
 
   const loadProducts = useCallback((): StoredProduct[] => {
     if (typeof window === "undefined") return [];
 
     const storedProducts = JSON.parse(
-      localStorage.getItem("weavecarbonProducts") || "[]"
+      localStorage.getItem("weavecarbonProducts") || "[]",
     ) as StoredProduct[];
 
     // Check demo status from localStorage only (stable across renders)
@@ -80,7 +88,6 @@ const ProductsClient: React.FC = () => {
   const products = useMemo<StoredProduct[]>(() => {
     return loadProducts();
   }, [loadProducts]);
-
 
   const [selectedProductForQR, setSelectedProductForQR] = useState<{
     id: string;
@@ -111,7 +118,7 @@ const ProductsClient: React.FC = () => {
       draft: products.filter((p) => p.status === "draft").length,
       published: products.filter((p) => p.status === "published").length,
     }),
-    [products]
+    [products],
   );
 
   const handleViewProduct = (productId: string) => {
@@ -130,25 +137,27 @@ const ProductsClient: React.FC = () => {
                 total: stats.total,
                 draft: stats.draft,
                 published: stats.published,
-                batches: batches.length
+                batches: batches.length,
               })}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowBatchModal(true)}
-              className="gap-2"
-            >
-              <Layers className="w-4 h-4" /> {t("manageBatches")}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowBulkUpload(true)}
-              className="gap-2"
-            >
-              <Upload className="w-4 h-4" /> {t("uploadFile")}
-            </Button>
+          <div className="flex flex-col md:flex-row gap-2">
+            <div className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowBatchModal(true)}
+                className="gap-2"
+              >
+                <Layers className="w-4 h-4" /> {t("manageBatches")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowBulkUpload(true)}
+                className="gap-2"
+              >
+                <Upload className="w-4 h-4" /> {t("uploadFile")}
+              </Button>
+            </div>
             <Button
               onClick={() => router.push("/assessment")}
               className="gap-2"
@@ -171,7 +180,9 @@ const ProductsClient: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-xs text-muted-foreground">{t("stats.all")}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("stats.all")}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -188,7 +199,9 @@ const ProductsClient: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.draft}</p>
-                  <p className="text-xs text-muted-foreground">{t("stats.draft")}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("stats.draft")}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -205,7 +218,9 @@ const ProductsClient: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats.published}</p>
-                  <p className="text-xs text-muted-foreground">{t("stats.published")}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("stats.published")}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -226,7 +241,9 @@ const ProductsClient: React.FC = () => {
 
           <Select
             value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as "draft" | "published" | "all")}
+            onValueChange={(v) =>
+              setStatusFilter(v as "draft" | "published" | "all")
+            }
           >
             <SelectTrigger className="w-full md:w-45">
               <Filter className="w-4 h-4 mr-2" />
@@ -266,7 +283,7 @@ const ProductsClient: React.FC = () => {
                 onClick={() => handleViewProduct(product.id)}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
                       <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                         <Package className="w-6 h-6 text-primary" />
@@ -297,7 +314,9 @@ const ProductsClient: React.FC = () => {
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right hidden sm:block">
                         <p className="text-lg font-bold text-primary">
-                          {product.carbonResults?.perProduct.total.toFixed(2) || "—"} kg
+                          {product.carbonResults?.perProduct.total.toFixed(2) ||
+                            "—"}{" "}
+                          kg
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {t("co2PerUnit")}
@@ -344,7 +363,7 @@ const ProductsClient: React.FC = () => {
           <p className="text-sm text-muted-foreground text-center">
             {t("showing", {
               filtered: filteredProducts.length,
-              total: products.length
+              total: products.length,
             })}
           </p>
         )}
