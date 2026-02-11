@@ -1,17 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Settings as SettingsIcon, Users, Bell } from "lucide-react";
 import SystemSettings from "./SystemSettings";
 import UsersSettings from "./UsersSettings";
 import NotificationSettings from "./NotificationSettings";
+import { useDashboardTitle } from "@/contexts/DashboardContext";
 
 const SettingsPage: React.FC = () => {
   const t = useTranslations("settings");
   const [activeTab, setActiveTab] = useState("system");
+  const { setPageTitle } = useDashboardTitle();
+
+  useEffect(() => {
+    setPageTitle(t("title"), t("subtitle"));
+  }, [setPageTitle, t]);
 
   const SETTINGS_TABS = [
     { id: "system", label: t("tabs.system"), icon: SettingsIcon },
@@ -21,47 +26,42 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold">{t("title")}</h2>
-        <p className="text-muted-foreground">
-          {t("subtitle")}
-        </p>
-      </div>
-
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         className="space-y-6"
       >
         {/* Tab Navigation */}
-        <ScrollArea className="w-full">
-          <TabsList className="inline-flex h-auto p-1 bg-muted w-full justify-start gap-1">
+        <div className="w-full">
+          <TabsList className="grid h-auto w-full grid-cols-1 gap-3 overflow-visible bg-transparent p-0 sm:grid-cols-3">
             {SETTINGS_TABS.map((tab) => {
               const Icon = tab.icon;
               return (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-background"
+                  className="group flex h-auto items-center justify-center gap-3 rounded-xl border border-border/60 bg-background/80 px-4 py-3 text-sm font-semibold text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
                 >
-                  <Icon className="w-4 h-4" />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition-all group-data-[state=active]:bg-primary/15 group-data-[state=active]:text-primary">
+                    <Icon className="w-4 h-4" />
+                  </span>
                   <span>{tab.label}</span>
                 </TabsTrigger>
               );
             })}
           </TabsList>
-        </ScrollArea>
+        </div>
 
         {/* Tab Contents */}
-        <TabsContent value="system" className="mt-6">
+        <TabsContent value="system" className="mt-4">
           <SystemSettings />
         </TabsContent>
 
-        <TabsContent value="users" className="mt-6">
+        <TabsContent value="users" className="mt-4">
           <UsersSettings />
         </TabsContent>
 
-        <TabsContent value="notifications" className="mt-6">
+        <TabsContent value="notifications" className="mt-4">
           <NotificationSettings />
         </TabsContent>
       </Tabs>

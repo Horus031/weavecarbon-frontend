@@ -1,13 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from "react";
-import {
+import type {
   ProductData,
   TransportData,
   CalculationHistory,
-  DEMO_PRODUCTS,
-  DEMO_TRANSPORTS,
-  DEMO_HISTORY,
-} from "@/lib/demoData";
+} from "@/types/productData";
 
 const PRODUCTS_KEY = "weavecarbon_products";
 const TRANSPORTS_KEY = "weavecarbon_transports";
@@ -29,41 +26,36 @@ export function useProductStore() {
     const userTransports = storedTransports ? JSON.parse(storedTransports) : [];
     const userHistory = storedHistory ? JSON.parse(storedHistory) : [];
 
-    // Combine demo data with user data
-    setProducts([...DEMO_PRODUCTS, ...userProducts]);
-    setTransports([...DEMO_TRANSPORTS, ...userTransports]);
-    setHistory([...DEMO_HISTORY, ...userHistory]);
+    setProducts(userProducts);
+    setTransports(userTransports);
+    setHistory(userHistory);
     setIsLoaded(true);
   }, []);
 
-  // Save user data to localStorage (excluding demo data)
+  // Save user data to localStorage
   const saveProducts = (allProducts: ProductData[]) => {
-    const userProducts = allProducts.filter((p) => !p.isDemo);
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(userProducts));
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(allProducts));
     setProducts(allProducts);
   };
 
   const saveTransports = (allTransports: TransportData[]) => {
-    const userTransports = allTransports.filter((t) => !t.isDemo);
-    localStorage.setItem(TRANSPORTS_KEY, JSON.stringify(userTransports));
+    localStorage.setItem(TRANSPORTS_KEY, JSON.stringify(allTransports));
     setTransports(allTransports);
   };
 
   const saveHistory = (allHistory: CalculationHistory[]) => {
-    const userHistory = allHistory.filter((h) => !h.isDemo);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(userHistory));
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(allHistory));
     setHistory(allHistory);
   };
 
   const addProduct = (
-    product: Omit<ProductData, "id" | "createdAt" | "isDemo">,
+    product: Omit<ProductData, "id" | "createdAt">,
     userEmail: string,
   ) => {
     const newProduct: ProductData = {
       ...product,
       id: `product-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      isDemo: false,
       createdBy: userEmail,
     };
     saveProducts([...products, newProduct]);
@@ -71,14 +63,13 @@ export function useProductStore() {
   };
 
   const addTransport = (
-    transport: Omit<TransportData, "id" | "createdAt" | "isDemo">,
+    transport: Omit<TransportData, "id" | "createdAt">,
     userEmail: string,
   ) => {
     const newTransport: TransportData = {
       ...transport,
       id: `transport-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      isDemo: false,
       createdBy: userEmail,
     };
     saveTransports([...transports, newTransport]);
@@ -86,14 +77,13 @@ export function useProductStore() {
   };
 
   const addHistory = (
-    calc: Omit<CalculationHistory, "id" | "createdAt" | "isDemo">,
+    calc: Omit<CalculationHistory, "id" | "createdAt">,
     userEmail: string,
   ) => {
     const newCalc: CalculationHistory = {
       ...calc,
       id: `calc-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      isDemo: false,
       createdBy: userEmail,
     };
     saveHistory([...history, newCalc]);
@@ -107,12 +97,6 @@ export function useProductStore() {
   const getHistoryByProduct = (productId: string) =>
     history.filter((h) => h.productId === productId);
 
-  const getDemoProducts = () => products.filter((p) => p.isDemo);
-  const getUserProducts = () => products.filter((p) => !p.isDemo);
-
-  const getDemoHistory = () => history.filter((h) => h.isDemo);
-  const getUserHistory = () => history.filter((h) => !h.isDemo);
-
   return {
     products,
     transports,
@@ -125,9 +109,5 @@ export function useProductStore() {
     getTransport,
     getTransportByProduct,
     getHistoryByProduct,
-    getDemoProducts,
-    getUserProducts,
-    getDemoHistory,
-    getUserHistory,
   };
 }

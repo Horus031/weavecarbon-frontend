@@ -5,15 +5,14 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
-import { createClient } from "@/lib/supabase/client";
+import { api } from "@/lib/apiClient";
 import OnboardingHeader from "./OnboardingHeader";
 import OnboardingForm from "./OnboardingForm";
 
 const OnboardingClient: React.FC = () => {
-  const { user, supabaseUser, loading, refreshUser } = useAuth();
+  const { user, loading, refreshUser, updateUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const supabase = createClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [companyName, setCompanyName] = useState("");
@@ -24,8 +23,8 @@ const OnboardingClient: React.FC = () => {
     // Wait for loading to complete before any redirects
     if (loading) return;
 
-    // If no user AND no supabaseUser (not authenticated at all), redirect to auth
-    if (!user && !supabaseUser) {
+    // If no user (not authenticated at all), redirect to auth
+    if (!user) {
       console.log("No user found, redirecting to auth");
       router.push("/auth");
       return;
@@ -36,7 +35,7 @@ const OnboardingClient: React.FC = () => {
       console.log("User has company_id, redirecting to overview");
       router.push("/overview");
     }
-  }, [user, supabaseUser, loading, router]);
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,8 +49,8 @@ const OnboardingClient: React.FC = () => {
       return;
     }
 
-    // Get auth user ID - either from profile or supabase session
-    const authUserId = user?.id || supabaseUser?.id;
+    // Get auth user ID
+    const authUserId = user?.id;
 
     if (!authUserId) {
       toast({
@@ -65,56 +64,21 @@ const OnboardingClient: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // First, ensure user profile exists (for Google OAuth users who might not have one yet)
-      if (!user && supabaseUser) {
-        const { error: profileError } = await supabase.from("users").insert({
-          id: supabaseUser.id,
-          email: supabaseUser.email || "",
-          full_name:
-            supabaseUser.user_metadata?.full_name ||
-            supabaseUser.user_metadata?.name ||
-            "User",
-          avatar_url: supabaseUser.user_metadata?.avatar_url,
-          user_type: "b2b",
-        });
-
-        if (profileError && !profileError.message.includes("duplicate")) {
-          console.error("Profile creation error:", profileError);
-          throw new Error(profileError.message || "Failed to create profile");
-        }
-      }
-
       // Insert company with proper error handling
-      const { data: company, error: companyError } = await supabase
-        .from("companies")
-        .insert({
-          name: companyName,
-          business_type: businessType as "shop_online" | "brand" | "factory",
-          target_markets: targetMarkets.length > 0 ? targetMarkets : null,
-          current_plan: "starter",
-        })
-        .select()
-        .single();
-
-      if (companyError) {
-        console.error("Company creation error:", companyError);
-        throw new Error(companyError.message || "Failed to create company");
-      }
+      const company = await api.post<{ id: string }>("/companies", {
+        name: companyName,
+        business_type: businessType as "shop_online" | "brand" | "factory",
+        target_markets: targetMarkets.length > 0 ? targetMarkets : null,
+        current_plan: "starter",
+      });
 
       console.log("Company created:", company.id);
 
       // Update user with company_id
-      const { error: userUpdateError } = await supabase
-        .from("users")
-        .update({ company_id: company.id })
-        .eq("id", authUserId);
-
-      if (userUpdateError) {
-        console.error("User update error:", userUpdateError);
-        throw new Error(userUpdateError.message || "Failed to update user");
-      }
+      await api.patch(`/users/${authUserId}`, { company_id: company.id });
 
       console.log("User updated with company_id");
+      updateUser({ company_id: company.id });
 
       toast({
         title: "Success! 🎉",

@@ -13,6 +13,7 @@ import B2CStatsGrid from "./B2CStatsGrid";
 import B2CDonateCard from "./B2CDonateCard";
 import B2CRecentActivity from "./B2CRecentActivity";
 import B2CImagePreview from "./B2CImagePreview";
+import { toast } from "sonner";
 
 const B2CClient: React.FC = () => {
   const router = useRouter();
@@ -41,8 +42,7 @@ const B2CClient: React.FC = () => {
 
   const handleCameraClick = () => {
     if (hasCameraPermission) {
-      // Open camera scanner
-      console.log("Open camera scanner");
+      toast.info("Camera workflow will be enabled after API integration.");
     } else {
       setShowCameraPermission(true);
     }
@@ -50,7 +50,7 @@ const B2CClient: React.FC = () => {
 
   const handleLocationClick = () => {
     if (hasLocationPermission) {
-      console.log("Open location/map feature");
+      toast.info("Location workflow will be enabled after API integration.");
     } else {
       setShowLocationPermission(true);
     }
@@ -64,10 +64,6 @@ const B2CClient: React.FC = () => {
   const handleLocationPermissionAllow = () => {
     setShowLocationPermission(false);
     setHasLocationPermission(true);
-  };
-
-  const handleCapture = (imageData: string) => {
-    setCapturedImage(imageData);
   };
 
   if (loading || !profileLoaded || !activitiesLoaded) {
@@ -114,8 +110,8 @@ const B2CClient: React.FC = () => {
             imageData={capturedImage}
             onRetake={() => setCapturedImage(null)}
             onContinue={() => {
-              // Process captured image
               setCapturedImage(null);
+              toast.success("Image captured successfully.");
             }}
           />
         )}

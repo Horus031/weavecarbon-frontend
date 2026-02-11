@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
-import { createClient } from "@/lib/supabase/client";
+import { api } from "@/lib/apiClient";
 import {
   Card,
   CardContent,
@@ -14,7 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -22,9 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Building2, Save, X, Server, Zap } from "lucide-react";
+import { Building2, Save, X, Zap, User, KeyRound } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 interface CompanyData {
   id: string;
@@ -34,22 +32,39 @@ interface CompanyData {
   current_plan: string;
 }
 
+interface UsageLimits {
+  productsUsed: number;
+  productsLimit: number;
+  membersUsed: number;
+  membersLimit: number;
+  apiCallsUsed: number;
+  apiCallsLimit: number;
+}
+
 const SystemSettings: React.FC = () => {
   const t = useTranslations("settings.system");
   const { user } = useAuth();
   const [company, setCompany] = useState<CompanyData | null>(null);
+  const [usageLimits, setUsageLimits] = useState<UsageLimits | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const supabase = createClient();
-  const isDemoTenant = user?.is_demo_user || false;
   const companyId = user?.company_id || null;
+  const createdDateLabel = t("notUpdated");
 
-  // Form state
   const [formData, setFormData] = useState({
     name: "",
     business_type: "brand" as "shop_online" | "brand" | "factory",
   });
+
+  const businessTypeLabel =
+    company?.business_type === "brand"
+      ? t("businessTypeBrand")
+      : company?.business_type === "factory"
+        ? t("businessTypeFactory")
+        : company?.business_type === "shop_online"
+          ? t("businessTypeShop")
+          : t("notUpdated");
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -59,19 +74,27 @@ const SystemSettings: React.FC = () => {
       }
 
       try {
-        const { data } = await supabase
-          .from("companies")
-          .select("*")
-          .eq("id", companyId)
-          .maybeSingle();
+        const [companyResult, usageResult] = await Promise.allSettled([
+          api.get<CompanyData>(`/companies/${companyId}`),
+          api.get<UsageLimits>(`/companies/${companyId}/usage-limits`),
+        ]);
 
-        if (data) {
+        if (companyResult.status === "fulfilled") {
+          const data = companyResult.value;
           setCompany(data);
           setFormData((prev) => ({
             ...prev,
             name: data.name,
             business_type: data.business_type,
           }));
+        } else {
+          setCompany(null);
+        }
+
+        if (usageResult.status === "fulfilled") {
+          setUsageLimits(usageResult.value);
+        } else {
+          setUsageLimits(null);
         }
       } catch (error) {
         console.error("Error fetching company:", error);
@@ -81,20 +104,22 @@ const SystemSettings: React.FC = () => {
     };
 
     fetchCompany();
-  }, [companyId, supabase]);
+  }, [companyId]);
+
+  const getUsagePercentage = (used: number, limit: number) => {
+    if (limit <= 0) return 0;
+    return Math.min(100, Math.max(0, (used / limit) * 100));
+  };
 
   const handleSave = async () => {
     if (!companyId) return;
 
     setSaving(true);
     try {
-      await supabase
-        .from("companies")
-        .update({
-          name: formData.name,
-          business_type: formData.business_type,
-        })
-        .eq("id", companyId);
+      await api.patch(`/companies/${companyId}`, {
+        name: formData.name,
+        business_type: formData.business_type,
+      });
 
       toast.success(t("updateSuccess"));
       setEditMode(false);
@@ -126,7 +151,42 @@ const SystemSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Company Info */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <User className="w-5 h-5" />
+                {t("personalInfo")}
+              </CardTitle>
+              <CardDescription>{t("personalInfoDesc")}</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="gap-2" type="button">
+                <KeyRound className="w-4 h-4" />
+                {t("changePassword")}
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>{t("fullName")}</Label>
+              <Input value={user?.full_name?.trim() || t("notUpdated")} disabled />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("email")}</Label>
+              <Input value={user?.email?.trim() || t("noEmail")} disabled />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("accountCreated")}</Label>
+              <Input value={createdDateLabel} disabled />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -135,9 +195,7 @@ const SystemSettings: React.FC = () => {
                 <Building2 className="w-5 h-5" />
                 {t("companyInfo")}
               </CardTitle>
-              <CardDescription>
-                {t("companyInfoDesc")}
-              </CardDescription>
+              <CardDescription>{t("companyInfoDesc")}</CardDescription>
             </div>
             {!editMode ? (
               <Button variant="outline" onClick={() => setEditMode(true)}>
@@ -190,14 +248,14 @@ const SystemSettings: React.FC = () => {
                     <SelectItem value="factory">
                       {t("businessTypeFactory")}
                     </SelectItem>
-                    <SelectItem value="shop_online">{t("businessTypeShop")}</SelectItem>
+                    <SelectItem value="shop_online">
+                      {t("businessTypeShop")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
                 <p className="text-sm text-muted-foreground p-2 bg-muted rounded">
-                  {company?.business_type === "brand" && t("businessTypeBrand")}
-                  {company?.business_type === "factory" && t("businessTypeFactory")}
-                  {company?.business_type === "shop_online" && t("businessTypeShop")}
+                  {businessTypeLabel}
                 </p>
               )}
             </div>
@@ -209,119 +267,81 @@ const SystemSettings: React.FC = () => {
               </p>
             </div>
           </div>
-
-          {isDemoTenant && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-600">
-              {t("demoWarning")}
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* System Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Server className="w-5 h-5" />
-            {t("systemInfo")}
-          </CardTitle>
-          <CardDescription>
-            {t("systemInfoDesc")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">{t("accountType")}</Label>
-                <Badge
-                  className={
-                    isDemoTenant
-                      ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                      : "bg-primary/10 text-primary border-primary/20"
-                  }
-                >
-                  {isDemoTenant ? t("demo") : t("production")}
-                </Badge>
-              </div>
-
-              <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">{t("createdDate")}</Label>
-                <span className="text-sm">
-                  {format(new Date("2024-01-15"), "dd/MM/yyyy")}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">{t("apiVersion")}</Label>
-                <span className="text-sm font-mono">v1.0.0</span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">{t("region")}</Label>
-                <span className="text-sm">{t("asiaPacific")}</span>
-              </div>
-
-              <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">{t("status")}</Label>
-                <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
-                  {t("active")}
-                </Badge>
-              </div>
-
-              <div className="flex items-center justify-between py-2 border-b">
-                <Label className="text-muted-foreground">{t("uptime")}</Label>
-                <span className="text-sm">99.9%</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Plan & Limits */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="w-5 h-5" />
             {t("usageLimits")}
           </CardTitle>
-          <CardDescription>
-            {t("usageLimitsDesc")}
-          </CardDescription>
+          <CardDescription>{t("usageLimitsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
             <div className="p-4 border rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-muted-foreground">{t("products")}</Label>
-                <span className="text-sm font-medium">12 / 100</span>
+                <span className="text-sm font-medium">
+                  {usageLimits
+                    ? `${usageLimits.productsUsed} / ${usageLimits.productsLimit}`
+                    : t("notUpdated")}
+                </span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary" style={{ width: "12%" }} />
+                <div
+                  className="h-full bg-primary"
+                  style={{
+                    width: `${getUsagePercentage(
+                      usageLimits?.productsUsed || 0,
+                      usageLimits?.productsLimit || 0,
+                    )}%`,
+                  }}
+                />
               </div>
             </div>
 
             <div className="p-4 border rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-muted-foreground">{t("members")}</Label>
-                <span className="text-sm font-medium">3 / 5</span>
+                <span className="text-sm font-medium">
+                  {usageLimits
+                    ? `${usageLimits.membersUsed} / ${usageLimits.membersLimit}`
+                    : t("notUpdated")}
+                </span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-primary" style={{ width: "60%" }} />
+                <div
+                  className="h-full bg-primary"
+                  style={{
+                    width: `${getUsagePercentage(
+                      usageLimits?.membersUsed || 0,
+                      usageLimits?.membersLimit || 0,
+                    )}%`,
+                  }}
+                />
               </div>
             </div>
 
             <div className="p-4 border rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-muted-foreground">{t("apiCalls")}</Label>
-                <span className="text-sm font-medium">1,234 / 10,000</span>
+                <span className="text-sm font-medium">
+                  {usageLimits
+                    ? `${usageLimits.apiCallsUsed.toLocaleString()} / ${usageLimits.apiCallsLimit.toLocaleString()}`
+                    : t("notUpdated")}
+                </span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className="h-full bg-primary"
-                  style={{ width: "12.34%" }}
+                  style={{
+                    width: `${getUsagePercentage(
+                      usageLimits?.apiCallsUsed || 0,
+                      usageLimits?.apiCallsLimit || 0,
+                    )}%`,
+                  }}
                 />
               </div>
             </div>
@@ -330,9 +350,7 @@ const SystemSettings: React.FC = () => {
           <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg flex items-center justify-between">
             <div>
               <p className="font-medium">{t("upgradeTitle")}</p>
-              <p className="text-sm text-muted-foreground">
-                {t("upgradeDesc")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("upgradeDesc")}</p>
             </div>
             <Button>{t("upgradeNow")}</Button>
           </div>

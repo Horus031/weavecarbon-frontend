@@ -1,15 +1,13 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import React, { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { api } from "@/lib/apiClient";
 import ShipmentList from "./ShipmentList";
 import ShipmentDetails from "./ShipmentDetails";
-import { DEMO_SHIPMENTS } from "@/lib/trackShipmentData";
+import type { TransportLeg } from "@/types/transport";
+import type { TrackShipment } from "./types";
 import {
   ProductAssessmentData,
   DESTINATION_MARKETS,
@@ -22,25 +20,22 @@ interface StoredProduct extends ProductAssessmentData {
   updatedAt: string;
 }
 
-// Shipment type definition - matching the one used in DEMO_SHIPMENTS
-interface Shipment {
-  id: string;
-  productId: string;
-  productName: string;
-  sku: string;
-  status: "in_transit" | "delivered" | "pending";
-  progress: number;
-  origin: string;
-  destination: string;
-  estimatedArrival: string;
-  departureDate: string;
-  currentLocation: string;
-  legs: any;
-  totalCO2: number;
-  carrier: string;
-  containerNo: string;
-  isDemo?: boolean;
-}
+const estimateArrivalDate = (product: StoredProduct) => {
+  const baseDate = new Date(product.updatedAt || product.createdAt);
+  const distance =
+    product.estimatedTotalDistance ||
+    product.transportLegs?.reduce(
+      (sum, leg) => sum + (leg.estimatedDistance || 0),
+      0,
+    ) ||
+    0;
+
+  const estimatedDays =
+    distance > 0 ? Math.min(45, Math.max(2, Math.ceil(distance / 600))) : 14;
+  const eta = new Date(baseDate);
+  eta.setDate(eta.getDate() + estimatedDays);
+  return eta.toISOString().split("T")[0];
+};
 
 // Utility function to get coordinates (basic mapping)
 const getLocationCoordinates = (
@@ -72,7 +67,9 @@ const getLocationCoordinates = (
 };
 
 // Convert stored product to shipment format
-const convertProductToShipment = (product: StoredProduct): Shipment | null => {
+const convertProductToShipment = (
+  product: StoredProduct,
+): TrackShipment | null => {
   try {
     const originCity =
       product.originAddress?.city ||
@@ -98,12 +95,10 @@ const convertProductToShipment = (product: StoredProduct): Shipment | null => {
 
     // Validate we got valid coordinates (not [0,0])
     if (!originCoords || (originCoords.lat === 0 && originCoords.lng === 0)) {
-      console.warn(`[TrackShipment] Invalid origin coordinates for ${product.productName}, defaulting to Ho Chi Minh`);
       originCoords.lat = 10.7769;
       originCoords.lng = 106.7009;
     }
     if (!destCoords || (destCoords.lat === 0 && destCoords.lng === 0)) {
-      console.warn(`[TrackShipment] Invalid destination coordinates for ${product.productName}, defaulting to Los Angeles`);
       destCoords.lat = 34.0522;
       destCoords.lng = -118.2437;
     }
@@ -112,7 +107,7 @@ const convertProductToShipment = (product: StoredProduct): Shipment | null => {
       product.destinationMarket && product.destinationMarket !== "vietnam";
 
     // Use transport legs from product if available, otherwise generate default
-    let legs: any[] = [];
+    let legs: TransportLeg[] = [];
 
     if (product.transportLegs && product.transportLegs.length > 0) {
       // Use product's transport legs
@@ -225,23 +220,6 @@ const convertProductToShipment = (product: StoredProduct): Shipment | null => {
 
     const totalCO2 = product.carbonResults?.perProduct.transport || 0;
 
-    console.log(
-      `[TrackShipment] Converted ${product.productName}:`,
-      { 
-        legs: legs.length, 
-        totalCO2, 
-        originCoords, 
-        destCoords,
-        legStructure: legs.map(l => ({
-          num: l.legNumber,
-          mode: l.mode,
-          originName: l.origin.name,
-          destName: l.destination.name,
-          coords: `[${l.origin.lat.toFixed(2)},${l.origin.lng.toFixed(2)}] -> [${l.destination.lat.toFixed(2)},${l.destination.lng.toFixed(2)}]`
-        }))
-      },
-    );
-
     return {
       id: product.id,
       productId: product.id,
@@ -251,16 +229,13 @@ const convertProductToShipment = (product: StoredProduct): Shipment | null => {
       progress: 0,
       origin: `${originCity}, ${originCountry}`,
       destination: `${destCity}, ${destCountry}`,
-      estimatedArrival: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
+      estimatedArrival: estimateArrivalDate(product),
       departureDate: new Date().toISOString().split("T")[0],
       currentLocation: `${originCity}, ${originCountry}`,
       legs,
       totalCO2,
-      carrier: isInternational ? "Maersk Line" : "Local Logistics",
+      carrier: "Unknown carrier",
       containerNo: `CNT-${product.id.slice(0, 6).toUpperCase()}`,
-      isDemo: false,
     };
   } catch (error) {
     console.error(
@@ -276,12 +251,9 @@ const TrackShipmentClient: React.FC = () => {
   const { setPageTitle } = useDashboardTitle();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [allShipments, setAllShipments] = useState<any[]>(
-    DEMO_SHIPMENTS as any[],
-  );
-  const [selectedShipment, setSelectedShipment] = useState<any>(
-    DEMO_SHIPMENTS[0] || null,
-  );
+  const [allShipments, setAllShipments] = useState<TrackShipment[]>([]);
+  const [selectedShipment, setSelectedShipment] =
+    useState<TrackShipment | null>(null);
 
   useEffect(() => {
     setPageTitle(
@@ -292,65 +264,37 @@ const TrackShipmentClient: React.FC = () => {
 
   // Load published products from localStorage and convert to shipments
   useEffect(() => {
-    const loadUserShipments = () => {
+    const loadUserShipments = async () => {
       try {
-        const storedProducts = localStorage.getItem("weavecarbonProducts");
-        console.log(
-          "[TrackShipment] Loading from localStorage:",
-          storedProducts ? "Found data" : "No data",
-        );
-
-        if (storedProducts) {
-          const products = JSON.parse(storedProducts) as StoredProduct[];
-          console.log("[TrackShipment] Total products:", products.length);
-
-          // Only include published products
-          const publishedProducts = products.filter(
-            (p) => p.status === "published",
-          );
-          console.log(
-            "[TrackShipment] Published products:",
-            publishedProducts.length,
-          );
-
-          const userShipments = publishedProducts
-            .map((p) => {
-              const shipment = convertProductToShipment(p);
-              console.log(
-                "[TrackShipment] Converted product to shipment:",
-                p.productName,
-                shipment ? "Success" : "Failed",
-              );
-              return shipment;
-            })
-            .filter((s): s is Shipment => s !== null);
-
-          console.log(
-            "[TrackShipment] User shipments created:",
-            userShipments.length,
-          );
-
-          // Merge with demo shipments
-          setAllShipments([...(DEMO_SHIPMENTS as any[]), ...userShipments]);
-
-          // Set first user shipment as selected if available, otherwise first demo shipment
-          if (userShipments.length > 0) {
-            setSelectedShipment(userShipments[0]);
-          } else if (DEMO_SHIPMENTS.length > 0) {
-            setSelectedShipment(DEMO_SHIPMENTS[0] || null);
-          }
+        let products: StoredProduct[] = [];
+        try {
+          products = await api.get<StoredProduct[]>("/products?status=published");
+        } catch {
+          const storedProducts = localStorage.getItem("weavecarbonProducts");
+          products = storedProducts
+            ? (JSON.parse(storedProducts) as StoredProduct[])
+            : [];
         }
+
+        const publishedProducts = products.filter((p) => p.status === "published");
+
+        const userShipments = publishedProducts
+          .map((p) => convertProductToShipment(p))
+          .filter((s): s is TrackShipment => s !== null);
+
+        setAllShipments(userShipments);
+        setSelectedShipment(userShipments[0] ?? null);
       } catch (error) {
-        console.error("Error loading shipments from localStorage:", error);
+        console.error("Error loading shipments:", error);
       }
     };
 
-    loadUserShipments();
+    void loadUserShipments();
 
     // Listen for storage changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "weavecarbonProducts") {
-        loadUserShipments();
+        void loadUserShipments();
       }
     };
 
@@ -372,43 +316,38 @@ const TrackShipmentClient: React.FC = () => {
   });
 
   const handleRefresh = () => {
-    console.log("[TrackShipment] Refreshing shipment data...");
-    // Reload from localStorage
-    try {
-      const storedProducts = localStorage.getItem("weavecarbonProducts");
-      if (storedProducts) {
-        const products = JSON.parse(storedProducts) as StoredProduct[];
-        const publishedProducts = products.filter(
-          (p) => p.status === "published",
-        );
+    const load = async () => {
+      try {
+        let products: StoredProduct[] = [];
+        try {
+          products = await api.get<StoredProduct[]>("/products?status=published");
+        } catch {
+          const storedProducts = localStorage.getItem("weavecarbonProducts");
+          products = storedProducts
+            ? (JSON.parse(storedProducts) as StoredProduct[])
+            : [];
+        }
+
+        const publishedProducts = products.filter((p) => p.status === "published");
         const userShipments = publishedProducts
           .map((p) => convertProductToShipment(p))
-          .filter((s): s is Shipment => s !== null);
-        setAllShipments([
-          ...(DEMO_SHIPMENTS as any[]),
-          ...userShipments,
-        ]);
+          .filter((s): s is TrackShipment => s !== null);
+
+        setAllShipments(userShipments);
+        setSelectedShipment((prev) => {
+          if (!prev) return userShipments[0] || null;
+          return userShipments.find((s) => s.id === prev.id) || userShipments[0] || null;
+        });
+      } catch (error) {
+        console.error("Error refreshing shipments:", error);
       }
-    } catch (error) {
-      console.error("Error refreshing shipments:", error);
-    }
+    };
+
+    void load();
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold">{t("title")}</h2>
-          <p className="text-muted-foreground">
-            {t("subtitle")}
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={handleRefresh}>
-          <RefreshCw className="w-4 h-4 mr-2" />
-          {t("refresh")}
-        </Button>
-      </div>
-
       <div className="grid lg:grid-cols-3 gap-6">
         <ShipmentList
           shipments={filteredShipments}
@@ -420,7 +359,7 @@ const TrackShipmentClient: React.FC = () => {
           onStatusFilterChange={setStatusFilter}
         />
 
-        <ShipmentDetails shipment={selectedShipment} />
+        <ShipmentDetails shipment={selectedShipment} onRefresh={handleRefresh} />
       </div>
     </div>
   );

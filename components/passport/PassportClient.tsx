@@ -32,19 +32,17 @@ import {
   Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DEMO_PRODUCTS,
-  DEMO_TRANSPORTS,
-  DEMO_HISTORY,
+import type {
   ProductData,
   TransportData,
   CalculationHistory,
+} from "@/types/productData";
+import {
   MATERIAL_LABELS,
   CERTIFICATION_LABELS,
   MARKET_LABELS,
   TRANSPORT_MODE_LABELS,
-} from "@/lib/demoData";
-import { getDemoProductById } from "@/lib/demoProductHelper";
+} from "@/lib/productLabels";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
 import {
   ProductAssessmentData,
@@ -88,7 +86,6 @@ function convertToProductData(stored: StoredProduct): ProductData {
     packagingWeight: "",
     sourceType: "documented",
     confidenceLevel: stored.carbonResults?.confidenceLevel === "high" ? 90 : stored.carbonResults?.confidenceLevel === "medium" ? 70 : 50,
-    isDemo: false,
     createdAt: stored.createdAt,
     createdBy: "User",
     status: stored.status,
@@ -112,7 +109,6 @@ function generateCalculationFromProduct(stored: StoredProduct): CalculationHisto
     transportCO2: perProduct.transport || 0,
     packagingCO2: 0,
     carbonVersion: "WeaveCarbon v1.0",
-    isDemo: false,
     createdAt: stored.createdAt,
     createdBy: "User",
   };
@@ -154,7 +150,6 @@ function generateTransportFromProduct(stored: StoredProduct): TransportData | nu
     totalDistanceKm: stored.estimatedTotalDistance || legs.reduce((sum, l) => sum + l.distanceKm, 0),
     totalCO2Kg: stored.carbonResults?.perProduct.transport || 0,
     confidenceLevel: stored.carbonResults?.confidenceLevel === "high" ? 90 : 70,
-    isDemo: false,
     createdAt: stored.createdAt,
     createdBy: "User",
   };
@@ -179,48 +174,27 @@ const PassportClient: React.FC = () => {
   }, [setPageTitle]);
 
   useEffect(() => {
-    // Load product data from demo or localStorage
     const loadData = () => {
       if (!productId) {
         setLoading(false);
         return;
       }
 
-      // Check demo products (including synthetic) first
-      const demoStoredProduct = getDemoProductById(productId);
-      let foundProduct = demoStoredProduct
-        ? convertToProductData(demoStoredProduct)
-        : null;
+      let foundProduct: ProductData | null = null;
       let foundTransport: TransportData | null = null;
       let foundCalc: CalculationHistory | null = null;
 
-      // Prefer detailed demo data for the base demo set
-      const demoProduct = DEMO_PRODUCTS.find((p) => p.id === productId);
-      if (demoProduct) {
-        foundProduct = demoProduct;
-        foundTransport =
-          DEMO_TRANSPORTS.find((t) => t.productId === productId) || null;
-        foundCalc = DEMO_HISTORY.find((h) => h.productId === productId) || null;
-      } else if (demoStoredProduct) {
-        foundTransport = generateTransportFromProduct(demoStoredProduct);
-        foundCalc = generateCalculationFromProduct(demoStoredProduct);
-      }
-
-      // If not found in demo, check localStorage (new format)
-      if (!foundProduct) {
-        const storedProducts = localStorage.getItem("weavecarbonProducts");
-        if (storedProducts) {
-          const userProducts = JSON.parse(storedProducts) as StoredProduct[];
-          const storedProduct = userProducts.find((p) => p.id === productId);
-          if (storedProduct) {
-            foundProduct = convertToProductData(storedProduct);
-            foundTransport = generateTransportFromProduct(storedProduct);
-            foundCalc = generateCalculationFromProduct(storedProduct);
-          }
+      const storedProducts = localStorage.getItem("weavecarbonProducts");
+      if (storedProducts) {
+        const userProducts = JSON.parse(storedProducts) as StoredProduct[];
+        const storedProduct = userProducts.find((p) => p.id === productId);
+        if (storedProduct) {
+          foundProduct = convertToProductData(storedProduct);
+          foundTransport = generateTransportFromProduct(storedProduct);
+          foundCalc = generateCalculationFromProduct(storedProduct);
         }
       }
 
-      // If still not found, check old localStorage format
       if (!foundProduct) {
         const oldStoredProducts = localStorage.getItem("weavecarbon_products");
         if (oldStoredProducts) {
@@ -229,43 +203,28 @@ const PassportClient: React.FC = () => {
         }
       }
 
+      if (!foundTransport) {
+        const storedTransports = localStorage.getItem("weavecarbon_transports");
+        if (storedTransports) {
+          const userTransports = JSON.parse(storedTransports) as TransportData[];
+          foundTransport =
+            userTransports.find((t) => t.productId === productId) || null;
+        }
+      }
+
+      if (!foundCalc) {
+        const storedHistory = localStorage.getItem("weavecarbon_history");
+        if (storedHistory) {
+          const userHistory = JSON.parse(
+            storedHistory,
+          ) as CalculationHistory[];
+          foundCalc = userHistory.find((h) => h.productId === productId) || null;
+        }
+      }
+
       if (foundProduct) {
         setProduct(foundProduct);
-
-        // Find transport data if not already set
-        if (!foundTransport) {
-          foundTransport = DEMO_TRANSPORTS.find(
-            (t) => t.productId === productId,
-          ) || null;
-          if (!foundTransport) {
-            const storedTransports = localStorage.getItem(
-              "weavecarbon_transports",
-            );
-            if (storedTransports) {
-              const userTransports = JSON.parse(
-                storedTransports,
-              ) as TransportData[];
-              foundTransport = userTransports.find(
-                (t) => t.productId === productId,
-              ) || null;
-            }
-          }
-        }
         setTransport(foundTransport);
-
-        // Find calculation history if not already set
-        if (!foundCalc) {
-          foundCalc = DEMO_HISTORY.find((h) => h.productId === productId) || null;
-          if (!foundCalc) {
-            const storedHistory = localStorage.getItem("weavecarbon_history");
-            if (storedHistory) {
-              const userHistory = JSON.parse(
-                storedHistory,
-              ) as CalculationHistory[];
-              foundCalc = userHistory.find((h) => h.productId === productId) || null;
-            }
-          }
-        }
         setCalculation(foundCalc);
       }
 

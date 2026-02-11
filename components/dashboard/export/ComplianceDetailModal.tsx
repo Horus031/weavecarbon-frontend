@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   Dialog,
@@ -29,8 +29,7 @@ import {
   ExternalLink,
   Info,
 } from "lucide-react";
-import { MarketCode, STATUS_CONFIG, MARKET_REGULATIONS } from "./types";
-import { generateDemoComplianceData } from "./complianceDemoData";
+import { MarketCode, MarketCompliance, STATUS_CONFIG, MARKET_REGULATIONS } from "./types";
 import ComplianceRecommendations from "./ComplianceRecommendations";
 import ComplianceDocuments from "./ComplianceDocuments";
 import ComplianceCarbonData from "./ComplianceCarbonData";
@@ -40,6 +39,7 @@ interface ComplianceDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   marketCode: MarketCode | null;
+  complianceData?: Record<MarketCode, MarketCompliance> | null;
 }
 
 const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
@@ -50,9 +50,8 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
   const t = useTranslations("export.modal");
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Get compliance data (demo data for now)
-  const allComplianceData = useMemo(() => generateDemoComplianceData(), []);
-  const compliance = marketCode ? allComplianceData[marketCode] : null;
+  const compliance =
+    marketCode && complianceData ? complianceData[marketCode] : null;
 
   if (!compliance || !marketCode) return null;
 

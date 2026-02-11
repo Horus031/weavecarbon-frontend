@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { createClient } from "@/lib/supabase/client";
+import { api } from "@/lib/apiClient";
 import PricingModal from "@/components/dashboard/PricingModal";
 import { useToast } from "@/hooks/useToast";
 
@@ -12,7 +12,6 @@ export default function PricingModalGate() {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const supabase = createClient();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -28,16 +27,9 @@ export default function PricingModalGate() {
 
       try {
         // Fetch company to check current_plan
-        const { data: company, error } = await supabase
-          .from("companies")
-          .select("current_plan")
-          .eq("id", user.company_id)
-          .single();
-
-        if (error) {
-          console.error("Error fetching company plan:", error);
-          return;
-        }
+        const company = await api.get<{ current_plan: string }>(
+          `/companies/${user.company_id}`,
+        );
 
         // Show modal if plan is 'starter' (default plan after onboarding)
         // This means user hasn't upgraded yet
@@ -63,20 +55,9 @@ export default function PricingModalGate() {
 
     try {
       // Update company plan in database
-      const { error } = await supabase
-        .from("companies")
-        .update({ current_plan: planId })
-        .eq("id", user.company_id);
-
-      if (error) {
-        console.error("Error updating plan:", error);
-        toast({
-          title: "Error",
-          description: "Failed to update plan. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
+      await api.patch(`/companies/${user.company_id}`, {
+        current_plan: planId,
+      });
 
       toast({
         title: "Plan Updated! 🎉",

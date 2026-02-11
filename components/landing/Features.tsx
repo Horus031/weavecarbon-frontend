@@ -88,7 +88,7 @@ const Features = () => {
   return (
     <section
       id="features"
-      className="relative z-30 py-24 md:py-32 bg-linear-to-b from-muted/30 to-background overflow-hidden"
+      className="relative z-30 pt-6 pb-10 md:pt-12 md:pb-14 bg-linear-to-b from-muted/30 to-background overflow-hidden"
     >
       <div className="container mx-auto px-6">
         {/* Interactive circular constellation */}
@@ -149,25 +149,6 @@ const Features = () => {
               }}
             />
 
-            {/* Animated dots traveling around the circle */}
-            {[0, 0.33, 0.66].map((offset, i) => (
-              <motion.circle
-                key={`orbit-dot-${i}`}
-                r="4"
-                fill="hsl(var(--primary))"
-                opacity="0.7"
-                filter="url(#glow)"
-              >
-                <animateMotion
-                  dur="12s"
-                  repeatCount="indefinite"
-                  begin={`${offset * 12}s`}
-                >
-                  <mpath href="#circle-path" />
-                </animateMotion>
-              </motion.circle>
-            ))}
-
             {/* Hidden path for animation */}
             <path
               id="circle-path"
@@ -176,12 +157,12 @@ const Features = () => {
             />
           </svg>
 
-          {/* Center content */}
+          {/* Feature icons positioned around the circle */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
             className="relative z-10 max-w-2xl text-center px-8"
           >
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
@@ -193,7 +174,6 @@ const Features = () => {
             <p className="text-lg text-muted-foreground">{t("subtitle")}</p>
           </motion.div>
 
-          {/* Feature icons positioned around the circle */}
           {features.map((feature, index) => {
             const angle = (index / features.length) * 2 * Math.PI - Math.PI / 2; // Start from top
             const radius = 340; // Match the SVG circle radius
@@ -289,28 +269,6 @@ const Features = () => {
             );
           })}
 
-          {/* Decorative floating particles */}
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={`particle-${i}`}
-              className="absolute w-1 h-1 bg-primary/30 rounded-full"
-              style={{
-                left: `${50 + (Math.random() - 0.5) * 80}%`,
-                top: `${50 + (Math.random() - 0.5) * 80}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0.2, 0.5, 0.2],
-                scale: [1, 1.3, 1],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
         </div>
       </div>
     </section>

@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Ship,
   Plane,
@@ -12,17 +13,20 @@ import {
   Navigation,
   Globe,
   ChevronRight,
+  RefreshCw,
 } from "lucide-react";
-import { TransportLeg } from "@/lib/demoData";
+import type { TransportLeg } from "@/types/transport";
+import { useTranslations } from "next-intl";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 interface TransportMapProps {
   legs: TransportLeg[];
-  isDemo?: boolean;
+  onRefresh?: () => void;
 }
 
-const TransportMap: React.FC<TransportMapProps> = ({ legs, isDemo = true }) => {
+const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
+  const t = useTranslations("trackShipment");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -500,7 +504,7 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, isDemo = true }) => {
   }, 0);
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden border border-border/60 shadow-sm">
       <style jsx global>{`
         @keyframes pulse {
           0%,
@@ -514,7 +518,7 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, isDemo = true }) => {
           }
         }
       `}</style>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 bg-background">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Globe className="w-5 h-5 text-primary" />
@@ -526,20 +530,18 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, isDemo = true }) => {
                 Đang mô phỏng...
               </Badge>
             )}
-            {isDemo && (
-              <Badge
-                variant="outline"
-                className="text-amber-600 border-amber-300 bg-amber-50"
-              >
-                Demo Data
-              </Badge>
-            )}
+              {onRefresh && (
+                <Button variant="outline" size="sm" onClick={onRefresh}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  {t("refresh")}
+                </Button>
+              )}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 bg-background">
         {/* Map Container */}
-        <div className="relative h-100 bg-muted">
+        <div className="relative h-100 bg-muted border-b border-border">
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
               <div className="text-center">
@@ -554,9 +556,9 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, isDemo = true }) => {
         </div>
 
         {/* Stats Panel */}
-        <div className="p-4 bg-muted/50">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <div className="text-center">
+        <div className="p-4 bg-background">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div className="text-center rounded-lg border border-border bg-muted/30 p-3">
               <p className="text-2xl font-bold text-primary">
                 {totalDistance.toLocaleString()}
               </p>
@@ -564,17 +566,17 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, isDemo = true }) => {
                 km tổng quãng đường
               </p>
             </div>
-            <div className="text-center">
+            <div className="text-center rounded-lg border border-border bg-muted/30 p-3">
               <p className="text-2xl font-bold text-orange-500">
                 {totalCO2.toFixed(1)}
               </p>
               <p className="text-xs text-muted-foreground">kg CO₂e phát thải</p>
             </div>
-            <div className="text-center">
+            <div className="text-center rounded-lg border border-border bg-muted/30 p-3">
               <p className="text-2xl font-bold text-blue-500">{legs.length}</p>
               <p className="text-xs text-muted-foreground">chặng vận chuyển</p>
             </div>
-            <div className="text-center">
+            <div className="text-center rounded-lg border border-border bg-muted/30 p-3">
               <p className="text-2xl font-bold text-green-500">
                 ~{estimatedDays}
               </p>
@@ -597,7 +599,7 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, isDemo = true }) => {
                 <div
                   key={leg.id}
                   className={`flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer
-                    ${selectedLeg === index ? "bg-primary/10 border-2 border-primary shadow-lg scale-[1.02]" : "bg-background hover:bg-muted border border-transparent"}`}
+                    ${selectedLeg === index ? "bg-primary/10 border-2 border-primary shadow-lg scale-[1.02]" : "bg-muted/30 hover:bg-muted/50 border border-border"}`}
                   onClick={() => handleLegClick(index)}
                 >
                   <div

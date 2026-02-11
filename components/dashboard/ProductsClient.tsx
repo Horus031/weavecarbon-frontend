@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useBatches } from "@/contexts/BatchContext";
-import { getDemoProducts } from "@/lib/demoProductHelper";
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +31,7 @@ import BulkUploadModal from "@/components/dashboard/products/BulkUploadModal";
 import BatchManagementModal from "@/components/dashboard/products/BatchManagementModal";
 import { useRouter } from "next/navigation";
 import { ProductAssessmentData } from "./assessment/steps/types";
+import { useDashboardTitle } from "@/contexts/DashboardContext";
 
 // Type for stored products in localStorage
 interface StoredProduct extends ProductAssessmentData {
@@ -45,6 +45,7 @@ const ProductsClient: React.FC = () => {
   const router = useRouter();
   const { batches } = useBatches();
   const t = useTranslations("products");
+  const { setPageTitle } = useDashboardTitle();
 
   const STATUS_CONFIG: Record<
     "draft" | "published",
@@ -63,6 +64,8 @@ const ProductsClient: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<
     "draft" | "published" | "all"
   >("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   const loadProducts = useCallback((): StoredProduct[] => {
     if (typeof window === "undefined") return [];
@@ -70,17 +73,6 @@ const ProductsClient: React.FC = () => {
     const storedProducts = JSON.parse(
       localStorage.getItem("weavecarbonProducts") || "[]",
     ) as StoredProduct[];
-
-    // Check demo status from localStorage only (stable across renders)
-    const isDemoUser = localStorage.getItem("weavecarbonDemoUser") === "true";
-
-    // Merge demo products with any locally created products
-    if (isDemoUser) {
-      const demoProducts = getDemoProducts() as StoredProduct[];
-      const demoIds = new Set(demoProducts.map((p) => p.id));
-      const uniqueStored = storedProducts.filter((p) => !demoIds.has(p.id));
-      return [...demoProducts, ...uniqueStored];
-    }
 
     return storedProducts;
   }, []);
@@ -111,6 +103,33 @@ const ProductsClient: React.FC = () => {
     });
   }, [products, searchQuery, statusFilter]);
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredProducts.length / ITEMS_PER_PAGE),
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, products.length]);
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
+
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredProducts, currentPage]);
+
+  const rangeStart =
+    filteredProducts.length === 0
+      ? 0
+      : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const rangeEnd = Math.min(
+    currentPage * ITEMS_PER_PAGE,
+    filteredProducts.length,
+  );
+
   // Statistics
   const stats = useMemo(
     () => ({
@@ -121,6 +140,21 @@ const ProductsClient: React.FC = () => {
     [products],
   );
 
+  const summaryText = useMemo(
+    () =>
+      t("summary", {
+        total: stats.total,
+        draft: stats.draft,
+        published: stats.published,
+        batches: batches.length,
+      }),
+    [t, stats.total, stats.draft, stats.published, batches.length],
+  );
+
+  useEffect(() => {
+    setPageTitle(t("title"), summaryText);
+  }, [setPageTitle, t, summaryText]);
+
   const handleViewProduct = (productId: string) => {
     router.push(`/summary/${productId}`);
   };
@@ -129,18 +163,7 @@ const ProductsClient: React.FC = () => {
     <>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-bold">{t("title")}</h2>
-            <p className="text-muted-foreground">
-              {t("summary", {
-                total: stats.total,
-                draft: stats.draft,
-                published: stats.published,
-                batches: batches.length,
-              })}
-            </p>
-          </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
           <div className="flex flex-col md:flex-row gap-2">
             <div className="gap-2">
               <Button
@@ -258,9 +281,9 @@ const ProductsClient: React.FC = () => {
         </div>
 
         {/* Products List */}
-        <div className="grid gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           {filteredProducts.length === 0 ? (
-            <Card>
+            <Card className="sm:col-span-2">
               <CardContent className="p-8 text-center">
                 <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-medium mb-2">{t("notFound")}</h3>
@@ -276,7 +299,7 @@ const ProductsClient: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            filteredProducts.map((product) => (
+            paginatedProducts.map((product) => (
               <Card
                 key={product.id}
                 className="hover:shadow-md transition-shadow cursor-pointer"
@@ -360,12 +383,34 @@ const ProductsClient: React.FC = () => {
 
         {/* Results count */}
         {filteredProducts.length > 0 && (
-          <p className="text-sm text-muted-foreground text-center">
-            {t("showing", {
-              filtered: filteredProducts.length,
-              total: products.length,
-            })}
-          </p>
+          totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                {t("pagination.prev")}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {t("pagination.page", {
+                  current: currentPage,
+                  total: totalPages,
+                })}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage === totalPages}
+              >
+                {t("pagination.next")}
+              </Button>
+            </div>
+          )
         )}
       </div>
 

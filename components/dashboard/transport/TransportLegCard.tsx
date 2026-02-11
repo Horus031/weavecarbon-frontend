@@ -62,8 +62,8 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border border-foreground/10 shadow-sm">
+      <CardHeader className="border-b border-border/60 bg-muted/20">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             {getModeIcon(leg.mode)}
@@ -81,7 +81,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-5">
         {/* Transport Mode */}
         <div>
           <Label>{t("transportMode")}</Label>
@@ -89,7 +89,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
             value={leg.mode}
             onValueChange={(v) => onUpdate(leg.id, "mode", v)}
           >
-            <SelectTrigger className="mt-1">
+            <SelectTrigger className="mt-1 bg-background border border-foreground/10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -128,7 +128,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
         </div>
 
         {/* Origin */}
-        <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+        <div className="p-4 bg-muted/30 border border-border/60 rounded-lg space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium mb-3">
             <MapPin className="w-4 h-4 text-emerald-600" />
             {t("originLabel")}
@@ -141,7 +141,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
         </div>
 
         {/* Destination */}
-        <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+        <div className="p-4 bg-muted/30 border border-border/60 rounded-lg space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium mb-3">
             <MapPin className="w-4 h-4 text-destructive" />
             {t("destinationLabel")}
@@ -161,7 +161,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
             placeholder={t("distancePlaceholder")}
             value={leg.distanceKm}
             onChange={(e) => onUpdate(leg.id, "distanceKm", e.target.value)}
-            className="mt-1"
+            className="mt-1 bg-background border border-foreground/10"
           />
           {!hasLocationPermission && (
             <p className="text-xs text-muted-foreground mt-1">
@@ -173,7 +173,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
 
         {/* Leg CO2 Result */}
         {parseFloat(leg.distanceKm) > 0 && (
-          <div className="p-3 bg-primary/5 rounded-lg">
+          <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t("legCO2")}</span>
               <span className="font-medium text-primary">

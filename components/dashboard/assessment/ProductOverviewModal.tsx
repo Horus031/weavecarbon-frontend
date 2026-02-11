@@ -248,7 +248,6 @@ const ProductOverviewModal: React.FC<ProductOverviewModalProps> = ({
         unit: "kg",
         scope: "scope1",
         confidenceScore: 45, // Low confidence for draft
-        isDemo: false,
       };
 
       addProduct(newProduct);

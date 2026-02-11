@@ -12,7 +12,6 @@ export interface CalculationHistoryItem {
   carbonVersion: string;
   createdAt: string;
   createdBy: string;
-  isDemo: boolean;
 }
 
 const STORAGE_KEY = "weavecarbon_calculation_history";
@@ -71,21 +70,11 @@ export const useCalculationHistory = () => {
     [history]
   );
 
-  const getDemoHistory = useCallback(() => {
-    return history.filter((item) => item.isDemo);
-  }, [history]);
-
-  const getRealHistory = useCallback(() => {
-    return history.filter((item) => !item.isDemo);
-  }, [history]);
-
   return {
     history,
     isLoaded,
     addCalculation,
     deleteCalculation,
     getByProductId,
-    getDemoHistory,
-    getRealHistory,
   };
 };

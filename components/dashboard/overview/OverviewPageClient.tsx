@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProducts } from "@/contexts/ProductContext";
-import { createClient } from "@/lib/supabase/client";
+import { api } from "@/lib/apiClient";
 import {
   Card,
   CardContent,
@@ -26,16 +26,12 @@ import {
   Lightbulb,
   PlusCircle,
 } from "lucide-react";
-import { useIsDemo } from "@/hooks/useTenantData";
-import {
-  marketReadiness,
-  recommendations,
-  getReadinessColor,
-  getImpactColor,
-} from "@/lib/dashboardData";
 import { useTranslations } from "next-intl";
 import ProductOverviewModal from "../assessment/ProductOverviewModal";
-import OverviewCharts from "../OverviewCharts";
+import OverviewCharts, {
+  EmissionBreakdownPoint,
+  TrendDataPoint,
+} from "../OverviewCharts";
 import { useRouter } from "next/navigation";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
 
@@ -44,10 +40,40 @@ interface Company {
   name?: string;
 }
 
-// Mock company data for demo users
-const MOCK_DEMO_COMPANY: Company = {
-  name: "WeaveCarbon Demo Company",
-  target_markets: ["US", "EU", "JP"],
+interface MarketReadinessItem {
+  market: string;
+  score: number;
+  status?: "good" | "warning" | "danger";
+}
+
+interface RecommendationItem {
+  id: string | number;
+  title: string;
+  description: string;
+  impact: "high" | "medium" | "low";
+  reduction: string;
+}
+
+interface OverviewMetricsResponse {
+  carbonTrendData?: TrendDataPoint[];
+  emissionBreakdown?: EmissionBreakdownPoint[];
+}
+
+const getReadinessColor = (score: number) => {
+  if (score >= 75) return "text-green-600 bg-green-100";
+  if (score >= 50) return "text-yellow-600 bg-yellow-100";
+  return "text-red-600 bg-red-100";
+};
+
+const getImpactColor = (impact: string) => {
+  switch (impact) {
+    case "high":
+      return "bg-green-100 text-green-700";
+    case "medium":
+      return "bg-yellow-100 text-yellow-700";
+    default:
+      return "bg-blue-100 text-blue-700";
+  }
 };
 
 const OverviewPage: React.FC = () => {
@@ -56,15 +82,24 @@ const OverviewPage: React.FC = () => {
   const { products, pendingProductData, clearPendingProduct } = useProducts();
   const navigate = useRouter();
   const [, setCompany] = useState<Company | null>(null);
-  const isDemo = useIsDemo();
   const [showProductModal, setShowProductModal] = useState(false);
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [marketReadiness, setMarketReadiness] = useState<MarketReadinessItem[]>(
+    [],
+  );
+  const [recommendations, setRecommendations] = useState<RecommendationItem[]>(
+    [],
+  );
+  const [trendData, setTrendData] = useState<TrendDataPoint[]>([]);
+  const [emissionBreakdown, setEmissionBreakdown] = useState<
+    EmissionBreakdownPoint[]
+  >([]);
   const { setPageTitle } = useDashboardTitle();
 
   useEffect(() => {
     setPageTitle(t("pageTitle"), t("pageSubtitle"));
   }, [setPageTitle, t]);
 
-  // Show modal when there's pending product data from assessment
   useEffect(() => {
     if (pendingProductData) {
       setShowProductModal(true);
@@ -76,7 +111,6 @@ const OverviewPage: React.FC = () => {
     clearPendingProduct();
   };
 
-  // Calculate dashboard stats dynamically from products
   const stats = useMemo(() => {
     const totalCO2 = products.reduce((sum, p) => sum + p.co2, 0);
     const skuCount = products.length;
@@ -91,7 +125,6 @@ const OverviewPage: React.FC = () => {
           )
         : 0;
 
-    // Export readiness based on published ratio and average confidence
     const exportReadiness =
       products.length > 0
         ? Math.round(
@@ -107,46 +140,87 @@ const OverviewPage: React.FC = () => {
     };
   }, [products]);
 
-  // Load company data - use mock data for demo users, fetch from DB for real users
+  const localFallbackTrendData = useMemo((): TrendDataPoint[] => {
+    if (products.length === 0) return [];
+
+    const totalCO2 = products.reduce((sum, p) => sum + p.co2, 0);
+    const monthLabel = `M${new Date().getMonth() + 1}`;
+
+    return [
+      {
+        month: monthLabel,
+        emissions: Math.round(totalCO2 * 100) / 100,
+        target: Math.round(totalCO2 * 1.1 * 100) / 100,
+      },
+    ];
+  }, [products]);
+
   useEffect(() => {
-    if (isDemo || user?.is_demo_user) {
-      // Use mock company data for demo users
-      console.log("[OverviewPage] Using mock company data for demo user");
-      setCompany(MOCK_DEMO_COMPANY);
-    } else {
-      // Fetch real company data from database
-      const fetchCompany = async () => {
-        const companyId = user?.company_id;
-        if (!companyId) {
-          console.log("[OverviewPage] No companyId found");
-          return;
-        }
+    let cancelled = false;
 
-        console.log("[OverviewPage] Fetching company data for:", companyId);
-        const supabase = createClient();
-        const { data: companyData, error } = await supabase
-          .from("companies")
-          .select("target_markets, name")
-          .eq("id", companyId)
-          .maybeSingle();
-
-        if (error) {
-          console.error("[OverviewPage] Error fetching company:", error);
-          return;
+    const fetchOverviewData = async () => {
+      const companyId = user?.company_id;
+      if (!companyId) {
+        if (!cancelled) {
+          setMarketReadiness([]);
+          setRecommendations([]);
+          setTrendData([]);
+          setEmissionBreakdown([]);
+          setInsightsLoading(false);
         }
+        return;
+      }
 
-        if (companyData) {
-          console.log("[OverviewPage] Company data loaded:", companyData.name);
-          setCompany(companyData);
-        }
-      };
-      fetchCompany();
-    }
-  }, [user?.company_id, user?.is_demo_user, isDemo]);
+      if (!cancelled) setInsightsLoading(true);
+
+      const [companyResult, readinessResult, recommendationResult, metricsResult] =
+        await Promise.allSettled([
+          api.get<Company>(`/companies/${companyId}`),
+          api.get<MarketReadinessItem[]>(`/companies/${companyId}/market-readiness`),
+          api.get<RecommendationItem[]>(`/companies/${companyId}/recommendations`),
+          api.get<OverviewMetricsResponse>(`/companies/${companyId}/overview-metrics`),
+        ]);
+
+      if (cancelled) return;
+
+      if (companyResult.status === "fulfilled") {
+        setCompany(companyResult.value);
+      }
+
+      if (readinessResult.status === "fulfilled") {
+        setMarketReadiness(readinessResult.value || []);
+      } else {
+        setMarketReadiness([]);
+      }
+
+      if (recommendationResult.status === "fulfilled") {
+        setRecommendations(recommendationResult.value || []);
+      } else {
+        setRecommendations([]);
+      }
+
+      if (metricsResult.status === "fulfilled") {
+        setTrendData(metricsResult.value?.carbonTrendData || []);
+        setEmissionBreakdown(metricsResult.value?.emissionBreakdown || []);
+      } else {
+        setTrendData([]);
+        setEmissionBreakdown([]);
+      }
+
+      setInsightsLoading(false);
+    };
+
+    fetchOverviewData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.company_id]);
+
+  const chartTrendData = trendData.length > 0 ? trendData : localFallbackTrendData;
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
@@ -165,9 +239,7 @@ const OverviewPage: React.FC = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t("stats.skuTracking")}</CardDescription>
-            <CardTitle className="text-3xl font-bold">
-              {stats.skuCount}
-            </CardTitle>
+            <CardTitle className="text-3xl font-bold">{stats.skuCount}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
@@ -204,12 +276,13 @@ const OverviewPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Charts Row */}
-      <OverviewCharts />
+      <OverviewCharts
+        carbonTrendData={chartTrendData}
+        emissionBreakdown={emissionBreakdown}
+        isLoading={insightsLoading}
+      />
 
-      {/* Export Readiness & Recommendations */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Export Readiness by Market */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -219,31 +292,38 @@ const OverviewPage: React.FC = () => {
             <CardDescription>{t("marketReadiness.subtitle")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {marketReadiness.map((market) => (
-              <div key={market.market} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{market.market}</span>
-                    <Badge
-                      className={getReadinessColor(market.score)}
-                      variant="secondary"
-                    >
-                      {market.score >= 75 ? (
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                      ) : (
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                      )}
-                      {market.score}%
-                    </Badge>
+            {insightsLoading ? (
+              <div className="h-28 bg-muted animate-pulse rounded-md" />
+            ) : marketReadiness.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No market readiness data yet.
+              </p>
+            ) : (
+              marketReadiness.map((market) => (
+                <div key={market.market} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{market.market}</span>
+                      <Badge
+                        className={getReadinessColor(market.score)}
+                        variant="secondary"
+                      >
+                        {market.score >= 75 ? (
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                        ) : (
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                        )}
+                        {market.score}%
+                      </Badge>
+                    </div>
                   </div>
+                  <Progress value={market.score} className="h-2" />
                 </div>
-                <Progress value={market.score} className="h-2" />
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
 
-        {/* Recommendations */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -253,34 +333,41 @@ const OverviewPage: React.FC = () => {
             <CardDescription>{t("recommendations.subtitle")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recommendations.map((rec) => (
-              <div
-                key={rec.id}
-                className="p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-sm">{t(rec.title)}</h4>
-                  <Badge
-                    className={getImpactColor(rec.impact)}
-                    variant="secondary"
-                  >
-                    -{rec.reduction}
-                  </Badge>
+            {insightsLoading ? (
+              <div className="h-28 bg-muted animate-pulse rounded-md" />
+            ) : recommendations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No recommendations available.
+              </p>
+            ) : (
+              recommendations.map((rec) => (
+                <div
+                  key={rec.id}
+                  className="p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium text-sm">{rec.title}</h4>
+                    <Badge
+                      className={getImpactColor(rec.impact)}
+                      variant="secondary"
+                    >
+                      -{rec.reduction}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {rec.description}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {t(rec.description)}
-                </p>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card
           className="hover:border-primary/50 transition-colors cursor-pointer"
-          onClick={() => navigate.push("/dashboard/products")}
+          onClick={() => navigate.push("/products")}
         >
           <CardHeader>
             <PlusCircle className="w-8 h-8 text-primary mb-2" />
@@ -301,7 +388,7 @@ const OverviewPage: React.FC = () => {
 
         <Card
           className="hover:border-primary/50 transition-colors cursor-pointer"
-          onClick={() => navigate.push("/dashboard/logistics")}
+          onClick={() => navigate.push("/logistics")}
         >
           <CardHeader>
             <Truck className="w-8 h-8 text-primary mb-2" />
@@ -322,7 +409,7 @@ const OverviewPage: React.FC = () => {
 
         <Card
           className="hover:border-primary/50 transition-colors cursor-pointer"
-          onClick={() => navigate.push("/dashboard/reports")}
+          onClick={() => navigate.push("/reports")}
         >
           <CardHeader>
             <FileCheck className="w-8 h-8 text-primary mb-2" />
@@ -342,28 +429,6 @@ const OverviewPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* Target Markets
-      {company?.target_markets && company.target_markets.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("dashboard.targetMarkets")}</CardTitle>
-            <CardDescription>
-              {t("dashboard.targetMarketsDesc")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {company.target_markets.map((market) => (
-                <Badge key={market} variant="secondary" className="text-sm">
-                  {market}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )} */}
-
-      {/* Product Overview Modal - shown after product creation */}
       {pendingProductData && (
         <ProductOverviewModal
           open={showProductModal}

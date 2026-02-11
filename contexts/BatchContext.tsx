@@ -46,7 +46,6 @@ export interface Batch {
 
   // Metadata
   shipmentId?: string;
-  isDemo?: boolean;
 }
 
 interface BatchContextType {
@@ -72,140 +71,10 @@ interface BatchContextType {
 
 const BatchContext = createContext<BatchContextType | undefined>(undefined);
 
-// Demo batches
-const generateDemoBatches = (): Batch[] => {
-  const now = new Date();
-
-  return [
-    {
-      id: "batch-demo-001",
-      name: "Lô xuất EU Q1-2024",
-      description: "Lô hàng xuất khẩu sang châu Âu quý 1/2024",
-      status: "published",
-      products: [
-        {
-          productId: "demo-product-001",
-          name: "Áo T-shirt Organic Cotton",
-          sku: "DEMO-SKU-001",
-          quantity: 500,
-          co2PerUnit: 3.45,
-          weight: 0.25,
-        },
-        {
-          productId: "demo-product-002",
-          name: "Quần Jeans Recycled Denim",
-          sku: "DEMO-SKU-002",
-          quantity: 300,
-          co2PerUnit: 5.82,
-          weight: 0.65,
-        },
-        {
-          productId: "demo-product-009",
-          name: "Áo Polo Pique",
-          sku: "DEMO-SKU-009",
-          quantity: 200,
-          co2PerUnit: 3.12,
-          weight: 0.28,
-        },
-      ],
-      totalProducts: 3,
-      totalQuantity: 1000,
-      totalCO2: 4995, // Sum of (quantity * co2PerUnit)
-      totalWeight: 475,
-      originAddress: {
-        streetNumber: "123",
-        street: "Đại lộ Bình Dương",
-        ward: "",
-        district: "Thuận An",
-        city: "Bình Dương",
-        stateRegion: "",
-        country: "Vietnam",
-        postalCode: "75000",
-      },
-      destinationAddress: {
-        streetNumber: "100",
-        street: "Europaweg",
-        ward: "",
-        district: "",
-        city: "Rotterdam",
-        stateRegion: "South Holland",
-        country: "Netherlands",
-        postalCode: "3199 LC",
-      },
-      destinationMarket: "eu",
-      transportModes: ["road", "sea"],
-      createdAt: new Date(
-        now.getTime() - 30 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      updatedAt: now.toISOString(),
-      publishedAt: new Date(
-        now.getTime() - 25 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      shipmentId: "SHIP-2024-003",
-      isDemo: true,
-    },
-    {
-      id: "batch-demo-002",
-      name: "Lô xuất US Xuân 2024",
-      description: "Lô hàng mùa xuân cho thị trường Mỹ",
-      status: "draft",
-      products: [
-        {
-          productId: "demo-product-004",
-          name: "Áo Hoodie Fleece",
-          sku: "DEMO-SKU-004",
-          quantity: 400,
-          co2PerUnit: 4.21,
-          weight: 0.45,
-        },
-        {
-          productId: "demo-product-005",
-          name: "Áo Sơ mi Cotton",
-          sku: "DEMO-SKU-005",
-          quantity: 250,
-          co2PerUnit: 2.95,
-          weight: 0.22,
-        },
-      ],
-      totalProducts: 2,
-      totalQuantity: 650,
-      totalCO2: 2421.5,
-      totalWeight: 235,
-      originAddress: {
-        streetNumber: "88",
-        street: "Nguyễn Văn Linh",
-        ward: "",
-        district: "Hải Châu",
-        city: "Đà Nẵng",
-        stateRegion: "",
-        country: "Vietnam",
-        postalCode: "550000",
-      },
-      destinationAddress: {
-        streetNumber: "456",
-        street: "Harbor Blvd",
-        ward: "",
-        district: "",
-        city: "Los Angeles",
-        stateRegion: "California",
-        country: "USA",
-        postalCode: "90001",
-      },
-      destinationMarket: "us",
-      transportModes: ["road", "sea"],
-      createdAt: new Date(
-        now.getTime() - 5 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      updatedAt: now.toISOString(),
-      isDemo: true,
-    },
-  ];
-};
-
 export const BatchProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [batches, setBatches] = useState<Batch[]>(generateDemoBatches());
+  const [batches, setBatches] = useState<Batch[]>([]);
 
   const createBatch = useCallback(
     (name: string, description?: string): Batch => {

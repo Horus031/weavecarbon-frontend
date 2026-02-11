@@ -5,15 +5,12 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Route, Plus, Map } from "lucide-react";
+import { Route, Plus } from "lucide-react";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
 import TransportScopeSelector from "./TransportScopeSelector";
 import TransportLegCard from "./TransportLegCard";
 import TransportResultsSidebar from "./TransportResultsSidebar";
 import PermissionDialog from "@/components/ui/PermissionDialog";
-import TransportMap from "@/components/ui/TransportMap";
-import { DEMO_VIETNAM_LA_ROUTE } from "@/lib/logisticData";
 
 export interface AddressData {
   streetAddress: string;
@@ -58,14 +55,12 @@ interface TransportClientProps {
   productId?: string;
   productName?: string;
   productCode?: string;
-  isDemo?: boolean;
 }
 
 const TransportClient: React.FC<TransportClientProps> = ({
   productId,
   productName,
   productCode,
-  isDemo = false,
 }) => {
   const t = useTranslations("transport");
   const router = useRouter();
@@ -74,34 +69,15 @@ const TransportClient: React.FC<TransportClientProps> = ({
     "domestic" | "international"
   >("international");
   const [showLocationDialog, setShowLocationDialog] = useState(false);
-  const [showDemoMap, setShowDemoMap] = useState(true);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   const [legs, setLegs] = useState<LegInput[]>([
     {
       id: "1",
       type: "international",
       mode: "ship",
-      origin: {
-        streetAddress: "Nhà máy dệt may Bình Dương",
-        aptSuite: "",
-        city: "Thủ Dầu Một",
-        state: "BD",
-        zipPostcode: "820000",
-        country: "VN",
-        lat: "10.9804",
-        lng: "106.6519",
-      },
-      destination: {
-        streetAddress: "123 Warehouse District",
-        aptSuite: "Building A",
-        city: "Los Angeles",
-        state: "CA",
-        zipPostcode: "90001",
-        country: "US",
-        lat: "34.0522",
-        lng: "-118.2437",
-      },
-      distanceKm: "14580",
+      origin: createEmptyAddress(),
+      destination: createEmptyAddress(),
+      distanceKm: "",
     },
   ]);
 
@@ -158,29 +134,6 @@ const TransportClient: React.FC<TransportClientProps> = ({
   };
 
   const handleSubmit = () => {
-    // Calculate total CO2 with breakdown
-    // const materialsCO2 = 2.5; // Simplified
-    // const manufacturingCO2 = 1.5; // Simplified
-    // const transportCO2 = getTotalCO2();
-    // const packagingCO2 = 0.15; // Simplified
-    // const totalCO2 =
-    //   materialsCO2 + manufacturingCO2 + transportCO2 + packagingCO2;
-
-    // Save to calculation history
-    // const calculation = addCalculation({
-    //   productId: productId || `product-${Date.now()}`,
-    //   productName: productName || "Demo Product",
-    //   materialsCO2,
-    //   manufacturingCO2,
-    //   transportCO2,
-    //   packagingCO2,
-    //   totalCO2,
-    //   carbonVersion: "v2024.1-DEFRA",
-    //   createdBy: "current-user",
-    //   isDemo: isDemo,
-    // });
-
-    // Redirect to calculation history page
     router.push(`/calculation-history?productId=${productId}`);
   };
 
@@ -213,11 +166,6 @@ const TransportClient: React.FC<TransportClientProps> = ({
                   SKU: {productCode}
                 </p>
               </div>
-              {isDemo && (
-                <Badge variant="outline" className="ml-auto">
-                  Demo
-                </Badge>
-              )}
             </CardContent>
           </Card>
         )}
@@ -245,40 +193,12 @@ const TransportClient: React.FC<TransportClientProps> = ({
               />
             ))}
 
-            {/* Demo Map Section */}
-            {showDemoMap && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <Map className="w-5 h-5 text-primary" />
-                    {t("demoMapTitle")}
-                  </h2>
-                  <Badge
-                    variant="outline"
-                    className="text-amber-600 border-amber-300 bg-amber-50"
-                  >
-                    {t("demoMapBadge")}
-                  </Badge>
-                </div>
-                <TransportMap legs={DEMO_VIETNAM_LA_ROUTE} isDemo={true} />
-              </div>
-            )}
-
             {/* Add Leg Button */}
             <Button variant="outline" onClick={handleAddLeg} className="w-full">
               <Plus className="w-4 h-4 mr-2" />
               {t("addLeg")}
             </Button>
 
-            {/* Toggle Demo Map */}
-            <Button
-              variant={showDemoMap ? "secondary" : "outline"}
-              onClick={() => setShowDemoMap(!showDemoMap)}
-              className="w-full"
-            >
-              <Map className="w-4 h-4 mr-2" />
-              {showDemoMap ? t("hideDemoMap") : t("showDemoMap")}
-            </Button>
           </div>
 
           {/* Sidebar - Results */}

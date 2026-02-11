@@ -5,7 +5,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useProducts } from "@/contexts/ProductContext";
 import { useProductStore } from "@/hooks/useProductStore";
-import { useIsDemo } from "@/hooks/useTenantData";
+import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { api } from "@/lib/apiClient";
 import {
   Card,
   CardContent,
@@ -46,6 +47,9 @@ import { toast } from "sonner";
 import {
   exportProductsToCSV,
   exportProductsToXLSX,
+  type ActivityLog,
+  type AuditLog,
+  type UserInfo,
   exportActivityLogsToCSV,
   exportActivityLogsToXLSX,
   exportAuditLogsToCSV,
@@ -56,10 +60,6 @@ import {
   exportHistoryToXLSX,
   exportAnalyticsSummaryToXLSX,
   exportFullCompanyReportToXLSX,
-  generateDemoActivityLogs,
-  generateDemoAuditLogs,
-  generateDemoUsers,
-  DEMO_METADATA,
 } from "@/lib/exportUtils";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import MobileFilterSheet from "./mobile/MobileFilterSheet";
@@ -67,6 +67,7 @@ import MobileDataCard from "./mobile/MobileDataCard";
 
 const ReportsPage: React.FC = () => {
   const t = useTranslations("reports");
+  const { setPageTitle } = useDashboardTitle();
   
   // Report types for quick actions
   const REPORT_TYPES = [
@@ -108,24 +109,56 @@ const ReportsPage: React.FC = () => {
     },
   ];
   const isMobile = useIsMobile();
-  const isDemo = useIsDemo();
   const { products } = useProducts();
   const { history: calculationHistory } = useProductStore();
 
   const [activeTab, setActiveTab] = useState<"report" | "export">("report");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 14;
   const [isMounted, setIsMounted] = useState(false);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [users, setUsers] = useState<UserInfo[]>([]);
 
   // Ensure hydration consistency by only rendering date-dependent content after mount
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Generate data from context
-  const activityLogs = useMemo(() => generateDemoActivityLogs(), []);
-  const auditLogs = useMemo(() => generateDemoAuditLogs(), []);
-  const users = useMemo(() => generateDemoUsers(), []);
+  useEffect(() => {
+    setPageTitle(t("title"), t("subtitle"));
+  }, [setPageTitle, t]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReportSources = async () => {
+      const [activityResult, auditResult, usersResult] =
+        await Promise.allSettled([
+          api.get<ActivityLog[]>("/reports/activity-logs"),
+          api.get<AuditLog[]>("/reports/audit-logs"),
+          api.get<UserInfo[]>("/companies/current/users"),
+        ]);
+
+      if (cancelled) return;
+
+      setActivityLogs(
+        activityResult.status === "fulfilled" ? activityResult.value : [],
+      );
+      setAuditLogs(auditResult.status === "fulfilled" ? auditResult.value : []);
+      setUsers(usersResult.status === "fulfilled" ? usersResult.value : []);
+    };
+
+    loadReportSources();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Dynamically generate reports based on real data
   const reports = useMemo(() => {
@@ -255,9 +288,9 @@ const ReportsPage: React.FC = () => {
   // Export handlers
   const handleExportProducts = (format: "csv" | "xlsx") => {
     if (format === "csv") {
-      exportProductsToCSV(products, isDemo);
+      exportProductsToCSV(products);
     } else {
-      exportProductsToXLSX(products, isDemo);
+      exportProductsToXLSX(products);
     }
     addToExportHistory(
       "Products Export",
@@ -272,9 +305,9 @@ const ReportsPage: React.FC = () => {
 
   const handleExportActivity = (format: "csv" | "xlsx") => {
     if (format === "csv") {
-      exportActivityLogsToCSV(activityLogs, isDemo);
+      exportActivityLogsToCSV(activityLogs);
     } else {
-      exportActivityLogsToXLSX(activityLogs, isDemo);
+      exportActivityLogsToXLSX(activityLogs);
     }
     addToExportHistory(
       "Activity Logs Export",
@@ -289,9 +322,9 @@ const ReportsPage: React.FC = () => {
 
   const handleExportAudit = (format: "csv" | "xlsx") => {
     if (format === "csv") {
-      exportAuditLogsToCSV(auditLogs, isDemo);
+      exportAuditLogsToCSV(auditLogs);
     } else {
-      exportAuditLogsToXLSX(auditLogs, isDemo);
+      exportAuditLogsToXLSX(auditLogs);
     }
     addToExportHistory(
       "Audit Logs Export",
@@ -306,9 +339,9 @@ const ReportsPage: React.FC = () => {
 
   const handleExportUsers = (format: "csv" | "xlsx") => {
     if (format === "csv") {
-      exportUsersToCSV(users, isDemo);
+      exportUsersToCSV(users);
     } else {
-      exportUsersToXLSX(users, isDemo);
+      exportUsersToXLSX(users);
     }
     addToExportHistory(
       "Users Export",
@@ -323,9 +356,9 @@ const ReportsPage: React.FC = () => {
 
   const handleExportHistory = (format: "csv" | "xlsx") => {
     if (format === "csv") {
-      exportHistoryToCSV(calculationHistory, isDemo);
+      exportHistoryToCSV(calculationHistory);
     } else {
-      exportHistoryToXLSX(calculationHistory, isDemo);
+      exportHistoryToXLSX(calculationHistory);
     }
     addToExportHistory(
       "Calculation History Export",
@@ -339,7 +372,7 @@ const ReportsPage: React.FC = () => {
   };
 
   const handleExportAnalytics = () => {
-    exportAnalyticsSummaryToXLSX(products, isDemo);
+    exportAnalyticsSummaryToXLSX(products);
     addToExportHistory(
       "Analytics Summary Export",
       products.length,
@@ -355,7 +388,6 @@ const ReportsPage: React.FC = () => {
       activityLogs,
       auditLogs,
       users,
-      isDemo,
     );
     addToExportHistory(
       "Full Company Report",
@@ -422,11 +454,35 @@ const ReportsPage: React.FC = () => {
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === "all" || report.type === typeFilter;
-    return matchesSearch && matchesType;
+    const matchesDateFrom = !dateFrom || report.date >= dateFrom;
+    const matchesDateTo = !dateTo || report.date <= dateTo;
+    return matchesSearch && matchesType && matchesDateFrom && matchesDateTo;
   });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredReports.length / ITEMS_PER_PAGE),
+  );
+
+  useEffect(() => {
+    if (activeTab !== "report") return;
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, typeFilter, dateFrom, dateTo, reports.length]);
+
+  useEffect(() => {
+    if (activeTab !== "report") return;
+    setCurrentPage((prev) => Math.min(prev, totalPages));
+  }, [activeTab, totalPages]);
+
+  const paginatedReports = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredReports.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredReports, currentPage]);
 
   const handleResetFilters = () => {
     setTypeFilter("all");
+    setDateFrom("");
+    setDateTo("");
   };
 
   const getTypeIcon = (type: string) => {
@@ -452,43 +508,6 @@ const ReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 no-horizontal-scroll" suppressHydrationWarning>
-      {/* Header */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg md:text-xl font-bold">
-              {t("title")}
-            </h2>
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {t("subtitle")}
-            </p>
-          </div>
-          <Button
-            onClick={handleExportFullReport}
-            className="gap-2 shrink-0 h-10"
-            size={isMobile ? "sm" : "default"}
-          >
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("fullReport")}</span>
-          </Button>
-        </div>
-
-        {/* Demo indicator */}
-        {isDemo && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 text-sm">
-            <Badge
-              variant="outline"
-              className="bg-amber-100 text-amber-700 border-amber-300"
-            >
-              Demo
-            </Badge>
-            <span className="text-amber-700">
-              {t("demoIndicator", { tenantName: DEMO_METADATA.tenant_name })}
-            </span>
-          </div>
-        )}
-      </div>
-
       {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
@@ -526,22 +545,32 @@ const ReportsPage: React.FC = () => {
         value={activeTab}
         onValueChange={(v) => setActiveTab(v as "report" | "export")}
       >
-        <TabsList className="grid w-full max-w-100 grid-cols-2">
-          <TabsTrigger value="report" className="gap-2">
-            <FileText className="w-4 h-4" />
-            <span>{t("tabs.reports")}</span>
-          </TabsTrigger>
-          <TabsTrigger value="export" className="gap-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <TabsList className="grid w-full md:w-auto max-w-100 grid-cols-2">
+            <TabsTrigger value="report" className="gap-2">
+              <FileText className="w-4 h-4" />
+              <span>{t("tabs.reports")}</span>
+            </TabsTrigger>
+            <TabsTrigger value="export" className="gap-2">
+              <Download className="w-4 h-4" />
+              <span>{t("tabs.export")}</span>
+            </TabsTrigger>
+          </TabsList>
+          <Button
+            onClick={handleExportFullReport}
+            className="gap-2 shrink-0 h-10"
+            size={isMobile ? "sm" : "default"}
+          >
             <Download className="w-4 h-4" />
-            <span>{t("tabs.export")}</span>
-          </TabsTrigger>
-        </TabsList>
+            <span className="hidden sm:inline">{t("fullReport")}</span>
+          </Button>
+        </div>
 
         {/* Report Tab */}
         <TabsContent value="report" className="mt-4 space-y-4">
           {/* Search and Filters */}
-          <div className="flex gap-2 md:gap-4">
-            <div className="relative flex-1">
+          <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder={t("search")}
@@ -586,12 +615,34 @@ const ReportsPage: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">
+                    {t("dateFrom")}
+                  </Label>
+                  <Input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="h-12"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">
+                    {t("dateTo")}
+                  </Label>
+                  <Input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="h-12"
+                  />
+                </div>
               </div>
             </MobileFilterSheet>
 
             {/* Desktop filters */}
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-37.5 hidden md:flex">
+              <SelectTrigger className="w-full md:w-37.5 hidden md:flex">
                 <SelectValue placeholder={t("filterType")} />
               </SelectTrigger>
               <SelectContent>
@@ -605,10 +656,33 @@ const ReportsPage: React.FC = () => {
                 <SelectItem value="company">{t("filterOptions.company")}</SelectItem>
               </SelectContent>
             </Select>
+
+            <div className="space-y-1 md:w-40">
+              <Label className="text-xs text-muted-foreground md:sr-only">
+                {t("dateFrom")}
+              </Label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-1 md:w-40">
+              <Label className="text-xs text-muted-foreground md:sr-only">
+                {t("dateTo")}
+              </Label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-10"
+              />
+            </div>
           </div>
 
           {/* Reports List */}
-          <div className="grid gap-3">
+          <div className="grid gap-3 md:grid-cols-2">
             {filteredReports.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -620,7 +694,7 @@ const ReportsPage: React.FC = () => {
                 </CardContent>
               </Card>
             ) : (
-              filteredReports.map((report) => (
+              paginatedReports.map((report) => (
                 <MobileDataCard
                   key={report.id}
                   title={report.title}
@@ -661,6 +735,35 @@ const ReportsPage: React.FC = () => {
               ))
             )}
           </div>
+
+          {filteredReports.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                {t("pagination.prev")}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                {t("pagination.page", {
+                  current: currentPage,
+                  total: totalPages,
+                })}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage === totalPages}
+              >
+                {t("pagination.next")}
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         {/* Export Tab */}

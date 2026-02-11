@@ -13,5 +13,4 @@ export interface Profile {
   company_id?: string | null;
   user_type?: "b2b" | "b2c" | "admin";
   avatar_url?: string | null;
-  is_demo_user?: boolean;
 }

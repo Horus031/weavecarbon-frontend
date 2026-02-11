@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCalculationHistory } from "@/hooks/useCalculationHistory";
 import { Button } from "@/components/ui/button";
+import { useDashboardTitle } from "@/contexts/DashboardContext";
 import {
   Card,
   CardContent,
@@ -13,9 +14,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { History, Download, Info, Package } from "lucide-react";
+import { Download, Package } from "lucide-react";
 import HistorySummaryStats from "./HistorySummaryStats";
-import HistoryFilterTabs from "./HistoryFilterTabs";
 import HistoryTable from "./HistoryTable";
 import HistoryEmptyState from "./HistoryEmptyState";
 
@@ -29,16 +29,12 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
   const { loading } = useAuth();
   const t = useTranslations("calculationHistory");
   const router = useRouter();
-  const { history, isLoaded, getDemoHistory, getRealHistory } = useCalculationHistory();
-  const [activeTab, setActiveTab] = useState<"all" | "demo" | "real">("all");
+  const { setPageTitle } = useDashboardTitle();
+  const { history, isLoaded } = useCalculationHistory();
 
   const filteredHistory = productId
     ? history.filter((h) => h.productId === productId)
-    : activeTab === "demo"
-      ? getDemoHistory()
-      : activeTab === "real"
-        ? getRealHistory()
-        : history;
+    : history;
 
   const getProductName = (id: string) => {
     return id; // Since we don't have the products list, just return the ID
@@ -56,7 +52,6 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
       t("csvHeaders.version"),
       t("csvHeaders.createdDate"),
       t("csvHeaders.createdBy"),
-      t("csvHeaders.type"),
     ];
     const rows = filteredHistory.map((h) => [
       h.id,
@@ -69,7 +64,6 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
       h.carbonVersion,
       h.createdAt,
       h.createdBy,
-      h.isDemo ? t("csvTypeDemo") : t("csvTypeReal"),
     ]);
 
     const csvContent = [headers, ...rows]
@@ -82,6 +76,10 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
     link.click();
   };
 
+  React.useEffect(() => {
+    setPageTitle(t("title"), t("subtitle"));
+  }, [setPageTitle, t]);
+
   if (!isLoaded || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -92,49 +90,15 @@ const CalculationHistoryClient: React.FC<CalculationHistoryClientProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <History className="w-6 h-6" />
-            {t("title")}
-          </h2>
-          <p className="text-muted-foreground">
-            {t("subtitle")}
-          </p>
-        </div>
+      <div className="flex items-center justify-end">
         <Button variant="outline" onClick={handleExportCSV}>
           <Download className="w-4 h-4 mr-2" />
           {t("exportCSV")}
         </Button>
       </div>
 
-      {/* Demo Notice */}
-      <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
-        <Info className="w-5 h-5 text-amber-600 shrink-0" />
-        <div>
-          <p className="text-amber-800 text-sm font-medium">
-            {t("demoDataDescription")}
-          </p>
-          <p className="text-amber-700 text-xs mt-1">
-            {t("demoDataNote")}
-          </p>
-        </div>
-      </div>
-
       {/* Summary Stats */}
       <HistorySummaryStats history={filteredHistory} />
-
-      {/* Filter Tabs */}
-      {!productId && (
-        <HistoryFilterTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          totalCount={history.length}
-          demoCount={getDemoHistory().length}
-          realCount={getRealHistory().length}
-        />
-      )}
 
       {/* History Table */}
       {filteredHistory.length === 0 ? (

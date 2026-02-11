@@ -4,13 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Package, Globe, Scale, AlertTriangle } from "lucide-react";
 import { useTranslations } from "next-intl";
+import type { ProductData } from "@/types/productData";
+import type { ProductStatus } from "@/types/product";
 import {
-  ProductData,
   CATEGORY_LABELS,
   MARKET_LABELS,
   PRODUCT_STATUS_CONFIG,
-  ProductStatus,
-} from "@/lib/demoData";
+} from "@/lib/productLabels";
 
 interface ProductOverviewHeaderProps {
   product: ProductData;

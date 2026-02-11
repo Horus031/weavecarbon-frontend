@@ -12,7 +12,7 @@ const Footer = () => {
   return (
     <footer
       id="contact"
-      className="bg-foreground text-primary-foreground pt-16 pb-8"
+      className="bg-foreground text-primary-foreground pt-8 pb-8"
     >
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-12">
@@ -67,7 +67,6 @@ const Footer = () => {
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
           >
-            <h4 className="font-semibold mb-4">{t("contact")}</h4>
             <div className="space-y-4">
               <div>
                 <p className="text-xs text-primary-foreground/50 mb-1">

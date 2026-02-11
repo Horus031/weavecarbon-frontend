@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 
-const MOCK_MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim();
 interface ShipmentMiniMapProps {
   currentLocation: { lat: number; lng: number; name: string };
   height?: string;
@@ -50,8 +50,13 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
       if (!mapContainerRef.current) return;
 
       try {
-        // Use mock token (in production, fetch from your backend)
-        mapboxgl.accessToken = MOCK_MAPBOX_TOKEN;
+        if (!MAPBOX_TOKEN || !MAPBOX_TOKEN.startsWith("pk.")) {
+          setError("Mapbox token is missing or invalid.");
+          setIsLoading(false);
+          return;
+        }
+
+        mapboxgl.accessToken = MAPBOX_TOKEN;
 
         // Create map with minimal controls
         const map = new mapboxgl.Map({

@@ -22,15 +22,19 @@ import {
   Truck,
   CheckCircle2,
 } from "lucide-react";
-import { TRANSPORT_MODE_LABELS } from "@/lib/demoData";
-import { DEMO_SHIPMENTS } from "@/lib/trackShipmentData";
+import { TRANSPORT_MODE_LABELS } from "@/lib/productLabels";
+import type { TrackShipment } from "./types";
 import TransportMap from "@/components/ui/TransportMap";
 
 interface ShipmentDetailsProps {
-  shipment: (typeof DEMO_SHIPMENTS)[0] | null;
+  shipment: TrackShipment | null;
+  onRefresh?: () => void;
 }
 
-const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
+const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
+  shipment,
+  onRefresh,
+}) => {
   const t = useTranslations("trackShipment");
   const router = useRouter();
 
@@ -89,10 +93,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({ shipment }) => {
   return (
     <div className="lg:col-span-2 space-y-6">
       {/* Map */}
-      <TransportMap 
-        legs={shipment.legs} 
-        isDemo={shipment.isDemo} 
-      />
+      <TransportMap legs={shipment.legs} onRefresh={onRefresh} />
 
       {/* Shipment Details */}
       <Card>

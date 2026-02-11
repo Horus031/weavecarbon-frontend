@@ -3,15 +3,16 @@ import { Suspense } from "react";
 import CalculationHistoryClient from "@/components/dashboard/calculation-history/CalculationHistoryClient";
 
 interface CalculationHistoryPageProps {
-  searchParams: {
+  searchParams: Promise<{
     productId?: string;
-  };
+  }>;
 }
 
-const CalculationHistoryPage: React.FC<CalculationHistoryPageProps> = async ({
+const CalculationHistoryPage = async ({
   searchParams,
-}) => {
-  const productId = searchParams?.productId || null;
+}: CalculationHistoryPageProps) => {
+  const params = await searchParams;
+  const productId = params?.productId || null;
 
   return (
     <Suspense

@@ -44,8 +44,8 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
   };
 
   return (
-    <Card className="sticky top-6">
-      <CardHeader>
+    <Card className="sticky top-6 border border-foreground/10 shadow-sm">
+      <CardHeader className="border-b border-border/60 bg-muted/20">
         <CardTitle className="flex items-center gap-2">
           <Calculator className="w-5 h-5" />
           {t("resultsTitle")}
@@ -53,7 +53,7 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
         <CardDescription>{t("resultsDescription")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="p-4 bg-muted rounded-lg space-y-3">
+        <div className="p-4 bg-muted/30 border border-border/60 rounded-lg space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">{t("totalDistance")}</span>
             <span className="font-bold">{totalDistance.toLocaleString()} km</span>
@@ -64,7 +64,7 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
           </div>
         </div>
 
-        <div className="p-4 bg-primary/10 rounded-lg">
+        <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">{t("estimatedCO2")}</span>
             <Badge variant="secondary">

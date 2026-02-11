@@ -20,11 +20,44 @@ import {
   Cell,
   Tooltip,
 } from "recharts";
-import { carbonTrendData, emissionBreakdown } from "@/lib/dashboardData";
 import { useTranslations } from "next-intl";
 
-export default function OverviewCharts() {
+export interface TrendDataPoint {
+  month: string;
+  emissions: number;
+  target: number;
+}
+
+export interface EmissionBreakdownPoint {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface OverviewChartsProps {
+  carbonTrendData?: TrendDataPoint[];
+  emissionBreakdown?: EmissionBreakdownPoint[];
+  isLoading?: boolean;
+}
+
+export default function OverviewCharts({
+  carbonTrendData = [],
+  emissionBreakdown = [],
+  isLoading = false,
+}: OverviewChartsProps) {
   const t = useTranslations("overview");
+
+  const hasTrendData = carbonTrendData.length > 0;
+  const hasBreakdownData = emissionBreakdown.length > 0;
+
+  const getLabel = (label: string) => {
+    if (!label.includes(".")) return label;
+    try {
+      return t(label);
+    } catch {
+      return label;
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
@@ -40,61 +73,69 @@ export default function OverviewCharts() {
         </CardHeader>
         <CardContent>
           <div className="h-48 md:h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={carbonTrendData}>
-                <defs>
-                  <linearGradient
-                    id="colorEmissions"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="5%"
-                      stopColor="hsl(150 60% 20%)"
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="hsl(150 60% 20%)"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="month"
-                  stroke="hsl(150 10% 45%)"
-                  fontSize={12}
-                />
-                <YAxis stroke="hsl(150 10% 45%)" fontSize={12} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(0 0% 100%)",
-                    border: "1px solid hsl(140 20% 88%)",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="emissions"
-                  stroke="hsl(150 60% 20%)"
-                  strokeWidth={2}
-                  fill="url(#colorEmissions)"
-                  name={t("chart.carbon.outcome")}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="target"
-                  stroke="hsl(150 60% 20%)"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  fill="transparent"
-                  name={t("chart.carbon.expect")}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {isLoading ? (
+              <div className="h-full w-full rounded-md bg-muted animate-pulse" />
+            ) : hasTrendData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={carbonTrendData}>
+                  <defs>
+                    <linearGradient
+                      id="colorEmissions"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor="hsl(150 60% 20%)"
+                        stopOpacity={0.3}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="hsl(150 60% 20%)"
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="month"
+                    stroke="hsl(150 10% 45%)"
+                    fontSize={12}
+                  />
+                  <YAxis stroke="hsl(150 10% 45%)" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(0 0% 100%)",
+                      border: "1px solid hsl(140 20% 88%)",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="emissions"
+                    stroke="hsl(150 60% 20%)"
+                    strokeWidth={2}
+                    fill="url(#colorEmissions)"
+                    name={t("chart.carbon.outcome")}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="target"
+                    stroke="hsl(150 60% 20%)"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    fill="transparent"
+                    name={t("chart.carbon.expect")}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-muted-foreground border rounded-md">
+                No chart data yet
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -108,43 +149,54 @@ export default function OverviewCharts() {
         </CardHeader>
         <CardContent>
           <div className="h-48 md:h-48 flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={emissionBreakdown}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={70}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {emissionBreakdown.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            {emissionBreakdown.map((item) => (
-              <div
-                key={t(item.name)}
-                className="flex items-center gap-2 text-xs md:text-sm"
-              >
-                <div
-                  className="w-2 h-2 md:w-3 md:h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-muted-foreground truncate">
-                  {t(item.name)}
-                </span>
-                <span className="font-medium ml-auto text-xs md:text-sm">
-                  {item.value}%
-                </span>
+            {isLoading ? (
+              <div className="h-full w-full rounded-md bg-muted animate-pulse" />
+            ) : hasBreakdownData ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={emissionBreakdown}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={70}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {emissionBreakdown.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground border rounded-md">
+                No breakdown data yet
               </div>
-            ))}
+            )}
           </div>
+
+          {hasBreakdownData && (
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {emissionBreakdown.map((item) => (
+                <div
+                  key={item.name}
+                  className="flex items-center gap-2 text-xs md:text-sm"
+                >
+                  <div
+                    className="w-2 h-2 md:w-3 md:h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-muted-foreground truncate">
+                    {getLabel(item.name)}
+                  </span>
+                  <span className="font-medium ml-auto text-xs md:text-sm">
+                    {item.value}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

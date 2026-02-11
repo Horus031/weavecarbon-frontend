@@ -1,19 +1,5 @@
 // Shared data for dashboard pages
 
-import type { ProductStatus } from "@/contexts/ProductContext";
-
-interface DemoProduct {
-  id: string;
-  name: string;
-  sku: string;
-  co2: number;
-  status: ProductStatus;
-  materials: string[];
-  category: string;
-  scope: string;
-  isDemo: boolean;
-}
-
 export const carbonTrendData = [
   { month: "T1", emissions: 2100, target: 2500 },
   { month: "T2", emissions: 2400, target: 2500 },
@@ -79,61 +65,6 @@ export const recommendations = [
     reduction: "3%",
   },
 ];
-
-export const demoProducts: DemoProduct[] = [
-  {
-    id: "1",
-    name: "Áo T-shirt Organic Cotton",
-    sku: "DEMO-SKU-001",
-    co2: 2.4,
-    status: "published",
-    materials: ["Cotton hữu cơ 100%"],
-    category: "apparel",
-    scope: "scope1_2_3",
-    isDemo: true,
-  },
-  {
-    id: "2",
-    name: "Quần Jeans Recycled Denim",
-    sku: "DEMO-SKU-002",
-    co2: 8.5,
-    status: "in_review",
-    materials: ["Denim tái chế 80%", "Elastane 20%"],
-    category: "apparel",
-    scope: "scope1_2",
-    isDemo: true,
-  },
-  {
-    id: "3",
-    name: "Váy Linen Blend",
-    sku: "DEMO-SKU-003",
-    co2: 3.2,
-    status: "published",
-    materials: ["Linen 60%", "Cotton 40%"],
-    category: "apparel",
-    scope: "scope1_2_3",
-    isDemo: true,
-  },
-  {
-    id: "4",
-    name: "Áo Hoodie Fleece",
-    sku: "DEMO-SKU-004",
-    co2: 5.1,
-    status: "draft",
-    materials: ["Polyester tái chế 100%"],
-    category: "apparel",
-    scope: "scope1",
-    isDemo: true,
-  },
-];
-
-export const dashboardStats = {
-  totalCO2: 2450,
-  skuCount: 124,
-  shipments: 38,
-  exportReadiness: 72,
-  confidenceScore: 85,
-};
 
 // Helper functions
 export const getReadinessColor = (score: number) => {

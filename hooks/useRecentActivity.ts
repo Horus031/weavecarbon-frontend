@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface Activity {
   id: string;
@@ -17,50 +16,22 @@ export const useRecentActivity = (userEmail?: string) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const currentEmail = userEmail;
-        if (!currentEmail) return;
+    if (typeof window === "undefined") return;
 
-        const key = `${ACTIVITIES_KEY}_${currentEmail}`;
-        const stored = localStorage.getItem(key);
+    if (!userEmail) {
+      setActivities([]);
+      setIsLoaded(true);
+      return;
+    }
 
-        if (stored) {
-          setActivities(JSON.parse(stored));
-        } else {
-          // Default activities
-          const defaultActivities: Activity[] = [
-            {
-              id: "1",
-              type: "donate",
-              item: "Áo thun cotton",
-              points: 50,
-              date: "2 ngày trước",
-              timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000,
-            },
-            {
-              id: "2",
-              type: "recycle",
-              item: "Quần jeans",
-              points: 75,
-              date: "5 ngày trước",
-              timestamp: Date.now() - 5 * 24 * 60 * 60 * 1000,
-            },
-            {
-              id: "3",
-              type: "donate",
-              item: "Áo khoác",
-              points: 100,
-              date: "1 tuần trước",
-              timestamp: Date.now() - 7 * 24 * 60 * 60 * 1000,
-            },
-          ];
-          localStorage.setItem(key, JSON.stringify(defaultActivities));
-          setActivities(defaultActivities);
-        }
-      } catch (error) {
-        console.error("Error loading activities:", error);
-      }
+    try {
+      const key = `${ACTIVITIES_KEY}_${userEmail}`;
+      const stored = localStorage.getItem(key);
+      setActivities(stored ? JSON.parse(stored) : []);
+    } catch (error) {
+      console.error("Error loading activities:", error);
+      setActivities([]);
+    } finally {
       setIsLoaded(true);
     }
   }, [userEmail]);
@@ -76,7 +47,7 @@ export const useRecentActivity = (userEmail?: string) => {
             timestamp: Date.now(),
           };
 
-          const updated = [newActivity, ...activities].slice(0, 20); // Keep last 20
+          const updated = [newActivity, ...activities].slice(0, 20);
           localStorage.setItem(key, JSON.stringify(updated));
           setActivities(updated);
           return newActivity;
@@ -86,7 +57,7 @@ export const useRecentActivity = (userEmail?: string) => {
       }
       return null;
     },
-    [userEmail, activities],
+    [activities, userEmail],
   );
 
   return {

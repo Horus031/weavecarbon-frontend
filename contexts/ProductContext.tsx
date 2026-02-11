@@ -8,7 +8,7 @@ import React, {
   ReactNode,
 } from "react";
 
-export type ProductStatus = "draft" | "in_review" | "published" | "archived";
+import type { ProductStatus } from "@/types/product";
 
 export interface DashboardProduct {
   id: string;
@@ -23,7 +23,6 @@ export interface DashboardProduct {
   createdAt: string;
   scope: "scope1" | "scope1_2" | "scope1_2_3";
   confidenceScore: number;
-  isDemo?: boolean;
 }
 
 interface CarbonBreakdown {
@@ -76,169 +75,10 @@ interface ProductContextType {
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
-// Generate 30 demo products with mix of statuses
-const generateDemoProducts = (): DashboardProduct[] => {
-  const categories = [
-    "apparel",
-    "footwear",
-    "accessories",
-    "textiles",
-    "homegoods",
-  ];
-  const categoryLabels: Record<string, string> = {
-    apparel: "Quần áo",
-    footwear: "Giày dép",
-    accessories: "Phụ kiện",
-    textiles: "Vải textile",
-    homegoods: "Đồ gia dụng",
-  };
-
-  const productNames: Record<string, string[]> = {
-    apparel: [
-      "Áo T-shirt Organic Cotton",
-      "Quần Jeans Recycled Denim",
-      "Váy Linen Blend",
-      "Áo Hoodie Fleece",
-      "Áo Sơ mi Cotton",
-      "Quần Short Tencel",
-      "Đầm Maxi Viscose",
-      "Áo Khoác Denim",
-      "Áo Polo Pique",
-      "Quần Legging Nylon",
-    ],
-    footwear: [
-      "Giày Sneaker Canvas",
-      "Dép Sandal Recycled",
-      "Boot Da Tổng hợp",
-      "Giày Lười Vải",
-      "Giày Thể thao Mesh",
-    ],
-    accessories: [
-      "Túi Tote Canvas",
-      "Ví Da Tái chế",
-      "Khăn Lụa Organic",
-      "Mũ Baseball Cotton",
-      "Thắt lưng Hemp",
-    ],
-    textiles: [
-      "Vải Cotton Hữu cơ",
-      "Vải Denim Recycled",
-      "Vải Linen Natural",
-      "Vải Tencel Blend",
-      "Vải Bamboo Fiber",
-    ],
-    homegoods: [
-      "Ga Trải giường Organic",
-      "Khăn Tắm Bamboo",
-      "Rèm Cửa Linen",
-      "Gối Tựa Cotton",
-      "Thảm Recycled",
-    ],
-  };
-
-  const materials: Record<string, string[]> = {
-    apparel: [
-      "Cotton hữu cơ 100%",
-      "Denim tái chế 80%",
-      "Linen 60%",
-      "Polyester tái chế 100%",
-      "Tencel 70%",
-    ],
-    footwear: [
-      "Canvas tái chế",
-      "EVA tái sinh",
-      "Da tổng hợp",
-      "Mesh thoáng khí",
-      "Cao su tự nhiên",
-    ],
-    accessories: [
-      "Canvas organic",
-      "Da tái chế",
-      "Lụa organic",
-      "Cotton BCI",
-      "Hemp natural",
-    ],
-    textiles: [
-      "Cotton GOTS",
-      "Denim GRS",
-      "Linen European",
-      "Tencel Lenzing",
-      "Bamboo FSC",
-    ],
-    homegoods: [
-      "Cotton organic",
-      "Bamboo fiber",
-      "Linen natural",
-      "Cotton recycled",
-      "Polyester GRS",
-    ],
-  };
-
-  const statuses: ProductStatus[] = [
-    "draft",
-    "draft",
-    "in_review",
-    "in_review",
-    "published",
-    "published",
-    "published",
-    "archived",
-  ];
-
-  const products: DashboardProduct[] = [];
-  let productIndex = 1;
-
-  categories.forEach((category) => {
-    const names = productNames[category];
-    const mats = materials[category];
-
-    names.forEach((name, i) => {
-      const status = statuses[productIndex % statuses.length];
-      const weight = parseFloat((Math.random() * 1.5 + 0.2).toFixed(2));
-      const baseCO2 = Math.random() * 8 + 1.5;
-      const confidenceScore =
-        status === "published"
-          ? Math.floor(Math.random() * 15 + 85)
-          : status === "in_review"
-            ? Math.floor(Math.random() * 20 + 65)
-            : Math.floor(Math.random() * 30 + 40);
-
-      products.push({
-        id: `demo-product-${String(productIndex).padStart(3, "0")}`,
-        name,
-        sku: `DEMO-SKU-${String(productIndex).padStart(3, "0")}`,
-        category,
-        co2: parseFloat(baseCO2.toFixed(2)),
-        status,
-        materials: [mats[i % mats.length]],
-        weight,
-        unit: "kg",
-        createdAt: new Date(
-          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
-        ).toISOString(),
-        scope:
-          status === "published"
-            ? "scope1_2_3"
-            : status === "in_review"
-              ? "scope1_2"
-              : "scope1",
-        confidenceScore,
-        isDemo: true,
-      });
-
-      productIndex++;
-    });
-  });
-
-  return products;
-};
-
 export const ProductProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [products, setProducts] = useState<DashboardProduct[]>(
-    generateDemoProducts(),
-  );
+  const [products, setProducts] = useState<DashboardProduct[]>([]);
   const [lastCreatedProduct, setLastCreatedProduct] =
     useState<DashboardProduct | null>(null);
   const [pendingProductData, setPendingProductData] =

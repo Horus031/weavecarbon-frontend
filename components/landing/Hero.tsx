@@ -93,7 +93,7 @@ const Hero = () => {
               className="w-full sm:w-auto"
               onClick={() => setShowUserTypeDialog(true)}
             >
-              {t("cta.demo")}
+              {t("cta.start")}
               <ArrowRight className="w-5 h-5" />
             </Button>
             <Link href="/calculator">

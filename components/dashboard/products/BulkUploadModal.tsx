@@ -171,7 +171,6 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ open, onClose }) => {
             : row.confidenceLevel === "medium"
               ? 70
               : 50,
-        isDemo: false,
       };
 
       addProduct(newProduct);

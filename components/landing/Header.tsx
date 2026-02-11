@@ -49,7 +49,7 @@ const Header = () => {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-8">
+            <nav className="hidden lg:flex items-center gap-6">
               {navLinks.map((link) =>
                 link.href.startsWith("/") ? (
                   <Link
@@ -72,28 +72,21 @@ const Header = () => {
             </nav>
 
             {/* CTA Buttons */}
-            <div className="hidden lg:flex items-center gap-3 max-w-96 w-full">
+            <div className="hidden lg:flex items-center gap-3 max-w-96 w-full justify-end">
               <LanguageToggle />
-              <Button
-                variant="link"
-                className="w-fit justify-center"
-                onClick={() => navigate.push("/calculator")}
-              >
-                {t("calculator")}
-              </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowUserTypeDialog(true)}
+                onClick={() => navigate.push("/calculator")}
               >
-                {t("login")}
+                {t("calculator")}
               </Button>
               <Button
                 variant="hero"
                 size="sm"
                 onClick={() => setShowUserTypeDialog(true)}
               >
-                {t("getStarted")}
+                {t("login")}
               </Button>
             </div>
 
@@ -142,21 +135,14 @@ const Header = () => {
               )}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 <Button
-                  variant="accent"
-                  className="w-full justify-center"
-                  onClick={() => navigate.push("/calculator")}
-                >
-                  Tính toán
-                </Button>
-                <Button
                   variant="ghost"
                   className="w-full justify-center"
                   onClick={() => {
                     setIsMenuOpen(false);
-                    setShowUserTypeDialog(true);
+                    navigate.push("/calculator");
                   }}
                 >
-                  {t("login")}
+                  {t("calculator")}
                 </Button>
                 <Button
                   variant="hero"
@@ -166,7 +152,7 @@ const Header = () => {
                     setShowUserTypeDialog(true);
                   }}
                 >
-                  {t("getStarted")}
+                  {t("login")}
                 </Button>
               </div>
             </nav>

@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Search, MapPin, CheckCircle2, Truck, Clock } from "lucide-react";
-import { DEMO_SHIPMENTS } from "@/lib/trackShipmentData";
+import type { TrackShipment } from "./types";
 
 interface ShipmentListProps {
-  shipments: typeof DEMO_SHIPMENTS;
-  selectedShipment: (typeof DEMO_SHIPMENTS)[0] | null;
-  onSelectShipment: (shipment: (typeof DEMO_SHIPMENTS)[0]) => void;
+  shipments: TrackShipment[];
+  selectedShipment: TrackShipment | null;
+  onSelectShipment: (shipment: TrackShipment) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   statusFilter: string;
@@ -138,14 +138,6 @@ const ShipmentList: React.FC<ShipmentListProps> = ({
                 </div>
               )}
 
-              {shipment.isDemo && (
-                <Badge
-                  variant="outline"
-                  className="mt-3 text-amber-600 border-amber-300 bg-amber-50 text-xs"
-                >
-                  Demo
-                </Badge>
-              )}
             </CardContent>
           </Card>
         ))}

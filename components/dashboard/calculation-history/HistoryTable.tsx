@@ -24,7 +24,6 @@ interface HistoryRecord {
   carbonVersion: string;
   createdAt: string;
   createdBy: string;
-  isDemo: boolean;
 }
 
 interface HistoryTableProps {
@@ -61,15 +60,11 @@ const HistoryTable: React.FC<HistoryTableProps> = ({
             <TableHead>{t("columnVersion")}</TableHead>
             <TableHead>{t("columnCreatedDate")}</TableHead>
             <TableHead>{t("columnCreatedBy")}</TableHead>
-            <TableHead>{t("columnType")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {history.map((item) => (
-            <TableRow
-              key={item.id}
-              className={item.isDemo ? "bg-amber-50/50" : ""}
-            >
+            <TableRow key={item.id}>
               <TableCell className="font-medium">
                 <button
                   onClick={() => onProductClick(item.productId)}
@@ -103,11 +98,6 @@ const HistoryTable: React.FC<HistoryTableProps> = ({
               </TableCell>
               <TableCell className="text-sm truncate max-w-37.5">
                 {item.createdBy}
-              </TableCell>
-              <TableCell>
-                <Badge variant={item.isDemo ? "outline" : "default"}>
-                  {item.isDemo ? t("typeDemo") : t("typeReal")}
-                </Badge>
               </TableCell>
             </TableRow>
           ))}

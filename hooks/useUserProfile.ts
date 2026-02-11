@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface UserProfile {
   id: string;
@@ -19,35 +18,23 @@ export const useUserProfile = (userEmail?: string) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const currentEmail =
-          userEmail || localStorage.getItem(CURRENT_USER_KEY);
-        if (!currentEmail) return;
+    if (typeof window === "undefined") return;
 
-        const profiles = JSON.parse(localStorage.getItem(PROFILES_KEY) || "{}");
-        const userProfile = profiles[currentEmail];
+    const currentEmail = userEmail || localStorage.getItem(CURRENT_USER_KEY);
+    if (!currentEmail) {
+      setProfile(null);
+      setIsLoaded(true);
+      return;
+    }
 
-        if (userProfile) {
-          setProfile(userProfile);
-        } else {
-          // Create default profile if not exists
-          const newProfile: UserProfile = {
-            id: `user-${Date.now()}`,
-            email: currentEmail,
-            fullName: currentEmail.split("@")[0],
-            circularPoints: 1250,
-            garmentsDonated: 15,
-            co2Saved: 45.5,
-            treesEquivalent: 3,
-          };
-          profiles[currentEmail] = newProfile;
-          localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
-          setProfile(newProfile);
-        }
-      } catch (error) {
-        console.error("Error loading user profile:", error);
-      }
+    try {
+      const profiles = JSON.parse(localStorage.getItem(PROFILES_KEY) || "{}");
+      const userProfile = profiles[currentEmail] as UserProfile | undefined;
+      setProfile(userProfile || null);
+    } catch (error) {
+      console.error("Error loading user profile:", error);
+      setProfile(null);
+    } finally {
       setIsLoaded(true);
     }
   }, [userEmail]);
@@ -56,9 +43,7 @@ export const useUserProfile = (userEmail?: string) => {
     (updates: Partial<UserProfile>) => {
       if (typeof window !== "undefined" && profile) {
         try {
-          const profiles = JSON.parse(
-            localStorage.getItem(PROFILES_KEY) || "{}",
-          );
+          const profiles = JSON.parse(localStorage.getItem(PROFILES_KEY) || "{}");
           const updated = { ...profile, ...updates };
           profiles[profile.email] = updated;
           localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));

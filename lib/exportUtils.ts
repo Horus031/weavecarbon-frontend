@@ -1,37 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as XLSX from "xlsx";
 import { DashboardProduct } from "@/contexts/ProductContext";
-import { CalculationHistory } from "@/lib/demoData";
-
-// Demo metadata constants
-export const DEMO_METADATA = {
-  tenant_name: "Ego Lism",
-  data_source: "DEMO",
-  watermark: "Demo data – For demonstration purpose only",
-  generated_by: "WeaveCarbon Demo",
-};
+import type { CalculationHistory } from "@/types/productData";
 
 // Generic export helper for any data
 export const exportToExcel = (
   data: Record<string, any>[],
   filename: string,
-  isDemo: boolean = false,
 ) => {
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "Data");
-
-  if (isDemo) {
-    const metaData = [
-      { Key: "data_source", Value: DEMO_METADATA.data_source },
-      { Key: "tenant_name", Value: DEMO_METADATA.tenant_name },
-      { Key: "watermark", Value: DEMO_METADATA.watermark },
-      { Key: "exported_at", Value: new Date().toISOString() },
-      { Key: "generated_by", Value: DEMO_METADATA.generated_by },
-    ];
-    const metaWs = XLSX.utils.json_to_sheet(metaData);
-    XLSX.utils.book_append_sheet(wb, metaWs, "Demo Metadata");
-  }
 
   XLSX.writeFile(wb, `${filename}-${getDateString()}.xlsx`);
 };
@@ -39,22 +18,13 @@ export const exportToExcel = (
 export const exportToCSV = (
   data: Record<string, any>[],
   filename: string,
-  isDemo: boolean = false,
 ) => {
   if (data.length === 0) return;
 
   const headers = Object.keys(data[0]);
   const rows = data.map((item) => headers.map((h) => String(item[h] ?? "")));
 
-  let csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
-
-  if (isDemo) {
-    csvContent += "\n\n---,DEMO METADATA,---\n";
-    csvContent += `data_source,${DEMO_METADATA.data_source}\n`;
-    csvContent += `tenant_name,${DEMO_METADATA.tenant_name}\n`;
-    csvContent += `watermark,${DEMO_METADATA.watermark}\n`;
-    csvContent += `exported_at,${new Date().toISOString()}\n`;
-  }
+  const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
 
   downloadFile(
     csvContent,
@@ -82,7 +52,7 @@ const getDateString = (): string => {
   return `${year}${month}${day}`;
 };
 
-// Activity log types for demo
+// Activity log types
 export interface ActivityLog {
   id: string;
   timestamp: string;
@@ -93,7 +63,6 @@ export interface ActivityLog {
   userId: string;
   userEmail: string;
   details?: string;
-  isDemo: boolean;
 }
 
 export interface AuditLog {
@@ -113,7 +82,6 @@ export interface AuditLog {
   ipAddress?: string;
   userAgent?: string;
   details?: Record<string, any>;
-  isDemo: boolean;
 }
 
 export interface UserInfo {
@@ -124,193 +92,7 @@ export interface UserInfo {
   status: "active" | "inactive";
   lastLogin: string;
   createdAt: string;
-  isDemo: boolean;
 }
-
-// Generate demo activity logs
-export const generateDemoActivityLogs = (): ActivityLog[] => {
-  const now = new Date();
-  return [
-    {
-      id: "activity-001",
-      timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString(),
-      action: "CREATE",
-      entityType: "product",
-      entityId: "demo-product-001",
-      entityName: "Áo T-shirt Organic Cotton",
-      userId: "demo-user-001",
-      userEmail: "admin@egolism.demo",
-      details: "Tạo sản phẩm mới với SKU DEMO-SKU-001",
-      isDemo: true,
-    },
-    {
-      id: "activity-002",
-      timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
-      action: "UPDATE",
-      entityType: "product",
-      entityId: "demo-product-002",
-      entityName: "Quần Jeans Recycled Denim",
-      userId: "demo-user-002",
-      userEmail: "member@egolism.demo",
-      details: "Cập nhật thông tin vận chuyển",
-      isDemo: true,
-    },
-    {
-      id: "activity-003",
-      timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(),
-      action: "APPROVE",
-      entityType: "product",
-      entityId: "demo-product-001",
-      entityName: "Áo T-shirt Organic Cotton",
-      userId: "demo-user-001",
-      userEmail: "admin@egolism.demo",
-      details: "Phê duyệt và publish sản phẩm",
-      isDemo: true,
-    },
-    {
-      id: "activity-004",
-      timestamp: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(),
-      action: "EXPORT",
-      entityType: "report",
-      entityId: "report-001",
-      entityName: "Báo cáo Carbon Q4/2024",
-      userId: "demo-user-001",
-      userEmail: "admin@egolism.demo",
-      details: "Xuất báo cáo định dạng PDF",
-      isDemo: true,
-    },
-    {
-      id: "activity-005",
-      timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
-      action: "CREATE",
-      entityType: "shipment",
-      entityId: "shipment-001",
-      entityName: "SHP-2024-001",
-      userId: "demo-user-002",
-      userEmail: "member@egolism.demo",
-      details: "Tạo lô hàng xuất khẩu EU",
-      isDemo: true,
-    },
-    {
-      id: "activity-006",
-      timestamp: new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString(),
-      action: "LOGIN",
-      entityType: "system",
-      entityId: "session-001",
-      entityName: "System Login",
-      userId: "demo-user-001",
-      userEmail: "admin@egolism.demo",
-      details: "Đăng nhập thành công",
-      isDemo: true,
-    },
-  ];
-};
-
-// Generate demo audit logs
-export const generateDemoAuditLogs = (): AuditLog[] => {
-  const now = new Date();
-  return [
-    {
-      id: "audit-001",
-      timestamp: new Date(now.getTime() - 30 * 60 * 1000).toISOString(),
-      event: "LOGIN",
-      userId: "demo-user-001",
-      userEmail: "admin@egolism.demo",
-      ipAddress: "192.168.1.1",
-      userAgent: "Chrome/120.0",
-      isDemo: true,
-    },
-    {
-      id: "audit-002",
-      timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString(),
-      event: "CREATE_ORDER",
-      userId: "demo-user-001",
-      userEmail: "admin@egolism.demo",
-      details: { orderId: "ORD-001", productCount: 3 },
-      isDemo: true,
-    },
-    {
-      id: "audit-003",
-      timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
-      event: "EXPORT_REPORT",
-      userId: "demo-user-002",
-      userEmail: "member@egolism.demo",
-      details: { reportType: "carbon_audit", format: "PDF" },
-      isDemo: true,
-    },
-    {
-      id: "audit-004",
-      timestamp: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(),
-      event: "UPDATE_PRODUCT",
-      userId: "demo-user-002",
-      userEmail: "member@egolism.demo",
-      details: { productId: "demo-product-002", field: "transport_mode" },
-      isDemo: true,
-    },
-    {
-      id: "audit-005",
-      timestamp: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
-      event: "FIRST_LOGIN",
-      userId: "demo-user-002",
-      userEmail: "member@egolism.demo",
-      isDemo: true,
-    },
-    {
-      id: "audit-006",
-      timestamp: new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString(),
-      event: "SIGNUP_COMPLETED",
-      userId: "demo-user-001",
-      userEmail: "admin@egolism.demo",
-      details: { companyName: "Ego Lism", plan: "starter" },
-      isDemo: true,
-    },
-  ];
-};
-
-// Generate demo users
-export const generateDemoUsers = (): UserInfo[] => {
-  const now = new Date();
-  return [
-    {
-      id: "demo-user-001",
-      email: "admin@egolism.demo",
-      fullName: "Admin Demo",
-      role: "admin",
-      status: "active",
-      lastLogin: new Date(now.getTime() - 30 * 60 * 1000).toISOString(),
-      createdAt: new Date(
-        now.getTime() - 30 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      isDemo: true,
-    },
-    {
-      id: "demo-user-002",
-      email: "member@egolism.demo",
-      fullName: "Member Demo",
-      role: "member",
-      status: "active",
-      lastLogin: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date(
-        now.getTime() - 15 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      isDemo: true,
-    },
-    {
-      id: "demo-user-003",
-      email: "viewer@egolism.demo",
-      fullName: "Viewer Demo",
-      role: "viewer",
-      status: "inactive",
-      lastLogin: new Date(
-        now.getTime() - 7 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      createdAt: new Date(
-        now.getTime() - 10 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      isDemo: true,
-    },
-  ];
-};
 
 // Format date for export
 const formatDate = (date: string) => {
@@ -323,25 +105,8 @@ const formatDate = (date: string) => {
   });
 };
 
-// Add demo metadata row
-const addDemoMetadataRows = (isDemo: boolean): string[][] => {
-  if (!isDemo) return [];
-  return [
-    [],
-    ["---", "DEMO METADATA", "---"],
-    ["data_source", DEMO_METADATA.data_source],
-    ["tenant_name", DEMO_METADATA.tenant_name],
-    ["watermark", DEMO_METADATA.watermark],
-    ["exported_at", new Date().toISOString()],
-    ["generated_by", DEMO_METADATA.generated_by],
-  ];
-};
-
 // Export Products to CSV
-export const exportProductsToCSV = (
-  products: DashboardProduct[],
-  isDemo: boolean,
-) => {
+export const exportProductsToCSV = (products: DashboardProduct[]) => {
   const headers = [
     "ID",
     "Tên sản phẩm",
@@ -354,7 +119,6 @@ export const exportProductsToCSV = (
     "Scope",
     "Độ tin cậy (%)",
     "Ngày tạo",
-    "Loại dữ liệu",
   ];
 
   const rows = products.map((p) => [
@@ -369,13 +133,9 @@ export const exportProductsToCSV = (
     p.scope,
     p.confidenceScore.toString(),
     formatDate(p.createdAt),
-    p.isDemo ? "Demo" : "Real",
   ]);
 
-  const metadataRows = addDemoMetadataRows(isDemo);
-  const csvContent = [headers, ...rows, ...metadataRows]
-    .map((row) => row.join(","))
-    .join("\n");
+  const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
 
   downloadFile(
     csvContent,
@@ -385,10 +145,7 @@ export const exportProductsToCSV = (
 };
 
 // Export Products to XLSX
-export const exportProductsToXLSX = (
-  products: DashboardProduct[],
-  isDemo: boolean,
-) => {
+export const exportProductsToXLSX = (products: DashboardProduct[]) => {
   const data = products.map((p) => ({
     ID: p.id,
     "Tên sản phẩm": p.name,
@@ -401,25 +158,11 @@ export const exportProductsToXLSX = (
     Scope: p.scope,
     "Độ tin cậy (%)": p.confidenceScore,
     "Ngày tạo": formatDate(p.createdAt),
-    "Loại dữ liệu": p.isDemo ? "Demo" : "Real",
   }));
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "Products");
-
-  // Add metadata sheet for demo
-  if (isDemo) {
-    const metaData = [
-      { Key: "data_source", Value: DEMO_METADATA.data_source },
-      { Key: "tenant_name", Value: DEMO_METADATA.tenant_name },
-      { Key: "watermark", Value: DEMO_METADATA.watermark },
-      { Key: "exported_at", Value: new Date().toISOString() },
-      { Key: "generated_by", Value: DEMO_METADATA.generated_by },
-    ];
-    const metaWs = XLSX.utils.json_to_sheet(metaData);
-    XLSX.utils.book_append_sheet(wb, metaWs, "Demo Metadata");
-  }
 
   XLSX.writeFile(wb, `products-export-${getDateString()}.xlsx`);
 };
@@ -427,7 +170,6 @@ export const exportProductsToXLSX = (
 // Export Activity Logs
 export const exportActivityLogsToCSV = (
   logs: ActivityLog[],
-  isDemo: boolean,
 ) => {
   const headers = [
     "ID",
@@ -439,7 +181,6 @@ export const exportActivityLogsToCSV = (
     "User ID",
     "Email",
     "Chi tiết",
-    "Loại dữ liệu",
   ];
 
   const rows = logs.map((l) => [
@@ -452,13 +193,9 @@ export const exportActivityLogsToCSV = (
     l.userId,
     l.userEmail,
     l.details || "",
-    l.isDemo ? "Demo" : "Real",
   ]);
 
-  const metadataRows = addDemoMetadataRows(isDemo);
-  const csvContent = [headers, ...rows, ...metadataRows]
-    .map((row) => row.join(","))
-    .join("\n");
+  const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
 
   downloadFile(
     csvContent,
@@ -469,7 +206,6 @@ export const exportActivityLogsToCSV = (
 
 export const exportActivityLogsToXLSX = (
   logs: ActivityLog[],
-  isDemo: boolean,
 ) => {
   const data = logs.map((l) => ({
     ID: l.id,
@@ -481,29 +217,17 @@ export const exportActivityLogsToXLSX = (
     "User ID": l.userId,
     Email: l.userEmail,
     "Chi tiết": l.details || "",
-    "Loại dữ liệu": l.isDemo ? "Demo" : "Real",
   }));
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "Activity Logs");
 
-  if (isDemo) {
-    const metaData = [
-      { Key: "data_source", Value: DEMO_METADATA.data_source },
-      { Key: "tenant_name", Value: DEMO_METADATA.tenant_name },
-      { Key: "watermark", Value: DEMO_METADATA.watermark },
-      { Key: "exported_at", Value: new Date().toISOString() },
-    ];
-    const metaWs = XLSX.utils.json_to_sheet(metaData);
-    XLSX.utils.book_append_sheet(wb, metaWs, "Demo Metadata");
-  }
-
   XLSX.writeFile(wb, `activity-logs-${getDateString()}.xlsx`);
 };
 
 // Export Audit Logs
-export const exportAuditLogsToCSV = (logs: AuditLog[], isDemo: boolean) => {
+export const exportAuditLogsToCSV = (logs: AuditLog[]) => {
   const headers = [
     "ID",
     "Thời gian",
@@ -513,7 +237,6 @@ export const exportAuditLogsToCSV = (logs: AuditLog[], isDemo: boolean) => {
     "IP Address",
     "User Agent",
     "Chi tiết",
-    "Loại dữ liệu",
   ];
 
   const rows = logs.map((l) => [
@@ -525,13 +248,9 @@ export const exportAuditLogsToCSV = (logs: AuditLog[], isDemo: boolean) => {
     l.ipAddress || "",
     l.userAgent || "",
     l.details ? JSON.stringify(l.details) : "",
-    l.isDemo ? "Demo" : "Real",
   ]);
 
-  const metadataRows = addDemoMetadataRows(isDemo);
-  const csvContent = [headers, ...rows, ...metadataRows]
-    .map((row) => row.join(","))
-    .join("\n");
+  const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
 
   downloadFile(
     csvContent,
@@ -540,7 +259,7 @@ export const exportAuditLogsToCSV = (logs: AuditLog[], isDemo: boolean) => {
   );
 };
 
-export const exportAuditLogsToXLSX = (logs: AuditLog[], isDemo: boolean) => {
+export const exportAuditLogsToXLSX = (logs: AuditLog[]) => {
   const data = logs.map((l) => ({
     ID: l.id,
     "Thời gian": formatDate(l.timestamp),
@@ -550,29 +269,17 @@ export const exportAuditLogsToXLSX = (logs: AuditLog[], isDemo: boolean) => {
     "IP Address": l.ipAddress || "",
     "User Agent": l.userAgent || "",
     "Chi tiết": l.details ? JSON.stringify(l.details) : "",
-    "Loại dữ liệu": l.isDemo ? "Demo" : "Real",
   }));
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "Audit Logs");
 
-  if (isDemo) {
-    const metaData = [
-      { Key: "data_source", Value: DEMO_METADATA.data_source },
-      { Key: "tenant_name", Value: DEMO_METADATA.tenant_name },
-      { Key: "watermark", Value: DEMO_METADATA.watermark },
-      { Key: "exported_at", Value: new Date().toISOString() },
-    ];
-    const metaWs = XLSX.utils.json_to_sheet(metaData);
-    XLSX.utils.book_append_sheet(wb, metaWs, "Demo Metadata");
-  }
-
   XLSX.writeFile(wb, `audit-logs-${getDateString()}.xlsx`);
 };
 
 // Export Users
-export const exportUsersToCSV = (users: UserInfo[], isDemo: boolean) => {
+export const exportUsersToCSV = (users: UserInfo[]) => {
   const headers = [
     "ID",
     "Email",
@@ -581,7 +288,6 @@ export const exportUsersToCSV = (users: UserInfo[], isDemo: boolean) => {
     "Trạng thái",
     "Đăng nhập cuối",
     "Ngày tạo",
-    "Loại dữ liệu",
   ];
 
   const rows = users.map((u) => [
@@ -592,13 +298,9 @@ export const exportUsersToCSV = (users: UserInfo[], isDemo: boolean) => {
     u.status,
     formatDate(u.lastLogin),
     formatDate(u.createdAt),
-    u.isDemo ? "Demo" : "Real",
   ]);
 
-  const metadataRows = addDemoMetadataRows(isDemo);
-  const csvContent = [headers, ...rows, ...metadataRows]
-    .map((row) => row.join(","))
-    .join("\n");
+  const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
 
   downloadFile(
     csvContent,
@@ -607,7 +309,7 @@ export const exportUsersToCSV = (users: UserInfo[], isDemo: boolean) => {
   );
 };
 
-export const exportUsersToXLSX = (users: UserInfo[], isDemo: boolean) => {
+export const exportUsersToXLSX = (users: UserInfo[]) => {
   const data = users.map((u) => ({
     ID: u.id,
     Email: u.email,
@@ -616,23 +318,11 @@ export const exportUsersToXLSX = (users: UserInfo[], isDemo: boolean) => {
     "Trạng thái": u.status,
     "Đăng nhập cuối": formatDate(u.lastLogin),
     "Ngày tạo": formatDate(u.createdAt),
-    "Loại dữ liệu": u.isDemo ? "Demo" : "Real",
   }));
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "Users");
-
-  if (isDemo) {
-    const metaData = [
-      { Key: "data_source", Value: DEMO_METADATA.data_source },
-      { Key: "tenant_name", Value: DEMO_METADATA.tenant_name },
-      { Key: "watermark", Value: DEMO_METADATA.watermark },
-      { Key: "exported_at", Value: new Date().toISOString() },
-    ];
-    const metaWs = XLSX.utils.json_to_sheet(metaData);
-    XLSX.utils.book_append_sheet(wb, metaWs, "Demo Metadata");
-  }
 
   XLSX.writeFile(wb, `users-export-${getDateString()}.xlsx`);
 };
@@ -640,7 +330,6 @@ export const exportUsersToXLSX = (users: UserInfo[], isDemo: boolean) => {
 // Export Calculation History
 export const exportHistoryToCSV = (
   history: CalculationHistory[],
-  isDemo: boolean,
 ) => {
   const headers = [
     "ID",
@@ -654,7 +343,6 @@ export const exportHistoryToCSV = (
     "Phiên bản",
     "Ngày tính",
     "Người tính",
-    "Loại dữ liệu",
   ];
 
   const rows = history.map((h) => [
@@ -669,13 +357,9 @@ export const exportHistoryToCSV = (
     h.carbonVersion,
     formatDate(h.createdAt),
     h.createdBy,
-    h.isDemo ? "Demo" : "Real",
   ]);
 
-  const metadataRows = addDemoMetadataRows(isDemo);
-  const csvContent = [headers, ...rows, ...metadataRows]
-    .map((row) => row.join(","))
-    .join("\n");
+  const csvContent = [headers, ...rows].map((row) => row.join(",")).join("\n");
 
   downloadFile(
     csvContent,
@@ -686,7 +370,6 @@ export const exportHistoryToCSV = (
 
 export const exportHistoryToXLSX = (
   history: CalculationHistory[],
-  isDemo: boolean,
 ) => {
   const data = history.map((h) => ({
     ID: h.id,
@@ -700,32 +383,17 @@ export const exportHistoryToXLSX = (
     "Phiên bản": h.carbonVersion,
     "Ngày tính": formatDate(h.createdAt),
     "Người tính": h.createdBy,
-    "Loại dữ liệu": h.isDemo ? "Demo" : "Real",
   }));
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(data);
   XLSX.utils.book_append_sheet(wb, ws, "Calculation History");
 
-  if (isDemo) {
-    const metaData = [
-      { Key: "data_source", Value: DEMO_METADATA.data_source },
-      { Key: "tenant_name", Value: DEMO_METADATA.tenant_name },
-      { Key: "watermark", Value: DEMO_METADATA.watermark },
-      { Key: "exported_at", Value: new Date().toISOString() },
-    ];
-    const metaWs = XLSX.utils.json_to_sheet(metaData);
-    XLSX.utils.book_append_sheet(wb, metaWs, "Demo Metadata");
-  }
-
   XLSX.writeFile(wb, `calculation-history-${getDateString()}.xlsx`);
 };
 
 // Export Analytics Summary
-export const exportAnalyticsSummaryToXLSX = (
-  products: DashboardProduct[],
-  isDemo: boolean,
-) => {
+export const exportAnalyticsSummaryToXLSX = (products: DashboardProduct[]) => {
   // Summary stats
   const totalProducts = products.length;
   const totalCO2 = products.reduce((sum, p) => sum + p.co2, 0);
@@ -790,19 +458,6 @@ export const exportAnalyticsSummaryToXLSX = (
   const productsWs = XLSX.utils.json_to_sheet(productsData);
   XLSX.utils.book_append_sheet(wb, productsWs, "Products Detail");
 
-  // Demo metadata
-  if (isDemo) {
-    const metaData = [
-      { Key: "data_source", Value: DEMO_METADATA.data_source },
-      { Key: "tenant_name", Value: DEMO_METADATA.tenant_name },
-      { Key: "watermark", Value: DEMO_METADATA.watermark },
-      { Key: "exported_at", Value: new Date().toISOString() },
-      { Key: "generated_by", Value: DEMO_METADATA.generated_by },
-    ];
-    const metaWs = XLSX.utils.json_to_sheet(metaData);
-    XLSX.utils.book_append_sheet(wb, metaWs, "Demo Metadata");
-  }
-
   XLSX.writeFile(wb, `analytics-summary-${getDateString()}.xlsx`);
 };
 
@@ -812,7 +467,6 @@ export const exportFullCompanyReportToXLSX = (
   activityLogs: ActivityLog[],
   auditLogs: AuditLog[],
   users: UserInfo[],
-  isDemo: boolean,
 ) => {
   const wb = XLSX.utils.book_new();
 
@@ -883,19 +537,6 @@ export const exportFullCompanyReportToXLSX = (
   }));
   const usersWs = XLSX.utils.json_to_sheet(usersData);
   XLSX.utils.book_append_sheet(wb, usersWs, "Users");
-
-  // Demo metadata
-  if (isDemo) {
-    const metaData = [
-      { Key: "data_source", Value: DEMO_METADATA.data_source },
-      { Key: "tenant_name", Value: DEMO_METADATA.tenant_name },
-      { Key: "watermark", Value: DEMO_METADATA.watermark },
-      { Key: "exported_at", Value: new Date().toISOString() },
-      { Key: "generated_by", Value: DEMO_METADATA.generated_by },
-    ];
-    const metaWs = XLSX.utils.json_to_sheet(metaData);
-    XLSX.utils.book_append_sheet(wb, metaWs, "Demo Metadata");
-  }
 
   XLSX.writeFile(wb, `company-report-${getDateString()}.xlsx`);
 };

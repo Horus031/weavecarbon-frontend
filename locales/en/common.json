@@ -8,32 +8,25 @@
     "login": "Log In",
     "getStarted": "Get Started"
   },
-
   "hero": {
     "badge": "EU DPP & Carbon Tracking Platform",
     "title": "Measure Your Fashion",
     "titleHighlight": "Carbon Footprint",
     "subtitle": "Enable Vietnamese fashion brands to measure carbon footprints for 2026 export standards and manage a circular economy for garment waste.",
     "cta": {
-      "demo": "Book a Demo",
-      "calculate": "Calculate Now"
+      "calculate": "Calculate Now",
+      "start": "Sign in"
     },
-
     "trust": "Trusted by leading Vietnamese manufacturers"
   },
-
   "userType": {
     "title": "Who are you?",
     "b2b": "Business B2B",
     "b2bDesc": "Fashion brands, manufacturers, and exporters",
     "b2c": "Individual B2C",
     "b2cDesc": "Consumers who want to contribute to circular economy",
-    "orTry": "Or try",
-    "demoB2B": "Demo B2B",
-    "demoB2C": "Demo B2C",
-    "viewHistory": "View demo history"
+    "orTry": "Or try"
   },
-
   "features": {
     "badge": "Features",
     "title": "Powerful Features for Sustainable Fashion",
@@ -75,7 +68,6 @@
       "desc": "Export-ready documentation for audits, customs, and stakeholder communications."
     }
   },
-
   "howItWorks": {
     "badge": "How It Works",
     "title": "How It Works",
@@ -109,7 +101,6 @@
       "item3": "Audit trails"
     }
   },
-
   "stats": {
     "badge": "Impact",
     "title": "Making Real Impact",
@@ -132,7 +123,6 @@
       "description": "Total emissions documented"
     }
   },
-
   "cta": {
     "badge": "Get Started",
     "title": "Ready to Transform Your Carbon Strategy?",
@@ -141,7 +131,6 @@
     "button": "Get Early Access",
     "terms": "By subscribing, you agree to our Terms and Privacy Policy"
   },
-
   "footer": {
     "desc": "Empowering fashion brands to measure, reduce, and report their carbon footprint while building a circular economy.",
     "platform": "Platform",
@@ -152,7 +141,6 @@
     "representative": "Project Representative",
     "rights": "All rights reserved."
   },
-
   "calculator": {
     "badge": "Carbon Proxy Engine",
     "title": "Carbon Calculator",
@@ -172,7 +160,6 @@
     "packaging": "Packaging",
     "selectMaterial": "Select material type",
     "selectRoute": "Select shipping route",
-
     "materials": {
       "cotton": "Cotton",
       "polyester": "Polyester",
@@ -182,7 +169,6 @@
       "recycledPoly": "Recycled Polyester",
       "organicCotton": "Organic Cotton"
     },
-
     "routes": {
       "vnEu": "Vietnam → EU (Rotterdam)",
       "vnUs": "Vietnam → USA (Los Angeles)",
@@ -190,10 +176,8 @@
       "vnDomestic": "Vietnam Domestic",
       "vnKr": "Vietnam → South Korea"
     },
-
     "proxyNote": "Using proxy emission factors for incomplete supply chain data"
   },
-
   "pricing": {
     "title": "Pricing Plans",
     "starter": "Starter",
@@ -204,13 +188,11 @@
     "exportDesc": "For enterprises requiring full export compliance",
     "month": "/month"
   },
-
   "auth": {
     "welcome": "Welcome to WEAVECARBON",
     "welcomeb2b": "WEAVECARBON for Business",
     "description": "Sign in to access your dashboard",
     "b2bSubtitle": "Carbon Tracking for Fashion Businesses",
-    "demoLogin": "Try Demo Account",
     "googleLogin": "Continue with Google",
     "orContinueWith": "or continue with email",
     "login": "Sign In",
@@ -229,7 +211,6 @@
     "accountCreated": "Account created successfully!",
     "termsNotice": "By signing in, you agree to our Terms and Privacy Policy"
   },
-
   "onboarding": {
     "title": "Set Up Your Business",
     "subtitle": "Tell us about your company to get started",
@@ -250,7 +231,6 @@
     "fillRequired": "Please fill in all required fields",
     "companyCreated": "Company profile created!"
   },
-
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "Overview of your carbon tracking",
@@ -279,7 +259,6 @@
     "targetMarkets": "Target Markets",
     "targetMarketsDesc": "Your selected export destinations"
   },
-
   "overview": {
     "pageTitle": "Overview",
     "pageSubtitle": "Overview of your carbon tracking",
@@ -347,7 +326,6 @@
       "description": "Your selected export destinations"
     }
   },
-
   "sidebar": {
     "overview": "Overview",
     "product": "Product",
@@ -357,7 +335,6 @@
     "settings": "Settings",
     "signOut": "Sign Out"
   },
-
   "products": {
     "title": "Product Management",
     "summary": "Total {total} products • {draft} drafts • {published} published • {batches} batches",
@@ -376,6 +353,12 @@
     "co2PerUnit": "CO₂e / unit",
     "createQR": "Create QR Code",
     "showing": "Showing {filtered} / {total} products",
+    "showingRange": "Showing {from}-{to} / {total} products",
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page {current}/{total}"
+    },
     "stats": {
       "all": "All",
       "draft": "Drafts",
@@ -386,7 +369,6 @@
       "published": "Published"
     }
   },
-
   "summary": {
     "backButton": "Back",
     "draftNotice": "Product is in Draft status - Carbon results are preliminary estimates",
@@ -440,7 +422,6 @@
       "pending": "Pending completion"
     }
   },
-
   "productDetail": {
     "draftWarning": "Incomplete data – carbon results are preliminary estimates. Please supplement data for more accurate results.",
     "carbonFootprint": {
@@ -488,7 +469,6 @@
       "proxyBadge": "Proxy"
     }
   },
-
   "export": {
     "title": "Export & Compliance",
     "subtitle": "Managing export documentation and verifying compliance with international regulations",
@@ -604,12 +584,10 @@
       "totalExportVolume": "Total Export Volume"
     }
   },
-
   "reports": {
     "title": "Reports & Data Export",
     "subtitle": "Create reports or export CSV/Excel data with full metadata",
     "fullReport": "Full Report",
-    "demoIndicator": "Tenant: {tenantName} • Exported data will have demo metadata",
     "stats": {
       "products": "Products",
       "activities": "Activities",
@@ -655,6 +633,8 @@
     "filterType": "Report type",
     "filterPlaceholder": "Select type",
     "filterAllTypes": "All types",
+    "dateFrom": "From date",
+    "dateTo": "To date",
     "filterOptions": {
       "all": "All types",
       "product": "Products",
@@ -667,6 +647,11 @@
     },
     "notFound": "No reports found",
     "notFoundDesc": "Try changing filters or create a new report",
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page {current}/{total}"
+    },
     "ready": "Ready",
     "download": "Download",
     "quickExport": "Quick export by type",
@@ -721,7 +706,6 @@
     "analyticsReport": "Analytics Summary Report",
     "calculationHistoryReport": "Carbon Calculation History"
   },
-
   "settings": {
     "title": "Settings",
     "subtitle": "Manage system, users, and notifications",
@@ -731,6 +715,13 @@
       "notifications": "Notifications"
     },
     "system": {
+      "personalInfo": "Personal Information",
+      "personalInfoDesc": "Manage your account information",
+      "fullName": "Full name",
+      "email": "Email",
+      "accountCreated": "Account created",
+      "changePassword": "Change password",
+      "noEmail": "No email",
       "companyInfo": "Company Information",
       "companyInfoDesc": "Manage company basic information",
       "edit": "Edit",
@@ -742,11 +733,9 @@
       "businessTypeFactory": "Factory",
       "businessTypeShop": "Shop Online",
       "servicePlan": "Service Plan",
-      "demoWarning": "⚠️ This is a Demo account. Some changes may be limited.",
       "systemInfo": "System Information",
       "systemInfoDesc": "Details about environment and status",
       "accountType": "Account Type",
-      "demo": "DEMO",
       "production": "PRODUCTION",
       "createdDate": "Created Date",
       "apiVersion": "API Version",
@@ -806,8 +795,7 @@
       "toggleEnabled": "enabled",
       "removeSuccess": "Removed {email} from system",
       "emailRequired": "Please enter email",
-      "demoWarning": "⚠️ Demo Account: User changes are saved only in this session.",
-      "cancel":"Cancel"
+      "cancel": "Cancel"
     },
     "notifications": {
       "emailNotifications": "Email Notifications",
@@ -834,7 +822,6 @@
       "complianceDeadlineDesc": "Remind about upcoming compliance deadlines"
     }
   },
-
   "logistics": {
     "title": "Manage Shipping",
     "subtitle": "Track all shipments on the world map",
@@ -842,7 +829,6 @@
     "routeDetails": "Route Details",
     "backToMap": "← Back to Global Map",
     "clickInstruction": "Click on product to view route details",
-    "routesSection": "Shipment Routes",
     "new": "New",
     "qrCodeTitle": "Generate QR Code",
     "viewRouteDetails": "View Route Details",
@@ -853,9 +839,13 @@
       "pending": "Pending",
       "totalCO2": "Total kg CO₂e",
       "totalShipments": "Total Shipments"
+    },
+    "pagination": {
+      "prev": "Prev",
+      "next": "Next",
+      "page": "Page {current}/{total}"
     }
   },
-
   "trackShipment": {
     "title": "Track Shipment",
     "subtitle": "View status and location of all shipments",
@@ -885,7 +875,6 @@
       "unknown": "Unknown"
     }
   },
-
   "transport": {
     "title": "Transport & Logistics",
     "subtitle": "Enter transport information and calculate emissions",
@@ -908,10 +897,6 @@
     "legCO2": "CO₂ for this leg",
     "emissionFactor": "Factor",
     "addLeg": "Add Transport Leg",
-    "hideDemoMap": "Hide Demo Map",
-    "showDemoMap": "View Demo Map Vietnam → LA",
-    "demoMapTitle": "Demo: Vietnam → Los Angeles",
-    "demoMapBadge": "Demo - For Learning Only",
     "resultsTitle": "Preliminary Results",
     "resultsDescription": "Updates in real time",
     "totalDistance": "Total Distance",
@@ -924,13 +909,10 @@
     "saveAndView": "Save & View History",
     "carbonNote": "Carbon calculated using DEFRA/GHG Protocol factors"
   },
-
   "calculationHistory": {
     "title": "Calculation History",
     "subtitle": "View all carbon calculations",
     "exportCSV": "Export CSV",
-    "demoDataDescription": "Demo data is marked separately and cannot be edited",
-    "demoDataNote": "Demo data is used to learn how to use the system. Real data will be saved separately.",
     "detailsTitle": "History Details",
     "productHistoryTitle": "Calculation history for product: ",
     "allCalculations": "All carbon calculations",
@@ -950,14 +932,12 @@
       "createdBy": "Created By",
       "type": "Type"
     },
-    "csvTypeDemo": "Demo",
     "csvTypeReal": "Real",
     "totalRecords": "Total Records",
     "materialsLabel": "Materials (kg CO₂)",
     "manufacturingLabel": "Manufacturing (kg CO₂)",
     "transportLabel": "Transport (kg CO₂)",
     "filterAll": "All",
-    "filterDemo": "Demo",
     "filterReal": "Real",
     "columnProduct": "Product",
     "columnMaterials": "Materials",
@@ -969,7 +949,6 @@
     "columnCreatedDate": "Created Date",
     "columnCreatedBy": "Created By",
     "columnType": "Type",
-    "typeDemo": "Demo",
     "typeReal": "Real",
     "emptyStateTitle": "History Details",
     "emptyStateSubtitle": "All carbon calculations",
@@ -977,7 +956,6 @@
     "noHistoryDescription": "Start by entering product and transport information",
     "noHistoryButton": "Create New Product"
   },
-
   "passport": {
     "notFoundTitle": "Product not found",
     "notFoundDescription": "This QR code is not linked to any product in the system.",

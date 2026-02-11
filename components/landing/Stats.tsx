@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "motion/react";
-import { TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 import StatsWave from "@/components/icons/StatsWave";
 
@@ -33,7 +32,7 @@ const Stats = () => {
   return (
     <section
       id="impact"
-      className="py-24 md:py-32 relative bg-linear-to-b from-primary to-forest-dark text-primary-foreground overflow-hidden"
+      className="py-12 md:py-18 relative bg-linear-to-b from-primary to-forest-dark text-primary-foreground overflow-hidden"
     >
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
@@ -42,24 +41,6 @@ const Stats = () => {
       </div>
 
       <div className="container mx-auto px-6 relative z-10">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.6 }}
-          transition={{ duration: 0.7, ease: "easeOut" }}
-          className="max-w-3xl mx-auto text-center mb-16"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-foreground/10 text-primary-foreground text-sm font-medium mb-4">
-            <TrendingUp className="w-4 h-4" />
-            {t("badge")}
-          </div>
-          <h2 className="text-3xl md:text-5xl font-display font-bold mb-6">
-            {t("title")}
-          </h2>
-          <p className="text-lg text-primary-foreground/80">{t("subtitle")}</p>
-        </motion.div>
-
         {/* Stats grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {stats.map((stat, index) => (

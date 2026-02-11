@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { getDemoProductById } from "@/lib/demoProductHelper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +17,7 @@ import {
   CarbonBreakdownItem,
   MaterialImpactItem,
 } from "@/lib/carbonDetailData";
-import { ProductData } from "@/lib/demoData";
+import type { ProductData } from "@/types/productData";
 
 // Import product-details components
 import ProductOverviewHeader from "@/components/dashboard/product-details/ProductOverviewHeader";
@@ -65,7 +64,7 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
     },
   };
 
-  // Load product from localStorage or demo data
+  // Load product from localStorage
   const product = useMemo(() => {
     if (!productId || typeof window === "undefined") return null;
 
@@ -76,13 +75,6 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
       storedProducts.find((p) => p.id === productId) || null;
 
     if (storedProduct) return storedProduct;
-
-    // Check if user is demo user and load from demo data
-    const isDemoUser = localStorage.getItem("weavecarbonDemoUser") === "true";
-
-    if (isDemoUser) {
-      return getDemoProductById(productId);
-    }
 
     return null;
   }, [productId]);
@@ -120,7 +112,6 @@ export default function SummaryClient({ productId }: SummaryClientProps) {
           : product.carbonResults?.confidenceLevel === "medium"
             ? 70
             : 50,
-      isDemo: false,
       createdAt: product.createdAt || new Date().toISOString(),
       createdBy: "User",
       status: product.status,

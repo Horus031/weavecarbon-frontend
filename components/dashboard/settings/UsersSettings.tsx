@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/apiClient";
 import {
   Card,
   CardContent,
@@ -58,111 +59,161 @@ interface TeamMember {
   created_at: string;
 }
 
-// Demo data for team members
-const DEMO_TEAM: TeamMember[] = [
-  {
-    id: "1",
-    user_id: "11111111-1111-1111-1111-111111111111",
-    full_name: "Admin (Root)",
-    email: "admin@egolism.com",
-    role: "admin",
-    status: "active",
-    last_login: new Date().toISOString(),
-    created_at: "2024-01-15T10:00:00Z",
-  },
-  {
-    id: "2",
-    user_id: "22222222-2222-2222-2222-222222222222",
-    full_name: "Team Member",
-    email: "member@egolism.com",
-    role: "member",
-    status: "active",
-    last_login: new Date(Date.now() - 86400000).toISOString(),
-    created_at: "2024-02-01T10:00:00Z",
-  },
-  {
-    id: "3",
-    user_id: "33333333-3333-3333-3333-333333333333",
-    full_name: "Viewer User",
-    email: "viewer@egolism.com",
-    role: "viewer",
-    status: "invited",
-    last_login: null,
-    created_at: "2024-03-01T10:00:00Z",
-  },
-];
-
-const ROLES = [
-  { value: "member", label: "Member", description: "Xem và chỉnh sửa dữ liệu" },
-  { value: "viewer", label: "Viewer", description: "Chỉ xem dữ liệu" },
-];
-
 const UsersSettings: React.FC = () => {
   const t = useTranslations("settings.users");
   const { user } = useAuth();
-  const isDemoTenant = user?.is_demo_user || false;
-  const [members, setMembers] = useState<TeamMember[]>(DEMO_TEAM);
+  const companyId = user?.company_id || null;
+
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState<"member" | "viewer">("member");
 
-  const handleInvite = () => {
+  const loadMembers = useCallback(async () => {
+    if (!companyId) {
+      setMembers([]);
+      setLoadingMembers(false);
+      return;
+    }
+
+    setLoadingMembers(true);
+    try {
+      const data = await api.get<TeamMember[]>(`/companies/${companyId}/members`);
+      setMembers(data || []);
+    } catch (error) {
+      console.error("Failed to load members:", error);
+      setMembers([]);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, [companyId]);
+
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
+
+  const handleInvite = async () => {
     if (!inviteEmail) {
       toast.error(t("emailRequired"));
       return;
     }
 
-    // Demo: just add to local state
-    const newMember: TeamMember = {
-      id: Date.now().toString(),
-      user_id: crypto.randomUUID(),
-      full_name: inviteName || null,
-      email: inviteEmail,
-      role: inviteRole,
-      status: "invited",
-      last_login: null,
-      created_at: new Date().toISOString(),
-    };
+    if (!companyId) {
+      toast.error("Company is not set.");
+      return;
+    }
 
-    setMembers((prev) => [...prev, newMember]);
-    setInviteOpen(false);
-    setInviteEmail("");
-    setInviteName("");
-    toast.success(t("inviteSuccess", { email: inviteEmail }));
+    setUpdating(true);
+    try {
+      const created = await api.post<TeamMember | null>(
+        `/companies/${companyId}/members/invite`,
+        {
+          full_name: inviteName || null,
+          email: inviteEmail,
+          role: inviteRole,
+        },
+      );
+
+      if (created?.id) {
+        setMembers((prev) => [created, ...prev]);
+      } else {
+        await loadMembers();
+      }
+
+      setInviteOpen(false);
+      setInviteEmail("");
+      setInviteName("");
+      setInviteRole("member");
+      toast.success(t("inviteSuccess", { email: inviteEmail }));
+    } catch (error) {
+      console.error("Failed to invite member:", error);
+      toast.error(error instanceof Error ? error.message : "Invite failed.");
+    } finally {
+      setUpdating(false);
+    }
   };
 
-  const handleResendInvite = (member: TeamMember) => {
-    toast.success(t("resendSuccess", { email: member.email || "" }));
+  const handleResendInvite = async (member: TeamMember) => {
+    if (!companyId) return;
+
+    try {
+      await api.post(`/companies/${companyId}/members/${member.id}/resend-invite`);
+      toast.success(t("resendSuccess", { email: member.email || "" }));
+    } catch (error) {
+      console.error("Failed to resend invite:", error);
+      toast.error(error instanceof Error ? error.message : "Resend failed.");
+    }
   };
 
-  const handleToggleStatus = (member: TeamMember) => {
+  const handleToggleStatus = async (member: TeamMember) => {
     if (member.role === "admin") {
       toast.error(t("cannotDisableAdmin"));
       return;
     }
-    setMembers((prev) =>
-      prev.map((m) =>
-        m.id === member.id
-          ? {
-              ...m,
-              status: m.status === "active" ? "disabled" : ("active" as const),
-            }
-          : m,
-      ),
-    );
-    toast.success(
-      t("toggleSuccess", { action: member.status === "active" ? t("toggleDisabled") : t("toggleEnabled"), email: member.email || "" }),
-    );
+    if (!companyId) return;
+
+    const nextStatus: TeamMember["status"] =
+      member.status === "active" ? "disabled" : "active";
+
+    setUpdating(true);
+    try {
+      const updated = await api.patch<TeamMember | null>(
+        `/companies/${companyId}/members/${member.id}`,
+        { status: nextStatus },
+      );
+
+      if (updated?.id) {
+        setMembers((prev) =>
+          prev.map((m) => (m.id === member.id ? updated : m)),
+        );
+      } else {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.id === member.id ? { ...m, status: nextStatus } : m,
+          ),
+        );
+      }
+
+      toast.success(
+        t("toggleSuccess", {
+          action:
+            member.status === "active"
+              ? t("toggleDisabled")
+              : t("toggleEnabled"),
+          email: member.email || "",
+        }),
+      );
+    } catch (error) {
+      console.error("Failed to update member status:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update member.",
+      );
+    } finally {
+      setUpdating(false);
+    }
   };
 
-  const handleRemove = (member: TeamMember) => {
+  const handleRemove = async (member: TeamMember) => {
     if (member.role === "admin") {
       toast.error(t("cannotRemoveAdmin"));
       return;
     }
-    setMembers((prev) => prev.filter((m) => m.id !== member.id));
-    toast.success(t("removeSuccess", { email: member.email || "" }));
+    if (!companyId) return;
+
+    setUpdating(true);
+    try {
+      await api.delete(`/companies/${companyId}/members/${member.id}`);
+      setMembers((prev) => prev.filter((m) => m.id !== member.id));
+      toast.success(t("removeSuccess", { email: member.email || "" }));
+    } catch (error) {
+      console.error("Failed to remove member:", error);
+      toast.error(error instanceof Error ? error.message : "Remove failed.");
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -207,9 +258,10 @@ const UsersSettings: React.FC = () => {
     }
   };
 
+  const isLoading = loadingMembers || updating;
+
   return (
     <div className="space-y-6">
-      {/* Team Members */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -218,13 +270,11 @@ const UsersSettings: React.FC = () => {
                 <Users className="w-5 h-5" />
                 {t("teamMembersCount", { count: members.length })}
               </CardTitle>
-              <CardDescription>
-                {t("teamMembersDesc")}
-              </CardDescription>
+              <CardDescription>{t("teamMembersDesc")}</CardDescription>
             </div>
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button disabled={!companyId || isLoading}>
                   <UserPlus className="w-4 h-4 mr-2" />
                   {t("createAccount")}
                 </Button>
@@ -291,10 +341,11 @@ const UsersSettings: React.FC = () => {
                   <Button
                     variant="outline"
                     onClick={() => setInviteOpen(false)}
+                    disabled={isLoading}
                   >
                     {t("cancel")}
                   </Button>
-                  <Button onClick={handleInvite}>
+                  <Button onClick={handleInvite} disabled={isLoading}>
                     <UserPlus className="w-4 h-4 mr-2" />
                     {t("createAccount")}
                   </Button>
@@ -304,93 +355,104 @@ const UsersSettings: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("memberHeaderName")}</TableHead>
-                <TableHead>{t("memberHeaderRole")}</TableHead>
-                <TableHead>{t("memberHeaderStatus")}</TableHead>
-                <TableHead>{t("memberHeaderLastLogin")}</TableHead>
-                <TableHead className="w-12.5"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">
-                        {member.full_name || t("noName")}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {member.email}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getRoleBadge(member.role)}</TableCell>
-                  <TableCell>{getStatusBadge(member.status)}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {member.last_login
-                      ? format(new Date(member.last_login), "dd/MM/yyyy HH:mm")
-                      : t("neverLogged")}
-                  </TableCell>
-                  <TableCell>
-                    {member.role !== "admin" && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {member.status === "invited" && (
-                            <DropdownMenuItem
-                              onClick={() => handleResendInvite(member)}
-                            >
-                              <Mail className="w-4 h-4 mr-2" />
-                              {t("resendInvite")}
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => handleToggleStatus(member)}
-                          >
-                            {member.status === "active" ? (
-                              <>
-                                <X className="w-4 h-4 mr-2" />
-                                {t("disable")}
-                              </>
-                            ) : (
-                              <>
-                                <Check className="w-4 h-4 mr-2" />
-                                {t("enable")}
-                              </>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleRemove(member)}
-                            className="text-destructive"
-                          >
-                            <X className="w-4 h-4 mr-2" />
-                            {t("removeAccount")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </TableCell>
+          {!companyId ? (
+            <p className="text-sm text-muted-foreground">
+              Company context is missing.
+            </p>
+          ) : isLoading && members.length === 0 ? (
+            <div className="h-20 bg-muted rounded-md animate-pulse" />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("memberHeaderName")}</TableHead>
+                  <TableHead>{t("memberHeaderRole")}</TableHead>
+                  <TableHead>{t("memberHeaderStatus")}</TableHead>
+                  <TableHead>{t("memberHeaderLastLogin")}</TableHead>
+                  <TableHead className="w-12.5"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {members.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="text-center text-sm text-muted-foreground py-8"
+                    >
+                      No team members found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  members.map((member) => (
+                    <TableRow key={member.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">
+                            {member.full_name || t("noName")}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {member.email}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getRoleBadge(member.role)}</TableCell>
+                      <TableCell>{getStatusBadge(member.status)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {member.last_login
+                          ? format(new Date(member.last_login), "dd/MM/yyyy HH:mm")
+                          : t("neverLogged")}
+                      </TableCell>
+                      <TableCell>
+                        {member.role !== "admin" && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" disabled={isLoading}>
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {member.status === "invited" && (
+                                <DropdownMenuItem
+                                  onClick={() => handleResendInvite(member)}
+                                >
+                                  <Mail className="w-4 h-4 mr-2" />
+                                  {t("resendInvite")}
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => handleToggleStatus(member)}
+                              >
+                                {member.status === "active" ? (
+                                  <>
+                                    <X className="w-4 h-4 mr-2" />
+                                    {t("disable")}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Check className="w-4 h-4 mr-2" />
+                                    {t("enable")}
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleRemove(member)}
+                                className="text-destructive"
+                              >
+                                <X className="w-4 h-4 mr-2" />
+                                {t("removeAccount")}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
-
-      {isDemoTenant && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-          <p className="text-sm text-amber-600">
-            {t("demoAccountWarning")}
-          </p>
-        </div>
-      )}
     </div>
   );
 };

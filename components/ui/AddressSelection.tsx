@@ -193,6 +193,7 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({
           placeholder="123 Main Street"
           value={value.streetAddress}
           onChange={(e) => updateField("streetAddress", e.target.value)}
+          className="bg-background border border-foreground/10"
         />
       </div>
 
@@ -205,6 +206,7 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({
           placeholder="Apt 4B, Suite 100, Floor 2..."
           value={value.aptSuite}
           onChange={(e) => updateField("aptSuite", e.target.value)}
+          className="bg-background border border-foreground/10"
         />
       </div>
 
@@ -217,6 +219,7 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({
           placeholder="Ho Chi Minh City"
           value={value.city}
           onChange={(e) => updateField("city", e.target.value)}
+          className="bg-background border border-foreground/10"
         />
       </div>
 
@@ -231,7 +234,7 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({
               value={value.state}
               onValueChange={(v) => updateField("state", v)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-background border border-foreground/10">
                 <SelectValue placeholder="Chọn..." />
               </SelectTrigger>
               <SelectContent className="max-h-60 bg-background border shadow-lg z-50">
@@ -247,6 +250,7 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({
               placeholder="State or Province"
               value={value.state}
               onChange={(e) => updateField("state", e.target.value)}
+              className="bg-background border border-foreground/10"
             />
           )}
         </div>
@@ -259,6 +263,7 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({
             placeholder="700000"
             value={value.zipPostcode}
             onChange={(e) => updateField("zipPostcode", e.target.value)}
+            className="bg-background border border-foreground/10"
           />
         </div>
       </div>
@@ -275,7 +280,7 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({
             onChange({ ...value, country: v, state: "" });
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger className="bg-background border border-foreground/10">
             <SelectValue placeholder="Chọn quốc gia..." />
           </SelectTrigger>
           <SelectContent className="max-h-60 bg-background border shadow-lg z-50">
@@ -297,6 +302,7 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({
               placeholder="10.7769"
               value={value.lat || ""}
               onChange={(e) => updateField("lat", e.target.value)}
+              className="bg-background border border-foreground/10"
             />
           </div>
           <div className="space-y-2">
@@ -305,6 +311,7 @@ const AddressSelection: React.FC<AddressSelectionProps> = ({
               placeholder="106.7009"
               value={value.lng || ""}
               onChange={(e) => updateField("lng", e.target.value)}
+              className="bg-background border border-foreground/10"
             />
           </div>
         </div>

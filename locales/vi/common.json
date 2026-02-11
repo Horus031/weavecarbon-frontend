@@ -8,31 +8,25 @@
     "login": "Đăng nhập",
     "getStarted": "Bắt đầu"
   },
-
   "hero": {
     "badge": "Nền tảng EU DPP & Theo dõi Carbon",
     "title": "Đo lường Dấu chân Carbon",
     "titleHighlight": "Thời trang",
     "subtitle": "Hỗ trợ các thương hiệu thời trang Việt Nam đo lường dấu chân carbon cho tiêu chuẩn xuất khẩu 2026 và quản lý kinh tế tuần hoàn cho chất thải dệt may.",
     "cta": {
-      "demo": "Đặt lịch Demo",
-      "calculate": "Tính toán ngay"
+      "calculate": "Tính toán ngay",
+      "start": "Đăng nhập"
     },
     "trust": "Được tin dùng bởi các nhà sản xuất hàng đầu Việt Nam"
   },
-
   "userType": {
     "title": "Bạn là ai?",
     "b2b": "Doanh nghiệp B2B",
     "b2bDesc": "Thương hiệu thời trang, nhà sản xuất và xuất khẩu",
     "b2c": "Cá nhân B2C",
     "b2cDesc": "Người tiêu dùng muốn đóng góp vào kinh tế tuần hoàn",
-    "orTry": "hoặc dùng thử",
-    "demoB2B": "Demo B2B",
-    "demoB2C": "Demo B2C",
-    "viewHistory": "Xem lịch sử demo"
+    "orTry": "hoặc dùng thử"
   },
-
   "features": {
     "badge": "Tính năng",
     "title": "Tính năng mạnh mẽ cho Thời trang Bền vững",
@@ -74,7 +68,6 @@
       "desc": "Hồ sơ xuất khẩu sẵn sàng cho kiểm toán, hải quan và liên lạc với các bên liên quan."
     }
   },
-
   "howItWorks": {
     "badge": "Cách Hoạt Động",
     "title": "Cách Hoạt Động",
@@ -108,7 +101,6 @@
       "item3": "Đường mòn kiểm toán"
     }
   },
-
   "stats": {
     "badge": "Tác động",
     "title": "Tạo Tác Động Thực Sự",
@@ -131,7 +123,6 @@
       "description": "Tổng lượng khí thải được ghi lại"
     }
   },
-
   "cta": {
     "badge": "Bắt đầu ngay",
     "title": "Sẵn sàng Chuyển đổi Chiến lược Carbon?",
@@ -140,7 +131,6 @@
     "button": "Đăng ký sớm",
     "terms": "Bằng việc đăng ký, bạn đồng ý với Điều khoản và Chính sách Bảo mật của chúng tôi"
   },
-
   "footer": {
     "desc": "Hỗ trợ các thương hiệu thời trang đo lường, giảm thiểu và báo cáo dấu chân carbon trong khi xây dựng nền kinh tế tuần hoàn.",
     "platform": "Nền tảng",
@@ -151,7 +141,6 @@
     "representative": "Đại diện Dự án",
     "rights": "Đã đăng ký bản quyền."
   },
-
   "calculator": {
     "badge": "Động cơ Proxy Carbon",
     "title": "Tính toán Carbon",
@@ -171,7 +160,6 @@
     "packaging": "Đóng gói",
     "selectMaterial": "Chọn loại vật liệu",
     "selectRoute": "Chọn tuyến vận chuyển",
-
     "materials": {
       "cotton": "Cotton",
       "polyester": "Polyester",
@@ -181,7 +169,6 @@
       "recycledPoly": "Polyester tái chế",
       "organicCotton": "Cotton hữu cơ"
     },
-
     "routes": {
       "vnEu": "Việt Nam → EU (Rotterdam)",
       "vnUs": "Việt Nam → Mỹ (Los Angeles)",
@@ -189,10 +176,8 @@
       "vnDomestic": "Nội địa Việt Nam",
       "vnKr": "Việt Nam → Hàn Quốc"
     },
-
     "proxyNote": "Sử dụng hệ số phát thải proxy cho dữ liệu chuỗi cung ứng không đầy đủ"
   },
-
   "pricing": {
     "title": "Bảng giá",
     "starter": "Khởi động",
@@ -203,13 +188,11 @@
     "exportDesc": "Cho doanh nghiệp yêu cầu tuân thủ xuất khẩu đầy đủ",
     "month": "/tháng"
   },
-
   "auth": {
     "welcome": "Chào mừng đến WEAVECARBON",
     "welcomeb2b": "WEAVECARBON cho Doanh Nghiệp",
     "description": "Đăng nhập để truy cập bảng điều khiển",
     "b2bSubtitle": "Theo dõi Carbon cho Doanh nghiệp Thời trang",
-    "demoLogin": "Dùng thử tài khoản Demo",
     "googleLogin": "Tiếp tục với Google",
     "orContinueWith": "hoặc tiếp tục với email",
     "login": "Đăng nhập",
@@ -228,7 +211,6 @@
     "accountCreated": "Tạo tài khoản thành công!",
     "termsNotice": "Bằng việc đăng nhập, bạn đồng ý với Điều khoản và Chính sách Bảo mật"
   },
-
   "onboarding": {
     "title": "Thiết lập Doanh nghiệp",
     "subtitle": "Cho chúng tôi biết về công ty của bạn để bắt đầu",
@@ -249,7 +231,6 @@
     "fillRequired": "Vui lòng điền đầy đủ thông tin bắt buộc",
     "companyCreated": "Đã tạo hồ sơ công ty!"
   },
-
   "dashboard": {
     "title": "Bảng điều khiển",
     "subtitle": "Tổng quan theo dõi carbon của bạn",
@@ -278,7 +259,6 @@
     "targetMarkets": "Thị trường Mục tiêu",
     "targetMarketsDesc": "Các điểm đến xuất khẩu đã chọn"
   },
-
   "overview": {
     "pageTitle": "Tổng quan",
     "pageSubtitle": "Tổng quan theo dõi carbon của bạn",
@@ -346,7 +326,6 @@
       "description": "Các điểm đến xuất khẩu đã chọn"
     }
   },
-
   "sidebar": {
     "overview": "Tổng quan",
     "product": "Sản phẩm",
@@ -356,7 +335,6 @@
     "settings": "Cài đặt",
     "signOut": "Đăng xuất"
   },
-
   "products": {
     "title": "Quản lý sản phẩm",
     "summary": "Tổng cộng {total} sản phẩm • {draft} nháp • {published} đã xuất bản • {batches} lô hàng",
@@ -375,6 +353,12 @@
     "co2PerUnit": "CO₂e / đơn vị",
     "createQR": "Tạo QR Code",
     "showing": "Hiển thị {filtered} / {total} sản phẩm",
+    "showingRange": "Hiển thị {from}-{to} / {total} sản phẩm",
+    "pagination": {
+      "prev": "Trước",
+      "next": "Sau",
+      "page": "Trang {current}/{total}"
+    },
     "stats": {
       "all": "Tất cả",
       "draft": "Nháp",
@@ -385,7 +369,6 @@
       "published": "Đã xuất bản"
     }
   },
-
   "summary": {
     "backButton": "Quay lại",
     "draftNotice": "Sản phẩm đang ở trạng thái Nháp - Kết quả carbon chỉ mang tính ước tính",
@@ -439,7 +422,6 @@
       "pending": "Đang chờ hoàn thiện"
     }
   },
-
   "productDetail": {
     "draftWarning": "Dữ liệu chưa đầy đủ – kết quả carbon chỉ mang tính ước tính. Vui lòng bổ sung dữ liệu để có kết quả chính xác hơn.",
     "carbonFootprint": {
@@ -487,7 +469,6 @@
       "proxyBadge": "Proxy"
     }
   },
-
   "export": {
     "title": "Xuất khẩu & Tuân thủ",
     "subtitle": "Quản lý hồ sơ xuất khẩu và kiểm tra tuân thủ quy định quốc tế",
@@ -603,12 +584,10 @@
       "totalExportVolume": "Tổng sản lượng xuất khẩu"
     }
   },
-
   "reports": {
     "title": "Báo cáo & Xuất dữ liệu",
     "subtitle": "Tạo báo cáo hoặc xuất dữ liệu CSV/Excel với đầy đủ metadata",
     "fullReport": "Báo cáo đầy đủ",
-    "demoIndicator": "Tenant: {tenantName} • Dữ liệu export sẽ có metadata demo",
     "stats": {
       "products": "Sản phẩm",
       "activities": "Hoạt động",
@@ -654,6 +633,8 @@
     "filterType": "Loại báo cáo",
     "filterPlaceholder": "Chọn loại",
     "filterAllTypes": "Tất cả loại",
+    "dateFrom": "Từ ngày",
+    "dateTo": "Đến ngày",
     "filterOptions": {
       "all": "Tất cả loại",
       "product": "Sản phẩm",
@@ -666,6 +647,11 @@
     },
     "notFound": "Không tìm thấy báo cáo",
     "notFoundDesc": "Thử thay đổi bộ lọc hoặc tạo báo cáo mới",
+    "pagination": {
+      "prev": "Trước",
+      "next": "Sau",
+      "page": "Trang {current}/{total}"
+    },
     "ready": "Sẵn sàng",
     "download": "Tải",
     "quickExport": "Xuất nhanh theo loại",
@@ -720,7 +706,6 @@
     "analyticsReport": "Báo cáo tổng hợp Analytics",
     "calculationHistoryReport": "Lịch sử tính toán Carbon"
   },
-
   "settings": {
     "title": "Cài đặt",
     "subtitle": "Quản lý hệ thống, người dùng và thông báo",
@@ -730,6 +715,13 @@
       "notifications": "Thông báo"
     },
     "system": {
+      "personalInfo": "Thông tin cá nhân",
+      "personalInfoDesc": "Quản lý thông tin tài khoản của bạn",
+      "fullName": "Họ và tên",
+      "email": "Email",
+      "accountCreated": "Ngày tạo tài khoản",
+      "changePassword": "Đổi mật khẩu",
+      "noEmail": "Chưa có email",
       "companyInfo": "Thông tin công ty",
       "companyInfoDesc": "Quản lý thông tin cơ bản của doanh nghiệp",
       "edit": "Chỉnh sửa",
@@ -741,11 +733,9 @@
       "businessTypeFactory": "Nhà máy sản xuất (Factory)",
       "businessTypeShop": "Shop Online",
       "servicePlan": "Gói dịch vụ",
-      "demoWarning": "⚠️ Đây là tài khoản Demo. Một số thay đổi có thể bị giới hạn.",
       "systemInfo": "Thông tin hệ thống",
       "systemInfoDesc": "Chi tiết về môi trường và trạng thái",
       "accountType": "Loại tài khoản",
-      "demo": "DEMO",
       "production": "PRODUCTION",
       "createdDate": "Ngày tạo",
       "apiVersion": "Phiên bản API",
@@ -805,7 +795,6 @@
       "toggleEnabled": "kích hoạt",
       "removeSuccess": "Đã xóa {email} khỏi hệ thống",
       "emailRequired": "Vui lòng nhập email",
-      "demoWarning": "⚠️ Tài khoản Demo: Các thay đổi về người dùng chỉ được lưu trong phiên làm việc này.",
       "cancel": "Hủy"
     },
     "notifications": {
@@ -833,7 +822,6 @@
       "complianceDeadlineDesc": "Nhắc nhở về các deadline compliance sắp đến"
     }
   },
-
   "logistics": {
     "title": "Quản lý vận chuyển",
     "subtitle": "Theo dõi tất cả các lô hàng trên bản đồ thế giới",
@@ -841,7 +829,6 @@
     "routeDetails": "Chi tiết tuyến",
     "backToMap": "← Quay lại bản đồ toàn cầu",
     "clickInstruction": "Nhấn vào sản phẩm để xem chi tiết tuyến đường",
-    "routesSection": "Tuyến vận chuyển",
     "new": "Mới",
     "qrCodeTitle": "Tạo QR Code",
     "viewRouteDetails": "Xem chi tiết tuyến đường",
@@ -852,9 +839,13 @@
       "pending": "Chờ xử lý",
       "totalCO2": "kg CO₂e tổng",
       "totalShipments": "Tổng shipments"
+    },
+    "pagination": {
+      "prev": "Trước",
+      "next": "Sau",
+      "page": "Trang {current}/{total}"
     }
   },
-
   "trackShipment": {
     "title": "Theo dõi lô hàng",
     "subtitle": "Xem trạng thái và vị trí của tất cả lô hàng",
@@ -884,7 +875,6 @@
       "unknown": "Không xác định"
     }
   },
-
   "transport": {
     "title": "Vận chuyển & Logistics",
     "subtitle": "Nhập thông tin vận chuyển và tính toán phát thải",
@@ -907,10 +897,6 @@
     "legCO2": "CO₂ chặng này",
     "emissionFactor": "Hệ số",
     "addLeg": "Thêm chặng vận chuyển",
-    "hideDemoMap": "Ẩn bản đồ demo",
-    "showDemoMap": "Xem bản đồ demo Việt Nam → LA",
-    "demoMapTitle": "Demo: Việt Nam → Los Angeles",
-    "demoMapBadge": "Demo - Chỉ để học hỏi",
     "resultsTitle": "Kết quả tạm tính",
     "resultsDescription": "Cập nhật theo thời gian thực",
     "totalDistance": "Tổng quãng đường",
@@ -923,13 +909,10 @@
     "saveAndView": "Lưu & Xem lịch sử",
     "carbonNote": "Carbon được tính dựa trên hệ số DEFRA/GHG Protocol"
   },
-
   "calculationHistory": {
     "title": "Lịch sử tính toán",
     "subtitle": "Xem tất cả các lần tính toán carbon",
     "exportCSV": "Export CSV",
-    "demoDataDescription": "Demo data được đánh dấu riêng và không thể chỉnh sửa",
-    "demoDataNote": "Dữ liệu demo dùng để học cách sử dụng hệ thống. Dữ liệu thực sẽ được lưu riêng.",
     "detailsTitle": "Chi tiết lịch sử",
     "productHistoryTitle": "Lịch sử tính toán cho sản phẩm: ",
     "allCalculations": "Tất cả các lần tính toán carbon",
@@ -949,14 +932,12 @@
       "createdBy": "Người tạo",
       "type": "Loại"
     },
-    "csvTypeDemo": "Demo",
     "csvTypeReal": "Thực",
     "totalRecords": "Tổng bản ghi",
     "materialsLabel": "Vật liệu (kg CO₂)",
     "manufacturingLabel": "Sản xuất (kg CO₂)",
     "transportLabel": "Vận chuyển (kg CO₂)",
     "filterAll": "Tất cả",
-    "filterDemo": "Demo",
     "filterReal": "Thực",
     "columnProduct": "Sản phẩm",
     "columnMaterials": "Vật liệu",
@@ -968,7 +949,6 @@
     "columnCreatedDate": "Ngày tạo",
     "columnCreatedBy": "Người tạo",
     "columnType": "Loại",
-    "typeDemo": "Demo",
     "typeReal": "Thực",
     "emptyStateTitle": "Chi tiết lịch sử",
     "emptyStateSubtitle": "Tất cả các lần tính toán carbon",
@@ -976,7 +956,6 @@
     "noHistoryDescription": "Bắt đầu bằng cách nhập thông tin sản phẩm và vận chuyển",
     "noHistoryButton": "Tạo sản phẩm mới"
   },
-
   "passport": {
     "notFoundTitle": "Không tìm thấy sản phẩm",
     "notFoundDescription": "Mã QR này không liên kết với sản phẩm nào trong hệ thống.",

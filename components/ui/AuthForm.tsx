@@ -23,8 +23,9 @@ const passwordSchema = z
 
 const AuthForm: React.FC = () => {
   const t = useTranslations("auth");
-  const { signUp, signIn, signInWithGoogle, signInAsDemo, user, loading } =
+  const { signUp, signIn, signInWithGoogle, user, loading } =
     useAuth();
+  const authDisabled = process.env.NEXT_PUBLIC_AUTH_DISABLED === "1";
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -179,27 +180,6 @@ const AuthForm: React.FC = () => {
     // Redirect will be handled by callback
   };
 
-  const handleDemoLogin = async () => {
-    setIsLoading(true);
-    const { error } = await signInAsDemo(userType);
-
-    if (error) {
-      setIsLoading(false);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      setIsLoading(false);
-      // Redirect based on user type
-      if (userType === "b2c") {
-        router.push("/b2c");
-      } else {
-        router.push("/onboarding");
-      }
-    }
-  };
 
   if (loading) {
     return (
@@ -216,9 +196,23 @@ const AuthForm: React.FC = () => {
   //   return "Sign in to access your business dashboard";
   // };
 
-  const getDemoButtonText = () => {
-    return userType === "b2c" ? "Try Consumer Demo" : "Try Business Demo";
-  };
+  if (authDisabled) {
+    return (
+      <Card className="border-border/50 shadow-xl">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-xl">
+            {userType === "b2c" ? t("welcome") : t("welcomeb2b")}
+          </CardTitle>
+          <CardDescription>{t("description")}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground text-center">
+            Authentication is currently disabled.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-border/50 shadow-xl">
@@ -233,10 +227,8 @@ const AuthForm: React.FC = () => {
 
       <CardContent className="space-y-6">
         <SocialLogin
-          onDemoLogin={handleDemoLogin}
           onGoogleLogin={handleGoogleLogin}
           isLoading={isLoading}
-          demoButtonText={getDemoButtonText()}
         />
 
         <EmailAuthTabs
