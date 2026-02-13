@@ -3,19 +3,17 @@ import HomeClient from "../components/ui/HomeClient";
 import Header from "@/components/landing/Header";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Hero from "@/components/landing/Hero";
-import Features from "@/components/landing/Features";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Stats from "@/components/landing/Stats";
 import CTA from "@/components/landing/CTA";
-// import LeafHero3D from "@/components/landing/LeafHero3D";
+import Features from "@/components/landing/Features";
 
 export default function Home() {
   return (
     <AuthProvider>
       <HomeClient>
         <Header />
-        <main>
-          {/* <LeafHero3D /> */}
+        <main className="relative">
           <Hero />
           <Features />
           <HowItWorks />

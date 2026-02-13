@@ -26,11 +26,14 @@ const LeafHero3D = () => {
   const isLoadedRef = useRef(false);
   const transitionStartTimeRef = useRef(0);
   const isTransitioningRef = useRef(false);
+  const transitionCompleteTimeRef = useRef(0); // When transition finished (for float delay)
   const glowPlaneRef = useRef<THREE.Mesh | null>(null);
   const glowLightRef = useRef<THREE.PointLight | null>(null);
   const mousePositionRef = useRef({ x: 0, y: 0 });
   const targetRotationRef = useRef({ x: 0, y: 0 });
-  const initialLeafPositionRef = useRef({ x: 0.1, y: 0.2, z: 0 });
+  // Leaf at origin (same as Blender)
+  const initialLeafPositionRef = useRef({ x: 0, y: 0, z: 0 });
+  const baseLeafScaleRef = useRef(2); // Base scale for the leaf model
   const scrollProgressRef = useRef(0);
 
   useEffect(() => {
@@ -64,8 +67,31 @@ const LeafHero3D = () => {
       CAMERA_POSITION.z,
     );
 
-    // Point camera at the leaf (at origin)
-    camera.lookAt(0, 0, 0);
+    // Point camera at origin (where the leaf is)
+    camera.lookAt(0, -0.2, 0);
+
+    // Apply Blender camera shift (Shift X: -0.250, Shift Y: 0.020)
+    // Blender shift moves the lens without moving the camera
+    // In Three.js, we use setViewOffset to achieve the same effect
+    // Blender shift is in fractions of sensor size
+    // Negative X shift = view moves left = objects appear to the RIGHT
+    const blenderShiftX = -0.25;
+    const blenderShiftY = 0.02;
+    // setViewOffset simulates lens shift:
+    // fullWidth/fullHeight = the virtual "full" image
+    // offsetX/offsetY = where our viewport window starts
+    // width/height = our actual viewport size
+    // Shift X of -0.25 means move viewport 25% to the left of center
+    const shiftPixelsX = -blenderShiftX * width; // positive = shift viewport right, showing left part = objects appear right
+    const shiftPixelsY = blenderShiftY * height;
+    camera.setViewOffset(
+      width,
+      height,
+      -shiftPixelsX,
+      -shiftPixelsY, // offset of our viewport
+      width,
+      height,
+    );
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -78,7 +104,6 @@ const LeafHero3D = () => {
 
     // Mouse parallax effect - track mouse movement
     const handleMouseMove = (event: MouseEvent) => {
-      // Normalize mouse position to -1 to 1 range
       mousePositionRef.current = {
         x: (event.clientX / window.innerWidth) * 2 - 1,
         y: -(event.clientY / window.innerHeight) * 2 + 1,
@@ -87,8 +112,7 @@ const LeafHero3D = () => {
 
     // Scroll effect - track scroll for leaf falling animation
     const handleScroll = () => {
-      // Calculate scroll progress (0 to 1, capped at 3 screen heights for full fall)
-      const maxScroll = window.innerHeight * 3; // Leaf fully falls after 3 screen heights
+      const maxScroll = window.innerHeight * 3;
       scrollProgressRef.current = Math.min(window.scrollY / maxScroll, 1);
     };
 
@@ -97,7 +121,7 @@ const LeafHero3D = () => {
 
     // Point light for the glow effect ONLY (appears after transition)
     const pointLight = new THREE.PointLight(0xa0ff80, 0);
-    pointLight.position.set(0.1, 0.2, -0.5);
+    pointLight.position.set(0, 0, -0.5);
     scene.add(pointLight);
     glowLightRef.current = pointLight;
 
@@ -143,36 +167,44 @@ const LeafHero3D = () => {
     // Lưu ý: loadedTextures sẽ là mảng rỗng ban đầu, nhưng khi onLoad chạy thì nó đã đầy
     texturesRef.current = loadedTextures;
 
-    // Tạo Plane (FIX TỶ LỆ)
-    // Giả sử ảnh render ra là 1920x1080 (16:9)
-    const aspect = 1920 / 1080;
-    const planeHeight = 5;
-    const planeWidth = planeHeight * aspect; // Tự tính chiều ngang
+    // === SEQUENCE PLANE: Rendered as a 2D fullscreen overlay ===
+    // Use a separate scene + orthographic camera so the sequence PNG
+    // fills exactly the viewport, independent of the 3D perspective camera.
+    // The PNG was rendered in Blender with the correct composition already.
+    const sequenceScene = new THREE.Scene();
 
-    const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
-    // Khởi tạo material trong suốt
+    // Orthographic camera: maps a 2x2 unit area to the full viewport
+    const orthoCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 10);
+    orthoCamera.position.set(0, 0, 1);
+
+    // "Cover" mode: maintain PNG aspect ratio while filling the viewport
+    const vpAspect = width / height;
+    const imgAspect = 1920 / 1080;
+    let geoW: number, geoH: number;
+    if (vpAspect > imgAspect) {
+      // Viewport wider than image - fill width, extend height
+      geoW = 2;
+      geoH = 2 * (vpAspect / imgAspect);
+    } else {
+      // Viewport taller than image - fill height, extend width
+      geoH = 2;
+      geoW = 2 * (imgAspect / vpAspect);
+    }
+
+    const geometry = new THREE.PlaneGeometry(geoW, geoH);
     const material = new THREE.MeshBasicMaterial({
       transparent: true,
-      opacity: 0, // Ẩn lúc đầu
-      toneMapped: false, // Disable tone mapping to match rendered sequence brightness
+      opacity: 0,
+      toneMapped: false,
     });
 
     const sequencePlane = new THREE.Mesh(geometry, material);
     sequencePlaneRef.current = sequencePlane;
+    sequencePlane.position.set(0, 0, 0); // Centered in ortho view
+    sequenceScene.add(sequencePlane);
 
-    // Make the plane face the camera
-    // Calculate the direction from camera to origin
-    // const cameraDirection = new THREE.Vector3(0, 0, 0)
-    //   .sub(camera.position)
-    //   .normalize();
-
-    // Position the plane at the origin (where the leaf will be)
-    sequencePlane.position.set(0, 0, 0);
-
-    // Make the plane look at the camera (so it faces the camera)
-    sequencePlane.lookAt(camera.position);
-
-    scene.add(sequencePlane);
+    // Disable auto-clear so we can render both scenes
+    renderer.autoClear = false;
 
     // Create glow effect plane (behind the leaf) - Light rays burst effect
     // const createGlowTexture = () => {
@@ -276,9 +308,11 @@ const LeafHero3D = () => {
 
           // VALUES FROM BLENDER (with Apply All Transforms)
           // Blender Leaf: Location (0, 0, 0), Rotation (0, 0, 0), Scale (1, 1, 1)
-          const LEAF_POSITION = { x: 0.1, y: 0.2, z: 0 };
+          // Leaf stays at origin - camera shift handles the right-side positioning
+          const LEAF_POSITION = { x: 0, y: 0, z: 0 };
           const LEAF_ROTATION = { x: 0, y: 0, z: 0 };
-          const LEAF_SCALE = { x: 1.2, y: 1.2, z: 1.2 };
+          const LEAF_SCALE = 2; // ← CHANGE THIS VALUE to adjust 3D model size
+          baseLeafScaleRef.current = LEAF_SCALE; // Store for animation loop
 
           // Apply transform values
           leafModelRef.current.position.set(
@@ -295,11 +329,7 @@ const LeafHero3D = () => {
           );
 
           // Apply scale
-          leafModelRef.current.scale.set(
-            LEAF_SCALE.x,
-            LEAF_SCALE.y,
-            LEAF_SCALE.z,
-          );
+          leafModelRef.current.scale.set(LEAF_SCALE, LEAF_SCALE, LEAF_SCALE);
 
           // Configure materials to receive HDRI environment lighting
           leafModelRef.current.traverse((child) => {
@@ -326,6 +356,11 @@ const LeafHero3D = () => {
 
           scene.add(leafModelRef.current);
 
+          // PRE-WARM: Render the model once (invisible, opacity 0) to force
+          // GPU shader compilation NOW, not during the transition.
+          // This prevents the 1-second freeze when transitioning.
+          renderer.compile(scene, camera);
+
           // Calculate bounding box to get actual model size
           const box = new THREE.Box3().setFromObject(leafModelRef.current);
           const size = new THREE.Vector3();
@@ -340,37 +375,9 @@ const LeafHero3D = () => {
             center: center,
           });
 
-          // Calculate the visual size from camera perspective
-          // Get the distance from camera to object center
-          const distance = camera.position.distanceTo(center);
-
-          // Calculate the visible height using perspective projection
-          // The formula: visibleHeight = 2 * distance * tan(fov/2)
-          const vFOV = (CAMERA_FOV * Math.PI) / 180; // Convert to radians
-          const visibleHeight = 2 * Math.tan(vFOV / 2) * distance;
-
-          // We want the plane to fill roughly the same visual space as the model
-          // Use a scale factor based on the model's height relative to the visible area
-          const heightRatio = 1.3 / visibleHeight;
-          const planeVisualHeight = visibleHeight * heightRatio * 2.5; // Multiply by ~2-2.5 to match visual size
-          const newPlaneWidth = planeVisualHeight * aspect;
-
-          // Adjust plane size to match the model's visual projection
-          if (sequencePlaneRef.current) {
-            // Update plane geometry
-            sequencePlaneRef.current.geometry.dispose();
-            sequencePlaneRef.current.geometry = new THREE.PlaneGeometry(
-              newPlaneWidth,
-              planeVisualHeight,
-            );
-
-            console.log("Adjusted plane dimensions:", {
-              width: newPlaneWidth,
-              height: planeVisualHeight,
-              distance: distance,
-              heightRatio: heightRatio,
-            });
-          }
+          console.log(
+            "Leaf model loaded, 3D model will appear after sequence.",
+          );
         }
       },
       // Progress callback
@@ -390,6 +397,8 @@ const LeafHero3D = () => {
 
       // CHỈ CHẠY KHI ĐÃ LOAD XONG - Use ref to avoid re-render issues
       if (!isLoadedRef.current) {
+        renderer.clear();
+        renderer.render(sequenceScene, orthoCamera);
         renderer.render(scene, camera);
         return;
       }
@@ -419,11 +428,15 @@ const LeafHero3D = () => {
             sequencePlaneRef.current.material.needsUpdate = true;
           }
         } else if (!hasAnimatedRef.current) {
-          // Start transition
-          hasAnimatedRef.current = true;
-          transitionStartTimeRef.current = time;
-          isTransitioningRef.current = true;
-          if (leafModelRef.current) leafModelRef.current.visible = true;
+          // Start transition - but ONLY if the 3D model is loaded
+          if (leafModelRef.current) {
+            hasAnimatedRef.current = true;
+            transitionStartTimeRef.current = time;
+            isTransitioningRef.current = true;
+            leafModelRef.current.visible = true;
+          }
+          // If model isn't loaded yet, we'll retry next frame
+          // (currentFrameRef stays at totalFrames-1, hasAnimatedRef stays false)
         }
         lastTimeRef.current = time;
       }
@@ -471,7 +484,10 @@ const LeafHero3D = () => {
         // Apply smooth ease-in curve specifically for glow (cubic ease-in for gentle start)
         const glowEase = glowProgress * glowProgress * glowProgress;
 
-        if (glowPlaneRef.current && !Array.isArray(glowPlaneRef.current.material)) {
+        if (
+          glowPlaneRef.current &&
+          !Array.isArray(glowPlaneRef.current.material)
+        ) {
           glowPlaneRef.current.material.opacity = glowEase * 0.6; // Max 60% opacity, more subtle
         }
 
@@ -483,14 +499,25 @@ const LeafHero3D = () => {
         // End transition
         if (progress >= 1) {
           isTransitioningRef.current = false;
+          transitionCompleteTimeRef.current = time; // Record when transition finished
           if (sequencePlaneRef.current) {
             sequencePlaneRef.current.visible = false;
           }
         }
       }
 
-      // Floating animation + Mouse parallax + Scroll falling (only after leaf is visible)
+      // Floating animation + Mouse parallax + Scroll falling
+      // Only starts 2 seconds AFTER transition completes for smooth handoff
       if (hasAnimatedRef.current && leafModelRef.current) {
+        const timeSinceTransition = transitionCompleteTimeRef.current > 0
+          ? time - transitionCompleteTimeRef.current
+          : 0;
+        const floatDelay = 2000; // 2 second delay
+        // Ease in the floating effect from 0 to 1 over 1 second after the delay
+        const floatStrength = transitionCompleteTimeRef.current > 0
+          ? Math.min(Math.max((timeSinceTransition - floatDelay) / 1000, 0), 1)
+          : 0;
+
         const scrollProgress = scrollProgressRef.current;
 
         // Base floating animation (gets weaker as leaf falls)
@@ -499,12 +526,12 @@ const LeafHero3D = () => {
         const rotateSpeed = 0.0003;
         const rotateAmount = 0.08;
 
-        const floatY = Math.sin(time * floatSpeed) * floatAmount;
-        const rotateX = Math.sin(time * rotateSpeed) * rotateAmount;
-        const rotateZ = Math.cos(time * rotateSpeed * 0.7) * rotateAmount;
+        const floatY = Math.sin(time * floatSpeed) * floatAmount * floatStrength;
+        const rotateX = Math.sin(time * rotateSpeed) * rotateAmount * floatStrength;
+        const rotateZ = Math.cos(time * rotateSpeed * 0.7) * rotateAmount * floatStrength;
 
         // Mouse parallax - smooth interpolation (reduced during falling)
-        const parallaxStrength = 0.15 * (1 - scrollProgress * 0.5);
+        const parallaxStrength = 0.15 * (1 - scrollProgress * 0.5) * floatStrength;
         const lerpFactor = 0.05;
 
         targetRotationRef.current.x +=
@@ -523,14 +550,15 @@ const LeafHero3D = () => {
         const fallRotationZ = Math.sin(scrollProgress * Math.PI * 3) * 0.5; // Wobble side to side
 
         // Horizontal sway (leaves drift as they fall)
-        const swayAmount = Math.sin(scrollProgress * Math.PI * 4) * 0.8; // Drift left/right
+        const swayAmount = Math.sin(scrollProgress * Math.PI * 4) * 0.8 * floatStrength; // Drift left/right
 
         // Scale down slightly as it falls (perspective)
         const fallScale = 1 - scrollProgress * 0.3; // Shrink to 70% size
+        const baseScale = baseLeafScaleRef.current;
         leafModelRef.current.scale.set(
-          1.2 * fallScale,
-          1.2 * fallScale,
-          1.2 * fallScale,
+          baseScale * fallScale,
+          baseScale * fallScale,
+          baseScale * fallScale,
         );
 
         // Apply combined transformations
@@ -550,7 +578,10 @@ const LeafHero3D = () => {
           rotateZ + targetRotationRef.current.y + fallRotationZ;
 
         // Fade out glow as leaf falls
-        if (glowPlaneRef.current && !Array.isArray(glowPlaneRef.current.material)) {
+        if (
+          glowPlaneRef.current &&
+          !Array.isArray(glowPlaneRef.current.material)
+        ) {
           glowPlaneRef.current.material.opacity = Math.max(
             0,
             0.6 * (1 - scrollProgress * 1.5),
@@ -564,6 +595,9 @@ const LeafHero3D = () => {
         }
       }
 
+      // Render both scenes: sequence overlay first, then 3D on top
+      renderer.clear();
+      renderer.render(sequenceScene, orthoCamera);
       renderer.render(scene, camera);
     };
 
@@ -637,7 +671,7 @@ const LeafHero3D = () => {
   }, []); // Empty dependency array to prevent re-running
 
   return (
-    <div className="absolute w-5xl z-20 right-0 bg-transparent h-screen overflow-hidden">
+    <div className="absolute top-12 left-0 z-1 bg-transparent w-screen h-screen overflow-hidden">
       {/* LOADING SCREEN */}
       {!isLoaded && (
         <div className="absolute bg-transparent inset-0 flex items-center justify-center z-50"></div>
@@ -680,12 +714,8 @@ const LeafHero3D = () => {
         </span>
       </motion.div> */}
 
-
       {/* CANVAS CONTAINER */}
-      <div
-        ref={containerRef}
-        className="relative z-20 inset-0 w-full h-full bg-transparent"
-      />
+      <div ref={containerRef} className="w-full h-full" />
     </div>
   );
 };

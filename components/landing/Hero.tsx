@@ -7,8 +7,8 @@ import { useState } from "react";
 import UserTypeDialog from "./UserTypeDialog";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import LeafHero3D from "./LeafHero3D";
 import Waves from "../icons/Waves";
+import LeafHero3D from "./LeafHero3D";
 
 const Hero = () => {
   const [showUserTypeDialog, setShowUserTypeDialog] = useState(false);
@@ -16,9 +16,12 @@ const Hero = () => {
   // const tFeatures = useTranslations("features");
 
   return (
-    <section className="relative h-screen flex items-center justify-center pt-32 pb-20 overflow-hidden bg-gradient-hero">
+    <section className="relative h-screen w-screen flex items-center justify-center lg:pt-40 lg:pb-20 overflow-hidden bg-gradient-hero">
       {/* Background decorations */}
-      <div className="absolute inset-0 bg-linear-to-tr from-primary-foreground to-secondary overflow-hidden pointer-events-none">
+
+      <div className="absolute inset-0 bg-linear-to-b from-primary-foreground to-secondary overflow-hidden pointer-events-none">
+        <LeafHero3D />
+
         <motion.div
           className="absolute top-16 left-20 w-96 h-96 bg-primary/50 rounded-full blur-3xl"
           initial={{ scale: 0.8, opacity: 0 }}
@@ -96,7 +99,7 @@ const Hero = () => {
               {t("cta.demo")}
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <Link href="/calculator">
+            <Link href="/calculator" className="w-full">
               <Button
                 variant="heroOutline"
                 size="xl"
@@ -138,17 +141,15 @@ const Hero = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.6 }}
             transition={{ duration: 0.6, ease: "easeOut", delay: 0.25 }}
-            className="mt-12 text-sm text-muted-foreground"
+            className="mt-12 text-center md:text-left text-sm text-muted-foreground"
           >
             {t("trust")}
           </motion.p>
         </div>
       </div>
 
-      <LeafHero3D/>
-
       {/* Bottom gradient fade */}
-      <div className="absolute top-0 left-0 right-0">
+      <div className="absolute top-16 lg:top-0 left-0 right-0">
         <Waves />
       </div>
 

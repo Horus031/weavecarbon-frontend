@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import LoadingScreen from "@/app/loading";
+import LeafHero3D from "../landing/LeafHero3D";
 
 export default function HomeClient({
   children,
@@ -34,7 +35,7 @@ export default function HomeClient({
       )}
 
       <div
-        className={`min-h-screen bg-background transition-opacity duration-500 ${showContent ? "opacity-100" : "opacity-0"}`}
+        className={`min-h-screen relative bg-background overflow-hidden transition-opacity duration-500 ${showContent ? "opacity-100" : "opacity-0"}`}
       >
         {children}
       </div>

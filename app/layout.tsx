@@ -6,6 +6,7 @@ import { getMessages, getLocale } from "next-intl/server";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import WeaveyChat from "@/components/ui/WeaveyChat";
 import { AuthProvider } from "@/contexts/AuthContext";
+import LeafHero3D from "@/components/landing/LeafHero3D";
 
 export const metadata: Metadata = {
   title: "WeaveCarbon",
@@ -21,7 +22,7 @@ export default async function RootLayout({
   const messages = await getMessages();
   return (
     <html data-scroll-behavior="smooth" lang={locale} suppressHydrationWarning>
-      <body className={`antialiased`}>
+      <body className={`antialiased relative`}>
         <AuthProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
             <LanguageProvider>

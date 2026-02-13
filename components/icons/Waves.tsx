@@ -19,8 +19,8 @@ const Waves = (
     </style>
     <defs>
       <linearGradient id="gradient" x1="0%" y1="50%" x2="100%" y2="50%">
-        <stop offset="5%" stopColor="#145233" />
-        <stop offset="95%" stopColor="#3a7859" />
+        <stop offset="5%" stopColor="#2c441d" />
+        <stop offset="95%" stopColor="#17260d" />
       </linearGradient>
     </defs>
     <path

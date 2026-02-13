@@ -23,9 +23,9 @@ const HowItWorks = () => {
       titleKey: "step1.title",
       descKey: "step1.desc",
       items: ["step1.item1", "step1.item2", "step1.item3"],
-      color: "from-emerald-500 to-teal-600",
-      bgColor: "bg-emerald-500/10",
-      borderColor: "border-emerald-500/20",
+      gradient: "linear-gradient(135deg, hsl(96 41% 19%) 0%, hsl(96 30% 30%) 100%)",
+      glowColor: "hsl(96 41% 19% / 0.15)",
+      borderColor: "hsl(96 41% 19% / 0.2)",
     },
     {
       number: "02",
@@ -33,9 +33,9 @@ const HowItWorks = () => {
       titleKey: "step2.title",
       descKey: "step2.desc",
       items: ["step2.item1", "step2.item2", "step2.item3"],
-      color: "from-cyan-500 to-blue-600",
-      bgColor: "bg-cyan-500/10",
-      borderColor: "border-cyan-500/20",
+      gradient: "linear-gradient(135deg, hsl(96 30% 40%) 0%, hsl(96 25% 35%) 100%)",
+      glowColor: "hsl(96 30% 40% / 0.15)",
+      borderColor: "hsl(96 30% 40% / 0.2)",
     },
     {
       number: "03",
@@ -43,9 +43,9 @@ const HowItWorks = () => {
       titleKey: "step3.title",
       descKey: "step3.desc",
       items: ["step3.item1", "step3.item2", "step3.item3"],
-      color: "from-green-500 to-emerald-600",
-      bgColor: "bg-green-500/10",
-      borderColor: "border-green-500/20",
+      gradient: "linear-gradient(135deg, hsl(25 45% 50%) 0%, hsl(25 35% 45%) 100%)",
+      glowColor: "hsl(25 45% 50% / 0.15)",
+      borderColor: "hsl(25 45% 50% / 0.2)",
     },
     {
       number: "04",
@@ -53,9 +53,9 @@ const HowItWorks = () => {
       titleKey: "step4.title",
       descKey: "step4.desc",
       items: ["step4.item1", "step4.item2", "step4.item3"],
-      color: "from-teal-500 to-cyan-600",
-      bgColor: "bg-teal-500/10",
-      borderColor: "border-teal-500/20",
+      gradient: "linear-gradient(135deg, hsl(25 35% 60%) 0%, hsl(30 25% 65%) 100%)",
+      glowColor: "hsl(25 35% 60% / 0.15)",
+      borderColor: "hsl(25 35% 60% / 0.2)",
     },
   ];
 
@@ -106,7 +106,7 @@ const HowItWorks = () => {
               initial={{ height: 0 }}
               animate={isInView ? { height: "100%" } : { height: 0 }}
               transition={{ duration: 2, ease: "easeInOut", delay: 0.5 }}
-              className="lg:hidden absolute left-8 top-0 w-0.5 bg-gradient-to-b from-primary via-primary/50 to-primary/20"
+              className="lg:hidden absolute left-8 top-0 w-0.5 bg-linear-to-b from-primary via-primary/50 to-primary/20"
             />
 
             {steps.map((step, index) => {
@@ -128,21 +128,23 @@ const HowItWorks = () => {
                         <motion.div
                           whileHover={{ scale: 1.02, y: -8 }}
                           transition={{ duration: 0.3 }}
-                          className={`relative bg-card/80 backdrop-blur-sm border ${step.borderColor} rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 group`}
+                          className="relative bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 group"
+                          style={{ borderWidth: '1px', borderColor: step.borderColor }}
                         >
                           {/* Gradient overlay on hover */}
-                          <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+                          <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-5 transition-opacity duration-300" style={{ background: step.gradient }} />
                           
                           <div className="relative z-10">
                             {/* Number */}
                             <div className="flex items-center justify-between mb-6">
-                              <span className="text-7xl font-display font-bold bg-clip-text text-transparent bg-gradient-to-br from-primary/30 to-primary/10">
+                              <span className="text-7xl font-display font-bold bg-clip-text text-transparent bg-linear-to-br from-primary/30 to-primary/10">
                                 {step.number}
                               </span>
                               <motion.div
                                 whileHover={{ rotate: 360, scale: 1.1 }}
                                 transition={{ duration: 0.6 }}
-                                className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-white shadow-lg`}
+                                className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg"
+                                style={{ background: step.gradient }}
                               >
                                 {step.icon}
                               </motion.div>
@@ -178,7 +180,7 @@ const HowItWorks = () => {
                       </motion.div>
 
                       {/* Center Node */}
-                      <div className="relative flex-shrink-0">
+                      <div className="relative shrink-0">
                         <motion.div
                           initial={{ scale: 0, opacity: 0 }}
                           whileInView={{ scale: 1, opacity: 1 }}
@@ -186,14 +188,15 @@ const HowItWorks = () => {
                           transition={{ duration: 0.5, delay: index * 0.15 + 0.3 }}
                           className="relative"
                         >
-                          <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white text-2xl font-bold shadow-2xl ring-8 ring-background`}>
+                          <div className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-2xl ring-8 ring-background" style={{ background: step.gradient }}>
                             {step.number}
                           </div>
                           {/* Pulse effect */}
                           <motion.div
                             animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
                             transition={{ duration: 2, repeat: Infinity, delay: index * 0.5 }}
-                            className={`absolute inset-0 rounded-full bg-gradient-to-br ${step.color} -z-10`}
+                            className="absolute inset-0 rounded-full -z-10"
+                            style={{ background: step.gradient }}
                           />
                         </motion.div>
 
@@ -204,7 +207,7 @@ const HowItWorks = () => {
                             whileInView={{ height: "100%" }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.8, delay: index * 0.15 + 0.5 }}
-                            className="absolute left-1/2 top-20 w-1 -translate-x-1/2 bg-gradient-to-b from-primary to-primary/20"
+                            className="absolute left-1/2 top-20 w-1 -translate-x-1/2 bg-linear-to-b from-primary to-primary/20"
                             style={{ height: "calc(100% + 6rem)" }}
                           />
                         )}
@@ -219,13 +222,14 @@ const HowItWorks = () => {
                   <div className="lg:hidden mb-12">
                     <div className="flex gap-6">
                       {/* Timeline node */}
-                      <div className="relative flex-shrink-0">
+                      <div className="relative shrink-0">
                         <motion.div
                           initial={{ scale: 0, opacity: 0 }}
                           whileInView={{ scale: 1, opacity: 1 }}
                           viewport={{ once: true }}
                           transition={{ duration: 0.5, delay: index * 0.15 }}
-                          className={`w-16 h-16 rounded-full bg-gradient-to-br ${step.color} flex items-center justify-center text-white font-bold text-lg shadow-xl ring-4 ring-background relative z-10`}
+                          className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-xl ring-4 ring-background relative z-10"
+                          style={{ background: step.gradient }}
                         >
                           {step.number}
                         </motion.div>
@@ -239,9 +243,9 @@ const HowItWorks = () => {
                         transition={{ duration: 0.6, delay: index * 0.15 }}
                         className="flex-1 pb-8"
                       >
-                        <div className={`bg-card/80 backdrop-blur-sm border ${step.borderColor} rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300`}>
+                        <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300" style={{ borderWidth: '1px', borderColor: step.borderColor }}>
                           <div className="flex items-center gap-4 mb-4">
-                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center text-white`}>
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white" style={{ background: step.gradient }}>
                               {step.icon}
                             </div>
                             <h3 className="text-xl font-bold text-foreground flex-1">
