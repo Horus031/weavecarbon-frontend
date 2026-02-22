@@ -7,8 +7,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTitle } from
+"@/components/ui/alert-dialog";
 import { Camera, MapPin, ShieldCheck } from "lucide-react";
 
 interface PermissionDialogProps {
@@ -24,25 +24,25 @@ const PermissionDialog: React.FC<PermissionDialogProps> = ({
   onOpenChange,
   type,
   onAllow,
-  onDeny,
+  onDeny
 }) => {
   const config = {
     camera: {
       icon: Camera,
       title: "Allow Camera Access",
       description:
-        "The app needs camera access to scan QR codes on garments and identify materials. Camera data is only processed on your device.",
+      "The app needs camera access to scan QR codes on garments and identify materials. Camera data is only processed on your device.",
       allowText: "Allow",
-      denyText: "Deny",
+      denyText: "Deny"
     },
     location: {
       icon: MapPin,
       title: "Allow Location Access",
       description:
-        "The app needs location access to calculate transport distance and carbon footprint. Your location is secure and not shared with third parties.",
+      "The app needs location access to calculate transport distance and carbon footprint. Your location is secure and not shared with third parties.",
       allowText: "Allow",
-      denyText: "Deny",
-    },
+      denyText: "Deny"
+    }
   };
 
   const currentConfig = config[type];
@@ -76,14 +76,14 @@ const PermissionDialog: React.FC<PermissionDialogProps> = ({
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onAllow}
-            className="flex-1 bg-primary hover:bg-primary/90"
-          >
+            className="flex-1 bg-primary hover:bg-primary/90">
+            
             {currentConfig.allowText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
-    </AlertDialog>
-  );
+    </AlertDialog>);
+
 };
 
 export default PermissionDialog;

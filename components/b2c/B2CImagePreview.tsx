@@ -13,7 +13,7 @@ interface B2CImagePreviewProps {
 const B2CImagePreview: React.FC<B2CImagePreviewProps> = ({
   imageData,
   onRetake,
-  onContinue,
+  onContinue
 }) => {
   return (
     <Card>
@@ -24,8 +24,8 @@ const B2CImagePreview: React.FC<B2CImagePreviewProps> = ({
         <img
           src={imageData}
           alt="Captured"
-          className="w-full max-w-md mx-auto rounded-lg"
-        />
+          className="w-full max-w-md mx-auto rounded-lg" />
+        
         <div className="flex gap-2 mt-4 justify-center">
           <Button variant="outline" onClick={onRetake}>
             Retake
@@ -35,8 +35,8 @@ const B2CImagePreview: React.FC<B2CImagePreviewProps> = ({
           </Button>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default B2CImagePreview;

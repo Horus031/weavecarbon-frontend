@@ -33,7 +33,7 @@
     "subtitle": "Everything you need to track, reduce, and report your carbon emissions",
     "carbonProxy": {
       "title": "Carbon Proxy Engine",
-      "desc": "Calculate CO₂e for products with incomplete supply chain data using proxy emission factors."
+      "desc": "Calculate COâ‚‚e for products with incomplete supply chain data using proxy emission factors."
     },
     "circularHub": {
       "title": "Circular Hub",
@@ -81,7 +81,7 @@
     },
     "step2": {
       "title": "Calculate Emissions",
-      "desc": "Our engine computes accurate CO₂e using industry factors",
+      "desc": "Our engine computes accurate COâ‚‚e using industry factors",
       "item1": "Material library",
       "item2": "Transport mapping",
       "item3": "Batch upload"
@@ -106,7 +106,7 @@
     "title": "Making Real Impact",
     "subtitle": "Measurable progress towards a sustainable fashion industry",
     "co2Tracked": {
-      "title": "CO₂e Tracked",
+      "title": "COâ‚‚e Tracked",
       "description": "Carbon footprints calculated monthly"
     },
     "brands": "Brands",
@@ -119,7 +119,7 @@
       "description": "Through Circular Hub network"
     },
     "carbon": {
-      "title": "kg CO₂e",
+      "title": "kg COâ‚‚e",
       "description": "Total emissions documented"
     }
   },
@@ -144,15 +144,15 @@
   "calculator": {
     "badge": "Carbon Proxy Engine",
     "title": "Carbon Calculator",
-    "subtitle": "Calculate CO₂e emissions for your fashion products",
+    "subtitle": "Calculate COâ‚‚e emissions for your fashion products",
     "description": "Using proxy emission factors for incomplete supply chain data",
     "productWeight": "Product Weight (kg)",
     "materialType": "Material Type",
     "shippingRoute": "Shipping Route",
     "calculate": "Calculate Emissions",
-    "result": "Estimated CO₂e Emissions",
+    "result": "Estimated COâ‚‚e Emissions",
     "instruction": "Fill in the form and click calculate to see your emissions breakdown",
-    "kgCO2e": "kg CO₂e",
+    "kgCO2e": "kg COâ‚‚e",
     "breakdown": "Emissions Breakdown",
     "material": "Material Production",
     "manufacturing": "Manufacturing",
@@ -170,11 +170,11 @@
       "organicCotton": "Organic Cotton"
     },
     "routes": {
-      "vnEu": "Vietnam → EU (Rotterdam)",
-      "vnUs": "Vietnam → USA (Los Angeles)",
-      "vnJp": "Vietnam → Japan (Tokyo)",
+      "vnEu": "Vietnam â†’ EU (Rotterdam)",
+      "vnUs": "Vietnam â†’ USA (Los Angeles)",
+      "vnJp": "Vietnam â†’ Japan (Tokyo)",
       "vnDomestic": "Vietnam Domestic",
-      "vnKr": "Vietnam → South Korea"
+      "vnKr": "Vietnam â†’ South Korea"
     },
     "proxyNote": "Using proxy emission factors for incomplete supply chain data"
   },
@@ -242,7 +242,7 @@
     "settings": "Settings",
     "signOut": "Sign Out",
     "noCompany": "No company",
-    "totalCO2": "Total CO₂ Emissions",
+    "totalCO2": "Total COâ‚‚ Emissions",
     "thisMonth": "this month",
     "skuTracking": "SKUs Tracking",
     "activeProducts": "active products",
@@ -263,8 +263,8 @@
     "pageTitle": "Overview",
     "pageSubtitle": "Overview of your carbon tracking",
     "stats": {
-      "totalCO2": "Total CO₂ Emissions",
-      "kgCO2eThisMonth": "kg CO₂e this month",
+      "totalCO2": "Total COâ‚‚ Emissions",
+      "kgCO2eThisMonth": "kg COâ‚‚e this month",
       "skuTracking": "SKUs Tracking",
       "activeProducts": "active products",
       "exportReadiness": "Export Readiness",
@@ -350,7 +350,7 @@
     "notFound": "No products found",
     "tryChangeFilter": "Try changing filters or create a new product",
     "createNew": "Create New Product",
-    "co2PerUnit": "CO₂e / unit",
+    "co2PerUnit": "COâ‚‚e / unit",
     "createQR": "Create QR Code",
     "showing": "Showing {filtered} / {total} products",
     "showingRange": "Showing {from}-{to} / {total} products",
@@ -423,14 +423,14 @@
     }
   },
   "productDetail": {
-    "draftWarning": "Incomplete data – carbon results are preliminary estimates. Please supplement data for more accurate results.",
+    "draftWarning": "Incomplete data - carbon results are preliminary estimates. Please supplement data for more accurate results.",
     "carbonFootprint": {
       "title": "Total Carbon Footprint",
       "preliminary": "Preliminary",
       "preliminaryNotice": "These are preliminary estimates. Update data for more accurate results.",
       "preliminaryEstimate": "Preliminary estimate",
       "totalEmissions": "Total emissions",
-      "perProduct": "kg CO₂e / product",
+      "perProduct": "kg COâ‚‚e / product",
       "estimatedRange": "Estimated range: ",
       "confidenceLabel": "Data confidence",
       "highConfidence": "Data from official, verified sources",
@@ -452,7 +452,7 @@
       "material": "Material",
       "ratio": "Ratio",
       "emissionFactor": "EF",
-      "emissionFactorTooltip": "Emission Factor (kg CO₂e/kg)",
+      "emissionFactorTooltip": "Emission Factor (kg COâ‚‚e/kg)",
       "source": "Source",
       "sourceLabel": "Source: ",
       "verified": "Verified",
@@ -528,7 +528,8 @@
       "impact": "Impact if Missing",
       "actionGuide": "Implementation Guide",
       "viewGuide": "View Guide",
-      "learnMore": "Learn More"
+      "learnMore": "Learn More",
+      "alreadyAvailable": "Available"
     },
     "documents": {
       "title": "Certificates & Documents",
@@ -536,10 +537,25 @@
       "requiredDocs": "Required Documents",
       "recommendedDocs": "Recommended Documents",
       "requiredComplete": "{completed}/{total} required",
+      "uploadManagerTitle": "Upload Manager",
+      "uploadManagerDesc": "Upload files in one place and assign them to the correct compliance document.",
+      "uploadManagerSelectLabel": "Document type",
+      "uploadManagerSelectPlaceholder": "Select document",
+      "uploadManagerSearchLabel": "Search documents",
+      "uploadManagerSearchPlaceholder": "Enter document name...",
+      "uploadManagerMarketFilterLabel": "Filter by market",
+      "uploadManagerMarketFilterAll": "All markets",
+      "uploadManagerNoResults": "No matching documents",
+      "uploadSelected": "Upload selected",
+      "uploadedCount": "{count} uploaded",
+      "missingCount": "{count} missing",
+      "pendingUpload": "Pending upload",
+      "uploadManagedAtCertificates": "Uploads are managed centrally in the Certificates & Documents section on /export.",
       "uploadedBy": "Uploaded by {user}",
       "validUntil": "Valid until {date}",
       "validTo": "Valid until {date}",
       "upload": "Upload",
+      "uploadMore": "Upload more",
       "view": "View",
       "download": "Download",
       "remove": "Remove"
@@ -586,7 +602,7 @@
   },
   "reports": {
     "title": "Reports & Data Export",
-    "subtitle": "Create reports or export CSV/Excel data with full metadata",
+    "subtitle": "Create reports or export Excel (XLSX) data with full metadata",
     "fullReport": "Full Report",
     "stats": {
       "products": "Products",
@@ -655,6 +671,7 @@
     "ready": "Ready",
     "download": "Download",
     "quickExport": "Quick export by type",
+    "exporting": "Exporting...",
     "selectFormat": "Select export format",
     "selectFormatDesc": "Choose data type and file format",
     "formats": {
@@ -692,7 +709,7 @@
     "exportAll": "Export All",
     "exportHistory": "Export History",
     "records": "{count} records",
-    "mobileNote": "💡 Excel/CSV files are best viewed on desktop",
+    "mobileNote": "ðŸ’¡ Excel/CSV files are best viewed on desktop",
     "toasts": {
       "success": "Exported {count} {type} to {format}",
       "analyticsSuccess": "Exported analytics summary report",
@@ -766,6 +783,12 @@
       "fullNamePlaceholder": "John Doe",
       "email": "Email",
       "emailPlaceholder": "email@company.com",
+      "password": "Password",
+      "passwordPlaceholder": "Enter password or click Generate",
+      "generatePassword": "Generate",
+      "passwordHint": "Minimum 8 characters. Leave empty to auto-generate a random password.",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "passwordCopied": "Password copied to clipboard",
       "role": "Role",
       "roleDescription": "Member: Can view and edit data. Viewer: Can only view data.",
       "member": "Member",
@@ -827,17 +850,17 @@
     "subtitle": "Track all shipments on the world map",
     "mapTitle": "Global Shipping Map",
     "routeDetails": "Route Details",
-    "backToMap": "← Back to Global Map",
+    "backToMap": "â† Back to Global Map",
     "clickInstruction": "Click on product to view route details",
     "new": "New",
     "qrCodeTitle": "Generate QR Code",
-    "viewRouteDetails": "View Route Details",
     "viewTrackingDetails": "View Shipment Tracking Details",
     "statuses": {
       "delivered": "Delivered",
       "inTransit": "In Transit",
       "pending": "Pending",
-      "totalCO2": "Total kg CO₂e",
+      "cancelled": "Cancelled",
+      "totalCO2": "Total kg COâ‚‚e",
       "totalShipments": "Total Shipments"
     },
     "pagination": {
@@ -855,6 +878,7 @@
     "filterInTransit": "In Transit",
     "filterPending": "Pending",
     "filterDelivered": "Delivered",
+    "filterCancelled": "Cancelled",
     "progress": "Progress",
     "selectShipment": "Select a shipment to view details",
     "currentLocation": "Current Location",
@@ -872,6 +896,7 @@
       "delivered": "Delivered",
       "inTransit": "In Transit",
       "pending": "Pending",
+      "cancelled": "Cancelled",
       "unknown": "Unknown"
     }
   },
@@ -894,14 +919,14 @@
     "distance": "Distance (km)",
     "distancePlaceholder": "Enter distance",
     "locationPermissionHint": "Enable location to auto-calculate distance",
-    "legCO2": "CO₂ for this leg",
+    "legCO2": "COâ‚‚ for this leg",
     "emissionFactor": "Factor",
     "addLeg": "Add Transport Leg",
     "resultsTitle": "Preliminary Results",
     "resultsDescription": "Updates in real time",
     "totalDistance": "Total Distance",
     "totalLegs": "Number of Legs",
-    "estimatedCO2": "Estimated CO₂",
+    "estimatedCO2": "Estimated COâ‚‚",
     "highConfidence": "High confidence",
     "estimate": "Estimate",
     "breakdown": "Breakdown by leg:",
@@ -934,9 +959,9 @@
     },
     "csvTypeReal": "Real",
     "totalRecords": "Total Records",
-    "materialsLabel": "Materials (kg CO₂)",
-    "manufacturingLabel": "Manufacturing (kg CO₂)",
-    "transportLabel": "Transport (kg CO₂)",
+    "materialsLabel": "Materials (kg COâ‚‚)",
+    "manufacturingLabel": "Manufacturing (kg COâ‚‚)",
+    "transportLabel": "Transport (kg COâ‚‚)",
     "filterAll": "All",
     "filterReal": "Real",
     "columnProduct": "Product",
@@ -944,7 +969,7 @@
     "columnManufacturing": "Manufacturing",
     "columnTransport": "Transport",
     "columnPackaging": "Packaging",
-    "columnTotalCO2": "Total CO₂",
+    "columnTotalCO2": "Total COâ‚‚",
     "columnVersion": "Version",
     "columnCreatedDate": "Created Date",
     "columnCreatedBy": "Created By",
@@ -965,7 +990,7 @@
     "documentedSource": "Documented",
     "estimatedSource": "Estimated",
     "carbonFootprintTitle": "Carbon Footprint",
-    "perProductUnit": "kg CO₂e / product",
+    "perProductUnit": "kg COâ‚‚e / product",
     "materialsLabel": "Materials",
     "productionLabel": "Manufacturing",
     "transportLabel": "Transport",

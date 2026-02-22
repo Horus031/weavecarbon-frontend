@@ -7,8 +7,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  DialogDescription } from
+"@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,8 +20,8 @@ import {
   Shield,
   Copy,
   CheckCircle2,
-  Printer,
-} from "lucide-react";
+  Printer } from
+"lucide-react";
 import { useToast } from "@/hooks/useToast";
 
 export interface ProductQRCodeProps {
@@ -41,15 +41,15 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
   sku,
   open,
   isOpen,
-  onClose,
+  onClose
 }) => {
-  // Support both 'open' and 'isOpen' props, and 'productCode' or 'sku'
+
   const isDialogOpen = open ?? isOpen ?? false;
   const code = productCode ?? sku ?? productId;
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  // Generate the public URL for the Green Passport
+
   const passportUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
     return `${window.location.origin}/passport?id=${productId}`;
@@ -62,14 +62,14 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
       setCopied(true);
       toast({
         title: "Đã sao chép",
-        description: "Link Green Passport đã được sao chép vào clipboard",
+        description: "Link Green Passport đã được sao chép vào clipboard"
       });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast({
         title: "Lỗi",
         description: "Không thể sao chép link",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -88,16 +88,16 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
       canvas.height = 500;
 
       if (ctx) {
-        // White background
+
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw QR code centered
+
         const qrSize = 300;
         const qrX = (canvas.width - qrSize) / 2;
         ctx.drawImage(img, qrX, 30, qrSize, qrSize);
 
-        // Add text
+
         ctx.fillStyle = "#166534";
         ctx.font = "bold 18px sans-serif";
         ctx.textAlign = "center";
@@ -114,7 +114,7 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
         ctx.fillText(
           "Quét mã để xem thông tin sản phẩm",
           canvas.width / 2,
-          450,
+          450
         );
         ctx.fillText("WeaveCarbon", canvas.width / 2, 480);
       }
@@ -127,13 +127,13 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
 
       toast({
         title: "Đã tải xuống",
-        description: "QR Code đã được lưu thành công",
+        description: "QR Code đã được lưu thành công"
       });
     };
 
     img.src =
-      "data:image/svg+xml;base64," +
-      btoa(unescape(encodeURIComponent(svgData)));
+    "data:image/svg+xml;base64," +
+    btoa(unescape(encodeURIComponent(svgData)));
   };
 
   const handlePrint = () => {
@@ -215,10 +215,10 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
         await navigator.share({
           title: `Green Passport - ${productName}`,
           text: `Xem thông tin carbon footprint của sản phẩm ${productName}`,
-          url: passportUrl,
+          url: passportUrl
         });
       } catch {
-        // User cancelled or error
+
       }
     } else {
       handleCopyLink();
@@ -240,7 +240,7 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* QR Code Display */}
+          
           <Card className="bg-linear-to-br from-green-50 to-emerald-50">
             <CardContent className="p-6 flex flex-col items-center">
               <div className="bg-white p-4 rounded-xl shadow-sm">
@@ -255,9 +255,9 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
                     src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2322c55e'%3E%3Cpath d='M17,8C8,10,5.9,16.17,3.82,21.34L5.71,22l1-2.3A4.49,4.49,0,0,0,8,20c4,0,8.35-5.65,9-8,1-5-2-8-2-8Z'/%3E%3C/svg%3E",
                     height: 30,
                     width: 30,
-                    excavate: true,
-                  }}
-                />
+                    excavate: true
+                  }} />
+                
               </div>
 
               <div className="mt-4 text-center">
@@ -271,7 +271,7 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
             </CardContent>
           </Card>
 
-          {/* Actions */}
+          
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={handleDownload}>
               <Download className="w-4 h-4 mr-2" />
@@ -282,11 +282,11 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
               In
             </Button>
             <Button variant="outline" onClick={handleCopyLink}>
-              {copied ? (
-                <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-              ) : (
-                <Copy className="w-4 h-4 mr-2" />
-              )}
+              {copied ?
+              <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" /> :
+
+              <Copy className="w-4 h-4 mr-2" />
+              }
               {copied ? "Đã sao chép" : "Sao chép link"}
             </Button>
             <Button variant="outline" onClick={handleShare}>
@@ -295,7 +295,7 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
             </Button>
           </div>
 
-          {/* Info */}
+          
           <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
             <p className="flex items-start gap-2">
               <Leaf className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
@@ -314,8 +314,8 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
           </div>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 };
 
 export default ProductQRCode;

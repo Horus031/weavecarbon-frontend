@@ -70,71 +70,71 @@ const B2CClient: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      
       <B2CHeader
         profile={profile}
         onSignOut={handleSignOut}
         onNavigateBack={() => router.back()}
-        onNavigateHome={() => router.push("/")}
-      />
+        onNavigateHome={() => router.push("/")} />
+      
 
-      {/* Main Content */}
+      
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Welcome Section */}
+        
         <B2CWelcome profile={profile} />
 
-        {/* Quick Actions - Camera & Scan */}
+        
         <B2CQuickActions
           onCameraClick={handleCameraClick}
-          onLocationClick={handleLocationClick}
-        />
+          onLocationClick={handleLocationClick} />
+        
 
-        {/* Stats Grid */}
+        
         <B2CStatsGrid profile={profile} />
 
-        {/* Donate Action */}
+        
         <B2CDonateCard onStartDonate={handleCameraClick} />
 
-        {/* Recent Activity */}
+        
         <B2CRecentActivity activities={activities} />
 
-        {/* Captured Image Preview */}
-        {capturedImage && (
-          <B2CImagePreview
-            imageData={capturedImage}
-            onRetake={() => setCapturedImage(null)}
-            onContinue={() => {
-              setCapturedImage(null);
-              toast.success("Image captured successfully.");
-            }}
-          />
-        )}
+        
+        {capturedImage &&
+        <B2CImagePreview
+          imageData={capturedImage}
+          onRetake={() => setCapturedImage(null)}
+          onContinue={() => {
+            setCapturedImage(null);
+            toast.success("Image captured successfully.");
+          }} />
+
+        }
       </main>
 
-      {/* Permission Dialogs */}
+      
       <PermissionDialog
         open={showCameraPermission}
         onOpenChange={setShowCameraPermission}
         type="camera"
         onAllow={handleCameraPermissionAllow}
-        onDeny={() => setShowCameraPermission(false)}
-      />
+        onDeny={() => setShowCameraPermission(false)} />
+      
 
       <PermissionDialog
         open={showLocationPermission}
         onOpenChange={setShowLocationPermission}
         type="location"
         onAllow={handleLocationPermissionAllow}
-        onDeny={() => setShowLocationPermission(false)}
-      />
-    </div>
-  );
+        onDeny={() => setShowLocationPermission(false)} />
+      
+    </div>);
+
 };
 
 export default B2CClient;

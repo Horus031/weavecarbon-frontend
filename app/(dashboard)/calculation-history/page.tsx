@@ -9,7 +9,7 @@ interface CalculationHistoryPageProps {
 }
 
 const CalculationHistoryPage = async ({
-  searchParams,
+  searchParams
 }: CalculationHistoryPageProps) => {
   const params = await searchParams;
   const productId = params?.productId || null;
@@ -17,14 +17,14 @@ const CalculationHistoryPage = async ({
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      }
-    >
+      }>
+      
       <CalculationHistoryClient productId={productId} />
-    </Suspense>
-  );
+    </Suspense>);
+
 };
 
 export default CalculationHistoryPage;

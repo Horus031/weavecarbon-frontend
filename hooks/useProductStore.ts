@@ -1,10 +1,10 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+
 import { useState, useEffect } from "react";
 import type {
   ProductData,
   TransportData,
-  CalculationHistory,
-} from "@/types/productData";
+  CalculationHistory } from
+"@/types/productData";
 
 const PRODUCTS_KEY = "weavecarbon_products";
 const TRANSPORTS_KEY = "weavecarbon_transports";
@@ -16,7 +16,7 @@ export function useProductStore() {
   const [history, setHistory] = useState<CalculationHistory[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load data from localStorage on mount
+
   useEffect(() => {
     const storedProducts = localStorage.getItem(PRODUCTS_KEY);
     const storedTransports = localStorage.getItem(TRANSPORTS_KEY);
@@ -32,7 +32,7 @@ export function useProductStore() {
     setIsLoaded(true);
   }, []);
 
-  // Save user data to localStorage
+
   const saveProducts = (allProducts: ProductData[]) => {
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(allProducts));
     setProducts(allProducts);
@@ -49,42 +49,42 @@ export function useProductStore() {
   };
 
   const addProduct = (
-    product: Omit<ProductData, "id" | "createdAt">,
-    userEmail: string,
-  ) => {
+  product: Omit<ProductData, "id" | "createdAt">,
+  userEmail: string) =>
+  {
     const newProduct: ProductData = {
       ...product,
       id: `product-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      createdBy: userEmail,
+      createdBy: userEmail
     };
     saveProducts([...products, newProduct]);
     return newProduct;
   };
 
   const addTransport = (
-    transport: Omit<TransportData, "id" | "createdAt">,
-    userEmail: string,
-  ) => {
+  transport: Omit<TransportData, "id" | "createdAt">,
+  userEmail: string) =>
+  {
     const newTransport: TransportData = {
       ...transport,
       id: `transport-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      createdBy: userEmail,
+      createdBy: userEmail
     };
     saveTransports([...transports, newTransport]);
     return newTransport;
   };
 
   const addHistory = (
-    calc: Omit<CalculationHistory, "id" | "createdAt">,
-    userEmail: string,
-  ) => {
+  calc: Omit<CalculationHistory, "id" | "createdAt">,
+  userEmail: string) =>
+  {
     const newCalc: CalculationHistory = {
       ...calc,
       id: `calc-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      createdBy: userEmail,
+      createdBy: userEmail
     };
     saveHistory([...history, newCalc]);
     return newCalc;
@@ -93,9 +93,9 @@ export function useProductStore() {
   const getProduct = (id: string) => products.find((p) => p.id === id);
   const getTransport = (id: string) => transports.find((t) => t.id === id);
   const getTransportByProduct = (productId: string) =>
-    transports.find((t) => t.productId === productId);
+  transports.find((t) => t.productId === productId);
   const getHistoryByProduct = (productId: string) =>
-    history.filter((h) => h.productId === productId);
+  history.filter((h) => h.productId === productId);
 
   return {
     products,
@@ -108,6 +108,6 @@ export function useProductStore() {
     getProduct,
     getTransport,
     getTransportByProduct,
-    getHistoryByProduct,
+    getHistoryByProduct
   };
 }

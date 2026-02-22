@@ -12,26 +12,26 @@ import {
   CheckCircle2,
   Info,
   TrendingDown,
-  Sparkles,
-} from "lucide-react";
+  Sparkles } from
+"lucide-react";
 import {
   ProductAssessmentData,
   CarbonAssessmentResult,
   PRODUCTION_PROCESSES,
   ENERGY_SOURCES,
-  TRANSPORT_MODES,
-} from "./types";
+  TRANSPORT_MODES } from
+"./types";
 import {
   getMaterialById,
-  MATERIAL_CATALOG,
-} from "../materialCatalog";
+  MATERIAL_CATALOG } from
+"../materialCatalog";
 
 interface Step5CarbonResultProps {
   data: ProductAssessmentData;
   onChange: (updates: Partial<ProductAssessmentData>) => void;
 }
 
-// Extended material input with catalog support
+
 interface ExtendedMaterialInput {
   id: string;
   materialType: string;
@@ -44,49 +44,49 @@ interface ExtendedMaterialInput {
   confidenceScore?: number;
 }
 
-// Carbon calculation engine with catalog support
+
 const calculateCarbonAssessment = (
-  data: ProductAssessmentData,
-): CarbonAssessmentResult => {
+data: ProductAssessmentData)
+: CarbonAssessmentResult => {
   const proxyNotes: string[] = [];
   let confidenceLevel: "high" | "medium" | "low" = "high";
 
-  const weightKg = (data.weightPerUnit || 0) / 1000; // Convert gram to kg
+  const weightKg = (data.weightPerUnit || 0) / 1000;
   const quantity = data.quantity || 1;
 
-  // 1. Materials CO2 - Updated to use catalog
+
   let materialsCO2 = 0;
   data.materials.forEach((mat) => {
     const extMat = mat as ExtendedMaterialInput;
 
-    // Try to get catalog material
-    let co2Factor = 6.0; // Default proxy
-    const catalogMat = extMat.catalogMaterialId
-      ? getMaterialById(extMat.catalogMaterialId)
-      : MATERIAL_CATALOG.find((m) => m.id === mat.materialType);
+
+    let co2Factor = 6.0;
+    const catalogMat = extMat.catalogMaterialId ?
+    getMaterialById(extMat.catalogMaterialId) :
+    MATERIAL_CATALOG.find((m) => m.id === mat.materialType);
 
     if (catalogMat) {
       co2Factor = catalogMat.co2Factor;
 
-      // Check data quality
+
       if (catalogMat.dataQualityDefault === "proxy") {
         proxyNotes.push(
-          `Vật liệu "${catalogMat.displayNameVi}" sử dụng hệ số proxy`,
+          `Vật liệu "${catalogMat.displayNameVi}" sử dụng hệ số proxy`
         );
         confidenceLevel =
-          confidenceLevel === "high" ? "medium" : confidenceLevel;
+        confidenceLevel === "high" ? "medium" : confidenceLevel;
       }
     } else {
       proxyNotes.push(
-        `Vật liệu "${extMat.customName || mat.materialType}" không trong danh mục - dùng hệ số proxy`,
+        `Vật liệu "${extMat.customName || mat.materialType}" không trong danh mục - dùng hệ số proxy`
       );
       confidenceLevel = confidenceLevel === "high" ? "medium" : confidenceLevel;
     }
 
-    // User source affects confidence
+
     if (extMat.userSource === "user_other") {
       proxyNotes.push(
-        `Vật liệu tùy chỉnh "${extMat.customName}" - độ tin cậy thấp`,
+        `Vật liệu tùy chỉnh "${extMat.customName}" - độ tin cậy thấp`
       );
       confidenceLevel = "low";
     } else if (extMat.userSource === "ai_suggested") {
@@ -102,7 +102,7 @@ const calculateCarbonAssessment = (
     }
   });
 
-  // 2. Production CO2
+
   let productionCO2 = 0;
   if (data.productionProcesses && data.productionProcesses.length > 0) {
     data.productionProcesses.forEach((proc) => {
@@ -112,62 +112,62 @@ const calculateCarbonAssessment = (
       }
     });
   } else {
-    // Use proxy
+
     productionCO2 = weightKg * 1.5;
     proxyNotes.push(
-      "Không có thông tin quy trình - dùng hệ số trung bình ngành",
+      "Không có thông tin quy trình - dùng hệ số trung bình ngành"
     );
     confidenceLevel = "low";
   }
 
-  // 3. Energy CO2
+
   let energyCO2 = 0;
   if (data.energySources && data.energySources.length > 0) {
     data.energySources.forEach((energy) => {
       const energyInfo = ENERGY_SOURCES.find((e) => e.value === energy.source);
       if (energyInfo) {
-        // Assume 2 kWh per kg of product for manufacturing
+
         const kwhPerUnit = weightKg * 2;
         energyCO2 +=
-          kwhPerUnit * energyInfo.co2Factor * (energy.percentage / 100);
+        kwhPerUnit * energyInfo.co2Factor * (energy.percentage / 100);
       }
     });
   } else {
-    // Use proxy - grid electricity
+
     energyCO2 = weightKg * 2 * 1.0;
     proxyNotes.push("Không có thông tin năng lượng - dùng hệ số điện lưới");
     confidenceLevel = confidenceLevel === "high" ? "medium" : "low";
   }
 
-  // 4. Transport CO2
+
   let transportCO2 = 0;
   if (data.transportLegs && data.transportLegs.length > 0) {
     data.transportLegs.forEach((leg) => {
       const modeInfo = TRANSPORT_MODES.find((m) => m.value === leg.mode);
       if (modeInfo && leg.estimatedDistance) {
-        // CO2 = weight(tonnes) × distance(km) × factor
+
         const weightTonnes = weightKg / 1000;
         transportCO2 +=
-          weightTonnes * leg.estimatedDistance * modeInfo.co2Factor;
+        weightTonnes * leg.estimatedDistance * modeInfo.co2Factor;
       }
     });
   } else if (data.estimatedTotalDistance) {
-    // Use proxy with sea freight
+
     const weightTonnes = weightKg / 1000;
     transportCO2 = weightTonnes * data.estimatedTotalDistance * 0.016;
     proxyNotes.push("Ước tính vận chuyển bằng đường biển");
   }
 
-  // Total per product
+
   const totalPerProduct =
-    materialsCO2 + productionCO2 + energyCO2 + transportCO2;
+  materialsCO2 + productionCO2 + energyCO2 + transportCO2;
 
-  // Scope breakdown
-  const scope1 = productionCO2 * 0.3; // Direct emissions from production
-  const scope2 = energyCO2; // Purchased electricity
-  const scope3 = materialsCO2 + transportCO2 + productionCO2 * 0.7; // Supply chain
 
-  // Remove duplicate proxy notes
+  const scope1 = productionCO2 * 0.3;
+  const scope2 = energyCO2;
+  const scope3 = materialsCO2 + transportCO2 + productionCO2 * 0.7;
+
+
   const uniqueProxyNotes = [...new Set(proxyNotes)];
 
   return {
@@ -176,90 +176,99 @@ const calculateCarbonAssessment = (
       production: Math.round(productionCO2 * 1000) / 1000,
       energy: Math.round(energyCO2 * 1000) / 1000,
       transport: Math.round(transportCO2 * 1000) / 1000,
-      total: Math.round(totalPerProduct * 1000) / 1000,
+      total: Math.round(totalPerProduct * 1000) / 1000
     },
     totalBatch: {
       materials: Math.round(materialsCO2 * quantity * 100) / 100,
       production: Math.round(productionCO2 * quantity * 100) / 100,
       energy: Math.round(energyCO2 * quantity * 100) / 100,
       transport: Math.round(transportCO2 * quantity * 100) / 100,
-      total: Math.round(totalPerProduct * quantity * 100) / 100,
+      total: Math.round(totalPerProduct * quantity * 100) / 100
     },
     confidenceLevel,
     proxyUsed: uniqueProxyNotes.length > 0,
     proxyNotes: uniqueProxyNotes,
     scope1: Math.round(scope1 * quantity * 100) / 100,
     scope2: Math.round(scope2 * quantity * 100) / 100,
-    scope3: Math.round(scope3 * quantity * 100) / 100,
+    scope3: Math.round(scope3 * quantity * 100) / 100
   };
 };
 const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
   data,
-  onChange,
+  onChange
 }) => {
-  // Calculate carbon assessment
+  const currentSerialized = useMemo(
+    () => JSON.stringify(data.carbonResults ?? null),
+    [data.carbonResults]
+  );
+
+
   const result = useMemo(() => calculateCarbonAssessment(data), [data]);
+  const resultSerialized = useMemo(() => JSON.stringify(result), [result]);
 
-  // Update parent with results
+
   React.useEffect(() => {
+    if (currentSerialized === resultSerialized) {
+      return;
+    }
     onChange({ carbonResults: result });
-  }, [onChange, result]);
+  }, [currentSerialized, onChange, result, resultSerialized]);
 
-  // Breakdown items for visualization
+
   const breakdownItems = [
-    {
-      label: "Nguyên vật liệu",
-      icon: Leaf,
-      value: result.perProduct.materials,
-      total: result.totalBatch.materials,
-      color: "bg-green-500",
-      percentage: (result.perProduct.materials / result.perProduct.total) * 100,
-    },
-    {
-      label: "Sản xuất",
-      icon: Factory,
-      value: result.perProduct.production,
-      total: result.totalBatch.production,
-      color: "bg-blue-500",
-      percentage:
-        (result.perProduct.production / result.perProduct.total) * 100,
-    },
-    {
-      label: "Năng lượng",
-      icon: Zap,
-      value: result.perProduct.energy,
-      total: result.totalBatch.energy,
-      color: "bg-yellow-500",
-      percentage: (result.perProduct.energy / result.perProduct.total) * 100,
-    },
-    {
-      label: "Vận chuyển",
-      icon: Truck,
-      value: result.perProduct.transport,
-      total: result.totalBatch.transport,
-      color: "bg-purple-500",
-      percentage: (result.perProduct.transport / result.perProduct.total) * 100,
-    },
-  ];
+  {
+    label: "Nguyên vật liệu",
+    icon: Leaf,
+    value: result.perProduct.materials,
+    total: result.totalBatch.materials,
+    color: "bg-green-500",
+    percentage: result.perProduct.materials / result.perProduct.total * 100
+  },
+  {
+    label: "Sản xuất",
+    icon: Factory,
+    value: result.perProduct.production,
+    total: result.totalBatch.production,
+    color: "bg-blue-500",
+    percentage:
+    result.perProduct.production / result.perProduct.total * 100
+  },
+  {
+    label: "Năng lượng",
+    icon: Zap,
+    value: result.perProduct.energy,
+    total: result.totalBatch.energy,
+    color: "bg-yellow-500",
+    percentage: result.perProduct.energy / result.perProduct.total * 100
+  },
+  {
+    label: "Vận chuyển",
+    icon: Truck,
+    value: result.perProduct.transport,
+    total: result.totalBatch.transport,
+    color: "bg-purple-500",
+    percentage: result.perProduct.transport / result.perProduct.total * 100
+  }];
 
-  // Confidence badge style
+
+
   const confidenceBadgeStyle = {
     high: "bg-green-500/10 text-green-600 border-green-500/30",
     medium: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
-    low: "bg-red-500/10 text-red-600 border-red-500/30",
+    low: "bg-red-500/10 text-red-600 border-red-500/30"
   };
 
   const confidenceLabel = {
     high: "Cao",
     medium: "Trung bình",
-    low: "Thấp",
+    low: "Thấp"
   };
 
   return (
     <div className="space-y-6">
-      {/* Main Results */}
+      
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Per Product */}
+        
         <Card className="border-primary/30">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
@@ -280,7 +289,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
           </CardContent>
         </Card>
 
-        {/* Total Batch */}
+        
         <Card className="border-2 border-primary">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -307,14 +316,14 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
         </Card>
       </div>
 
-      {/* Breakdown */}
+      
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg">Phân tích chi tiết</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {breakdownItems.map((item, index) => (
-            <div key={index} className="space-y-2">
+          {breakdownItems.map((item, index) =>
+          <div key={index} className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <item.icon className="w-4 h-4 text-muted-foreground" />
@@ -334,11 +343,11 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
                 Tổng lô: {item.total.toFixed(2)} kg CO₂e
               </p>
             </div>
-          ))}
+          )}
         </CardContent>
       </Card>
 
-      {/* Materials Source Breakdown */}
+      
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -350,15 +359,15 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
           <div className="space-y-3">
             {data.materials.map((mat, index) => {
               const extMat = mat as ExtendedMaterialInput;
-              const catalogMat = extMat.catalogMaterialId
-                ? getMaterialById(extMat.catalogMaterialId)
-                : MATERIAL_CATALOG.find((m) => m.id === mat.materialType);
+              const catalogMat = extMat.catalogMaterialId ?
+              getMaterialById(extMat.catalogMaterialId) :
+              MATERIAL_CATALOG.find((m) => m.id === mat.materialType);
 
               const materialName =
-                extMat.customName ||
-                catalogMat?.displayNameVi ||
-                mat.materialType ||
-                "Vật liệu";
+              extMat.customName ||
+              catalogMat?.displayNameVi ||
+              mat.materialType ||
+              "Vật liệu";
               const co2Factor = catalogMat?.co2Factor || 6.0;
               const weightKg = (data.weightPerUnit || 0) / 1000;
               const materialCO2 = weightKg * (mat.percentage / 100) * co2Factor;
@@ -366,35 +375,35 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
               return (
                 <div
                   key={mat.id || index}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                >
+                  className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                  
                   <div className="flex items-center gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">
                           {materialName}
                         </span>
-                        {extMat.userSource === "selected_catalog" && (
-                          <Badge variant="outline" className="text-xs">
+                        {extMat.userSource === "selected_catalog" &&
+                        <Badge variant="outline" className="text-xs">
                             <CheckCircle2 className="w-3 h-3 mr-1" />
                             Từ danh mục
                           </Badge>
-                        )}
-                        {extMat.userSource === "ai_suggested" && (
-                          <Badge variant="secondary" className="text-xs">
+                        }
+                        {extMat.userSource === "ai_suggested" &&
+                        <Badge variant="secondary" className="text-xs">
                             <Sparkles className="w-3 h-3 mr-1" />
                             AI gợi ý
                           </Badge>
-                        )}
-                        {extMat.userSource === "user_other" && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
-                          >
+                        }
+                        {extMat.userSource === "user_other" &&
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                          
                             <AlertCircle className="w-3 h-3 mr-1" />
                             Proxy
                           </Badge>
-                        )}
+                        }
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         {mat.percentage}% • Hệ số: {co2Factor} kg CO₂e/kg
@@ -409,15 +418,15 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
                       kg CO₂e
                     </span>
                   </div>
-                </div>
-              );
+                </div>);
+
             })}
           </div>
 
           {data.materials.some(
-            (m) => (m as ExtendedMaterialInput).userSource === "user_other",
-          ) && (
-            <div className="mt-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+            (m) => (m as ExtendedMaterialInput).userSource === "user_other"
+          ) &&
+          <div className="mt-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
                 <p className="text-xs text-yellow-700">
@@ -426,11 +435,11 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
                 </p>
               </div>
             </div>
-          )}
+          }
         </CardContent>
       </Card>
 
-      {/* Scope Breakdown */}
+      
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg">
@@ -460,61 +469,61 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
         </CardContent>
       </Card>
 
-      {/* Confidence Level */}
+      
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Độ tin cậy dữ liệu</CardTitle>
             <Badge
               variant="outline"
-              className={confidenceBadgeStyle[result.confidenceLevel]}
-            >
-              {result.confidenceLevel === "high" && (
-                <CheckCircle2 className="w-3 h-3 mr-1" />
-              )}
-              {result.confidenceLevel === "medium" && (
-                <Info className="w-3 h-3 mr-1" />
-              )}
-              {result.confidenceLevel === "low" && (
-                <AlertCircle className="w-3 h-3 mr-1" />
-              )}
+              className={confidenceBadgeStyle[result.confidenceLevel]}>
+              
+              {result.confidenceLevel === "high" &&
+              <CheckCircle2 className="w-3 h-3 mr-1" />
+              }
+              {result.confidenceLevel === "medium" &&
+              <Info className="w-3 h-3 mr-1" />
+              }
+              {result.confidenceLevel === "low" &&
+              <AlertCircle className="w-3 h-3 mr-1" />
+              }
               {confidenceLabel[result.confidenceLevel]}
             </Badge>
           </div>
         </CardHeader>
         <CardContent>
-          {result.proxyUsed ? (
-            <div className="space-y-2">
+          {result.proxyUsed ?
+          <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
                 Một số hệ số proxy đã được sử dụng:
               </p>
               <ul className="text-sm space-y-1">
-                {result.proxyNotes.map((note, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-yellow-600"
-                  >
+                {result.proxyNotes.map((note, i) =>
+              <li
+                key={i}
+                className="flex items-start gap-2 text-yellow-600">
+                
                     <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                     <span>{note}</span>
                   </li>
-                ))}
+              )}
               </ul>
               <p className="text-xs text-muted-foreground mt-4">
                 * Bổ sung thông tin chi tiết để tăng độ chính xác của kết quả
               </p>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-green-600">
+            </div> :
+
+          <div className="flex items-center gap-2 text-green-600">
               <CheckCircle2 className="w-5 h-5" />
               <span className="text-sm">
                 Đủ dữ liệu - Kết quả có độ tin cậy cao
               </span>
             </div>
-          )}
+          }
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Step5CarbonResult;

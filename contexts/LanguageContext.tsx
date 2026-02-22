@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+
 "use client";
 
 import React, {
@@ -7,8 +7,8 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  ReactNode,
-} from "react";
+  ReactNode } from
+"react";
 import { useRouter } from "next/navigation";
 import { type Locale, defaultLocale, locales } from "@/lib/i18n/config";
 
@@ -19,7 +19,7 @@ interface LanguageContextType {
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(
-  undefined,
+  undefined
 );
 
 function getCookie(name: string): string | undefined {
@@ -37,13 +37,13 @@ function setCookie(name: string, value: string, days: number = 365) {
   document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
 }
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
+export function LanguageProvider({ children }: {children: ReactNode;}) {
   const [locale, setLocaleState] = useState<Locale>(defaultLocale);
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  // Read locale from cookie on mount
+
   useEffect(() => {
     setMounted(true);
     const savedLocale = getCookie("locale") as Locale | undefined;
@@ -51,7 +51,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (savedLocale && locales.includes(savedLocale)) {
       setLocaleState(savedLocale);
     } else {
-      // Set default locale cookie if not exists
+
       setCookie("locale", defaultLocale);
     }
   }, []);
@@ -62,38 +62,38 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
       setIsLoading(true);
 
-      // Set cookie
+
       setCookie("locale", newLocale);
 
       setLocaleState(newLocale);
 
-      // Refresh the page to load new translations
+
       router.refresh();
 
-      // Small delay to show loading state
+
       setTimeout(() => {
         setIsLoading(false);
       }, 100);
     },
-    [router],
+    [router]
   );
 
-  // Prevent hydration mismatch
+
   if (!mounted) {
     return (
       <LanguageContext.Provider
-        value={{ locale: defaultLocale, setLocale: () => {}, isLoading: true }}
-      >
+        value={{ locale: defaultLocale, setLocale: () => {}, isLoading: true }}>
+        
         {children}
-      </LanguageContext.Provider>
-    );
+      </LanguageContext.Provider>);
+
   }
 
   return (
     <LanguageContext.Provider value={{ locale, setLocale, isLoading }}>
       {children}
-    </LanguageContext.Provider>
-  );
+    </LanguageContext.Provider>);
+
 }
 
 export function useLanguage() {

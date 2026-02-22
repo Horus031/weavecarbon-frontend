@@ -55,25 +55,25 @@ export const useUserProfile = (userEmail?: string) => {
       }
       return profile;
     },
-    [profile],
+    [profile]
   );
 
   const addPoints = useCallback(
     (points: number) => {
       if (profile) {
         return updateProfile({
-          circularPoints: profile.circularPoints + points,
+          circularPoints: profile.circularPoints + points
         });
       }
       return null;
     },
-    [profile, updateProfile],
+    [profile, updateProfile]
   );
 
   return {
     profile,
     isLoaded,
     updateProfile,
-    addPoints,
+    addPoints
   };
 };

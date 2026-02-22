@@ -8,140 +8,132 @@ import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MobileDataCardProps {
-  /** First line - main title (will be truncated with line-clamp-2) */
+
   title: string;
-  /** Second line - subtitle like SKU, ID */
+
   subtitle?: string;
-  /** Status badge */
-  status?: {
-    label: string;
-    className?: string;
-  };
-  /** Key metrics displayed in a row */
+
   metrics?: Array<{
     label?: string;
     value: string | number;
     unit?: string;
     className?: string;
   }>;
-  /** Optional tags/badges */
+
   tags?: string[];
-  /** Icon component */
+
   icon?: React.ReactNode;
-  /** Click handler */
+
   onClick?: () => void;
-  /** Actions (buttons) */
+
   actions?: React.ReactNode;
-  /** Custom className */
+
   className?: string;
-  /** Show chevron */
+
   showChevron?: boolean;
 }
 
 const MobileDataCard: React.FC<MobileDataCardProps> = ({
   title,
   subtitle,
-  status,
   metrics,
   tags,
   icon,
   onClick,
   actions,
   className,
-  showChevron = true,
+  showChevron = true
 }) => {
   return (
     <Card
       className={cn(
-        "hover:shadow-md transition-shadow",
+        "border border-slate-200 bg-white shadow-sm transition-all hover:border-slate-300 hover:shadow-md",
         onClick && "cursor-pointer active:scale-[0.99]",
-        className,
+        className
       )}
-      onClick={onClick}
-    >
+      onClick={onClick}>
+
       <CardContent className="p-4">
-        {/* Row 1: Title + Status */}
+        
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex items-start gap-3 min-w-0 flex-1">
-            {icon && (
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            {icon &&
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700">
                 {icon}
               </div>
-            )}
+            }
             <div className="min-w-0 flex-1">
-              <h3 className="font-medium text-sm line-clamp-2">{title}</h3>
-              {subtitle && (
-                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              <h3 className="line-clamp-2 text-sm font-medium text-slate-900">{title}</h3>
+              {subtitle &&
+              <p className="mt-0.5 truncate text-xs text-slate-600">
                   {subtitle}
                 </p>
-              )}
+              }
             </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {status && (
-              <Badge
-                className={cn("text-xs whitespace-nowrap", status.className)}
-              >
-                {status.label}
-              </Badge>
-            )}
           </div>
         </div>
 
-        {/* Tags */}
-        {tags && tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {tags.slice(0, 3).map((tag, i) => (
-              <Badge key={i} variant="outline" className="text-xs">
+        
+        {tags && tags.length > 0 &&
+        <div className="flex flex-wrap gap-1 mb-3">
+            {tags.slice(0, 3).map((tag, i) =>
+          <Badge
+            key={i}
+            variant="outline"
+            className="border-slate-200 bg-white text-xs text-slate-700">
+
                 {tag}
               </Badge>
-            ))}
-            {tags.length > 3 && (
-              <Badge variant="outline" className="text-xs">
+          )}
+            {tags.length > 3 &&
+          <Badge
+            variant="outline"
+            className="border-slate-200 bg-white text-xs text-slate-700">
+
                 +{tags.length - 3}
               </Badge>
-            )}
+          }
           </div>
-        )}
+        }
 
-        {/* Row 2: Key Metrics */}
-        {metrics && metrics.length > 0 && (
-          <div className="flex items-center gap-4 flex-wrap">
-            {metrics.map((metric, i) => (
-              <div key={i} className="flex items-baseline gap-1">
+        
+        {metrics && metrics.length > 0 &&
+        <div className="flex items-center gap-4 flex-wrap">
+            {metrics.map((metric, i) =>
+          <div key={i} className="flex items-baseline gap-1">
                 <span className={cn("font-semibold text-sm", metric.className)}>
                   {metric.value}
                 </span>
-                {metric.unit && (
-                  <span className="text-xs text-muted-foreground">
+                {metric.unit &&
+            <span className="text-xs text-slate-600">
                     {metric.unit}
                   </span>
-                )}
-                {metric.label && (
-                  <span className="text-xs text-muted-foreground">
+            }
+                {metric.label &&
+            <span className="text-xs text-slate-600">
                     {metric.label}
                   </span>
-                )}
+            }
               </div>
-            ))}
+          )}
           </div>
-        )}
+        }
 
-        {/* Row 3: Actions */}
-        {(actions || showChevron) && (
-          <div className="flex items-center justify-between mt-3 pt-3 border-t">
+        
+        {(actions || showChevron) &&
+        <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
             <div className="flex items-center gap-2">{actions}</div>
-            {showChevron && onClick && (
-              <Button variant="ghost" size="sm" className="h-8 px-2">
-                <span className="text-xs text-muted-foreground mr-1">Xem</span>
+            {showChevron && onClick &&
+          <Button variant="ghost" size="sm" className="h-8 px-2">
+                <span className="mr-1 text-xs text-slate-600">Xem</span>
                 <ChevronRight className="w-4 h-4" />
               </Button>
-            )}
+          }
           </div>
-        )}
+        }
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default MobileDataCard;

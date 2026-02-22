@@ -13,14 +13,14 @@ import {
   Leaf,
   Factory,
   Truck,
-  AlertCircle,
-} from "lucide-react";
+  AlertCircle } from
+"lucide-react";
 import {
   ProductAssessmentData,
   DraftVersion,
   PRODUCT_TYPES,
-  DESTINATION_MARKETS,
-} from "./types";
+  DESTINATION_MARKETS } from
+"./types";
 
 interface Step6SaveHistoryProps {
   data: ProductAssessmentData;
@@ -35,31 +35,31 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
   draftHistory,
   onSaveDraft,
   onPublish,
-  isSubmitting = false,
+  isSubmitting = false
 }) => {
-  // Get product type label
+
   const productTypeLabel =
-    PRODUCT_TYPES.find((t) => t.value === data.productType)?.label ||
-    data.productType;
+  PRODUCT_TYPES.find((t) => t.value === data.productType)?.label ||
+  data.productType;
 
-  // Get market label
+
   const marketLabel =
-    DESTINATION_MARKETS.find((m) => m.value === data.destinationMarket)
-      ?.label || data.destinationMarket;
+  DESTINATION_MARKETS.find((m) => m.value === data.destinationMarket)?.
+  label || data.destinationMarket;
 
-  // Check if ready to publish
+
   const canPublish =
-    data.carbonResults &&
-    data.productCode &&
-    data.productName &&
-    data.quantity > 0 &&
-    data.materials.length > 0;
+  data.carbonResults &&
+  data.productCode &&
+  data.productName &&
+  data.quantity > 0 &&
+  data.materials.length > 0;
 
   const isHighConfidence = data.carbonResults?.confidenceLevel === "high";
 
   return (
     <div className="space-y-6">
-      {/* Summary Card */}
+      
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Basic Info */}
+          
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Mã sản phẩm</p>
@@ -99,7 +99,7 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
 
           <Separator />
 
-          {/* Quick Stats */}
+          
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <Leaf className="w-5 h-5 mx-auto text-green-600 mb-1" />
@@ -127,27 +127,27 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
 
           <Separator />
 
-          {/* Carbon Result Summary */}
-          {data.carbonResults && (
-            <div className="p-4 rounded-lg border-2 border-primary/30 bg-primary/5">
+          
+          {data.carbonResults &&
+          <div className="p-4 rounded-lg border-2 border-primary/30 bg-primary/5">
               <div className="flex items-center justify-between mb-3">
                 <p className="font-semibold">Kết quả đánh giá Carbon</p>
                 <Badge
-                  variant="outline"
-                  className={
-                    data.carbonResults.confidenceLevel === "high"
-                      ? "bg-green-500/10 text-green-600 border-green-500/30"
-                      : data.carbonResults.confidenceLevel === "medium"
-                        ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
-                        : "bg-red-500/10 text-red-600 border-red-500/30"
-                  }
-                >
+                variant="outline"
+                className={
+                data.carbonResults.confidenceLevel === "high" ?
+                "bg-green-500/10 text-green-600 border-green-500/30" :
+                data.carbonResults.confidenceLevel === "medium" ?
+                "bg-yellow-500/10 text-yellow-600 border-yellow-500/30" :
+                "bg-red-500/10 text-red-600 border-red-500/30"
+                }>
+                
                   Độ tin cậy:{" "}
-                  {data.carbonResults.confidenceLevel === "high"
-                    ? "Cao"
-                    : data.carbonResults.confidenceLevel === "medium"
-                      ? "Trung bình"
-                      : "Thấp"}
+                  {data.carbonResults.confidenceLevel === "high" ?
+                "Cao" :
+                data.carbonResults.confidenceLevel === "medium" ?
+                "Trung bình" :
+                "Thấp"}
                 </Badge>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
@@ -167,19 +167,19 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
                 </div>
               </div>
             </div>
-          )}
+          }
         </CardContent>
       </Card>
 
-      {/* Action Buttons */}
+      
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg">Hành động</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Warnings */}
-          {!canPublish && (
-            <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+          
+          {!canPublish &&
+          <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
                 <div className="text-sm">
@@ -190,24 +190,24 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
                     {!data.productCode && <li>• Thiếu mã sản phẩm</li>}
                     {!data.productName && <li>• Thiếu tên sản phẩm</li>}
                     {!data.quantity && <li>• Thiếu số lượng sản xuất</li>}
-                    {data.materials.length === 0 && (
-                      <li>• Chưa có thông tin vật liệu</li>
-                    )}
+                    {data.materials.length === 0 &&
+                  <li>• Chưa có thông tin vật liệu</li>
+                  }
                   </ul>
                 </div>
               </div>
             </div>
-          )}
+          }
 
-          {/* Buttons */}
+          
           <div className="flex flex-col sm:flex-row gap-4">
             <Button
               variant="outline"
               size="lg"
               onClick={onSaveDraft}
               disabled={isSubmitting}
-              className="flex-1"
-            >
+              className="flex-1">
+              
               <Save className="w-5 h-5 mr-2" />
               Lưu nháp (Draft)
             </Button>
@@ -215,33 +215,33 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
               size="lg"
               onClick={onPublish}
               disabled={!canPublish || isSubmitting}
-              className="flex-1"
-            >
-              {isSubmitting ? (
-                <>
+              className="flex-1">
+              
+              {isSubmitting ?
+              <>
                   <span className="animate-spin mr-2">⏳</span>
                   Đang xử lý...
-                </>
-              ) : (
-                <>
+                </> :
+
+              <>
                   <Send className="w-5 h-5 mr-2" />
                   Xuất bản (Publish)
                 </>
-              )}
+              }
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            {isHighConfidence
-              ? "✓ Sản phẩm đủ điều kiện báo cáo carbon"
-              : "* Sản phẩm cần bổ sung dữ liệu để đạt điều kiện báo cáo đầy đủ"}
+            {isHighConfidence ?
+            "✓ Sản phẩm đủ điều kiện báo cáo carbon" :
+            "* Sản phẩm cần bổ sung dữ liệu để đạt điều kiện báo cáo đầy đủ"}
           </p>
         </CardContent>
       </Card>
 
-      {/* Draft History */}
-      {draftHistory.length > 0 && (
-        <Card>
+      
+      {draftHistory.length > 0 &&
+      <Card>
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-muted-foreground" />
@@ -250,49 +250,49 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {draftHistory.map((draft, index) => (
-                <div
-                  key={draft.id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                >
+              {draftHistory.map((draft, index) =>
+            <div
+              key={draft.id}
+              className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+              
                   <div className="flex items-center gap-3">
                     <Badge variant="outline">v{draft.version}</Badge>
                     <div>
                       <p className="text-sm font-medium">
                         {new Date(draft.timestamp).toLocaleDateString("vi-VN", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
                       </p>
-                      {draft.note && (
-                        <p className="text-xs text-muted-foreground">
+                      {draft.note &&
+                  <p className="text-xs text-muted-foreground">
                           {draft.note}
                         </p>
-                      )}
+                  }
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {index === 0 && (
-                      <Badge className="bg-primary/10 text-primary border-0">
+                    {index === 0 &&
+                <Badge className="bg-primary/10 text-primary border-0">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
                         Hiện tại
                       </Badge>
-                    )}
+                }
                     <Button variant="ghost" size="sm">
                       Xem
                     </Button>
                   </div>
                 </div>
-              ))}
+            )}
             </div>
           </CardContent>
         </Card>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 };
 
 export default Step6Content;

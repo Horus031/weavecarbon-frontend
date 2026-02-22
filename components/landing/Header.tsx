@@ -17,11 +17,11 @@ const Header = () => {
   const t = useTranslations("navigation");
 
   const navLinks = [
-    { labelKey: "features", href: "#features" },
-    { labelKey: "howItWorks", href: "#how-it-works" },
-    { labelKey: "impact", href: "#impact" },
-    { labelKey: "contact", href: "#contact" },
-  ];
+  { labelKey: "features", href: "#features" },
+  { labelKey: "howItWorks", href: "#how-it-works" },
+  { labelKey: "impact", href: "#impact" },
+  { labelKey: "contact", href: "#contact" }];
+
 
   return (
     <>
@@ -29,17 +29,17 @@ const Header = () => {
         initial={{ y: -100 }}
         animate={{
           y: [null, 0],
-          transition: { duration: 0.5, times: [0, 1] },
+          transition: { duration: 0.5, times: [0, 1] }
         }}
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-3xl bg-white/60"
-      >
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70">
+
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo */}
+            
             <Link
               href="/"
-              className="flex items-center gap-2 group max-w-96 w-full"
-            >
+              className="flex items-center gap-2 group max-w-96 w-full">
+              
               <div className="w-10 h-10 rounded-xl bg-gradient-forest flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
                 <Leaf className="w-5 h-5 text-primary-foreground" />
               </div>
@@ -48,125 +48,125 @@ const Header = () => {
               </span>
             </Link>
 
-            {/* Desktop Navigation */}
+            
             <nav className="hidden lg:flex items-center gap-6">
               {navLinks.map((link) =>
-                link.href.startsWith("/") ? (
-                  <Link
-                    key={link.labelKey}
-                    href={link.href}
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
+              link.href.startsWith("/") ?
+              <Link
+                key={link.labelKey}
+                href={link.href}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                
                     {t(link.labelKey)}
-                  </Link>
-                ) : (
-                  <a
-                    key={link.labelKey}
-                    href={link.href}
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  </Link> :
+
+              <a
+                key={link.labelKey}
+                href={link.href}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                
                     {t(link.labelKey)}
                   </a>
-                ),
+
               )}
             </nav>
 
-            {/* CTA Buttons */}
+            
             <div className="hidden lg:flex items-center gap-3 max-w-96 w-full justify-end">
               <LanguageToggle />
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate.push("/calculator")}
-              >
+                onClick={() => navigate.push("/calculator")}>
+
                 {t("calculator")}
               </Button>
               <Button
                 variant="hero"
                 size="sm"
-                onClick={() => setShowUserTypeDialog(true)}
-              >
+                onClick={() => setShowUserTypeDialog(true)}>
+
                 {t("login")}
               </Button>
             </div>
 
-            {/* Mobile Menu Button */}
+            
             <div className="flex gap-2 lg:hidden">
               <LanguageToggle />
               <button
                 className="lg:hidden p-2 text-foreground"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                aria-label="Toggle menu"
-              >
-                {isMenuOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
+                aria-label="Toggle menu">
+                
+                {isMenuOpen ?
+                <X className="w-6 h-6" /> :
+
+                <Menu className="w-6 h-6" />
+                }
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="lg:hidden bg-background border-b border-border animate-fade-in">
+        
+        {isMenuOpen &&
+        <div className="lg:hidden bg-background border-b border-border animate-fade-in">
             <nav className="container mx-auto px-6 py-4 flex flex-col gap-4">
               {navLinks.map((link) =>
-                link.href.startsWith("/") ? (
-                  <Link
-                    key={link.labelKey}
-                    href={link.href}
-                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
+            link.href.startsWith("/") ?
+            <Link
+              key={link.labelKey}
+              href={link.href}
+              className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+              onClick={() => setIsMenuOpen(false)}>
+              
                     {t(link.labelKey)}
-                  </Link>
-                ) : (
-                  <a
-                    key={link.labelKey}
-                    href={link.href}
-                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
+                  </Link> :
+
+            <a
+              key={link.labelKey}
+              href={link.href}
+              className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+              onClick={() => setIsMenuOpen(false)}>
+              
                     {t(link.labelKey)}
                   </a>
-                ),
-              )}
+
+            )}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 <Button
-                  variant="ghost"
-                  className="w-full justify-center"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    navigate.push("/calculator");
-                  }}
-                >
+                variant="ghost"
+                className="w-full justify-center"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  navigate.push("/calculator");
+                }}>
+
                   {t("calculator")}
                 </Button>
                 <Button
-                  variant="hero"
-                  className="w-full justify-center"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    setShowUserTypeDialog(true);
-                  }}
-                >
+                variant="hero"
+                className="w-full justify-center"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setShowUserTypeDialog(true);
+                }}>
+
                   {t("login")}
                 </Button>
               </div>
             </nav>
           </div>
-        )}
+        }
       </motion.header>
 
-      {/* User Type Selection Dialog */}
+      
       <UserTypeDialog
         open={showUserTypeDialog}
-        onOpenChange={setShowUserTypeDialog}
-      />
-    </>
-  );
+        onOpenChange={setShowUserTypeDialog} />
+      
+    </>);
+
 };
 
 export default Header;

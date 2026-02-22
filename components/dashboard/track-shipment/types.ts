@@ -2,10 +2,11 @@ import type { TransportLeg } from "@/types/transport";
 
 export interface TrackShipment {
   id: string;
-  productId: string;
+  shipmentId?: string | null;
+  productId: string | null;
   productName: string;
   sku: string;
-  status: "in_transit" | "delivered" | "pending";
+  status: "in_transit" | "delivered" | "pending" | "cancelled";
   progress: number;
   origin: string;
   destination: string;

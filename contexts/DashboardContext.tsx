@@ -9,10 +9,10 @@ interface DashboardContextType {
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(
-  undefined,
+  undefined
 );
 
-export function DashboardProvider({ children }: { children: React.ReactNode }) {
+export function DashboardProvider({ children }: {children: React.ReactNode;}) {
   const [title, setTitle] = useState("Dashboard");
   const [subtitle, setSubtitle] = useState<string | undefined>();
 
@@ -24,8 +24,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   return (
     <DashboardContext.Provider value={{ title, subtitle, setPageTitle }}>
       {children}
-    </DashboardContext.Provider>
-  );
+    </DashboardContext.Provider>);
+
 }
 
 export function useDashboardTitle() {

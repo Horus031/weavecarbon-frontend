@@ -13,8 +13,8 @@ const OnboardingHeader = () => {
           WEAVE<span className="text-primary">CARBON</span>
         </span>
       </Link>
-    </div>
-  );
+    </div>);
+
 };
 
 export default OnboardingHeader;

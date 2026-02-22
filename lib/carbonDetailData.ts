@@ -1,14 +1,14 @@
-// Carbon Detail Data Types for Product Detail Page
+
 
 export interface CarbonBreakdownItem {
   stage:
-    | "materials"
-    | "manufacturing"
-    | "transport"
-    | "packaging"
-    | "end_of_life";
+  "materials" |
+  "manufacturing" |
+  "transport" |
+  "packaging" |
+  "end_of_life";
   label: string;
-  co2e: number | null; // null = awaiting data
+  co2e: number | null;
   percentage: number | null;
   note: string;
   isProxy: boolean;
@@ -46,11 +46,11 @@ export interface ComplianceItem {
 export interface ImprovementSuggestion {
   id: string;
   type:
-    | "material"
-    | "transport"
-    | "manufacturing"
-    | "packaging"
-    | "end_of_life";
+  "material" |
+  "transport" |
+  "manufacturing" |
+  "packaging" |
+  "end_of_life";
   title: string;
   description: string;
   potentialReduction: number;
@@ -76,7 +76,7 @@ export interface VersionHistoryItem {
 export interface ProductCarbonDetail {
   productId: string;
   totalCo2e: number;
-  co2eRange?: { min: number; max: number };
+  co2eRange?: {min: number;max: number;};
   confidenceLevel: "high" | "medium" | "low";
   confidenceScore: number;
   calculationNote: string;
@@ -96,7 +96,7 @@ export const STAGE_COLORS: Record<string, string> = {
   manufacturing: "hsl(var(--chart-2))",
   transport: "hsl(var(--chart-3))",
   packaging: "hsl(var(--chart-4))",
-  end_of_life: "hsl(var(--chart-5))",
+  end_of_life: "hsl(var(--chart-5))"
 };
 
 export const CONFIDENCE_CONFIG = {
@@ -104,18 +104,18 @@ export const CONFIDENCE_CONFIG = {
     color: "text-green-600",
     bg: "bg-green-100",
     label: "Cao",
-    minScore: 85,
+    minScore: 85
   },
   medium: {
     color: "text-yellow-600",
     bg: "bg-yellow-100",
     label: "Trung bình",
-    minScore: 65,
+    minScore: 65
   },
   low: {
     color: "text-red-600",
     bg: "bg-red-100",
     label: "Thấp",
-    minScore: 0,
-  },
+    minScore: 0
+  }
 };

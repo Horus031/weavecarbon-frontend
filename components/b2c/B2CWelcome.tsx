@@ -16,8 +16,8 @@ const B2CWelcome: React.FC<B2CWelcomeProps> = ({ profile }) => {
       <p className="text-muted-foreground">
         Thank you for contributing to the circular economy
       </p>
-    </div>
-  );
+    </div>);
+
 };
 
 export default B2CWelcome;

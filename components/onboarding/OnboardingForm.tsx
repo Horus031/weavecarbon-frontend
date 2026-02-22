@@ -9,8 +9,8 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from
+"@/components/ui/card";
 import { ArrowRight } from "lucide-react";
 import BusinessTypeSelector from "./BusinessTypeSelector";
 import TargetMarketSelector from "./TargetMarketSelector";
@@ -35,13 +35,13 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
   targetMarkets,
   setTargetMarkets,
   isSubmitting,
-  onSubmit,
+  onSubmit
 }) => {
   const toggleMarket = (market: string) => {
     setTargetMarkets((prev) =>
-      prev.includes(market)
-        ? prev.filter((m) => m !== market)
-        : [...prev, market],
+    prev.includes(market) ?
+    prev.filter((m) => m !== market) :
+    [...prev, market]
     );
   };
 
@@ -56,7 +56,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
 
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-6">
-          {/* Company Name */}
+          
           <div className="space-y-2">
             <Label htmlFor="company-name">Company Name *</Label>
             <Input
@@ -66,40 +66,40 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               disabled={isSubmitting}
-              required
-            />
+              required />
+            
           </div>
 
-          {/* Business Type */}
+          
           <BusinessTypeSelector
             value={businessType}
             onChange={setBusinessType}
-            disabled={isSubmitting}
-          />
+            disabled={isSubmitting} />
+          
 
-          {/* Target Markets */}
+          
           <TargetMarketSelector
             selectedMarkets={targetMarkets}
             onToggle={toggleMarket}
-            disabled={isSubmitting}
-          />
+            disabled={isSubmitting} />
+          
 
-          {/* Plan Info */}
+          
           <PlanInfo />
 
           <Button
             type="submit"
             className="w-full"
             size="lg"
-            disabled={isSubmitting}
-          >
+            disabled={isSubmitting}>
+            
             {isSubmitting ? "Creating..." : "Continue to Dashboard"}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </form>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default OnboardingForm;

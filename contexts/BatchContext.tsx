@@ -5,8 +5,8 @@ import React, {
   useContext,
   useState,
   useCallback,
-  ReactNode,
-} from "react";
+  ReactNode } from
+"react";
 import { AddressInput } from "@/components/dashboard/assessment/types";
 
 export type BatchStatus = "draft" | "published";
@@ -27,43 +27,43 @@ export interface Batch {
   status: BatchStatus;
   products: BatchProduct[];
 
-  // Totals
+
   totalProducts: number;
   totalQuantity: number;
   totalCO2: number;
   totalWeight: number;
 
-  // Logistics info (copied from first product or set manually)
+
   originAddress?: AddressInput;
   destinationAddress?: AddressInput;
   destinationMarket?: string;
   transportModes?: string[];
 
-  // Timestamps
+
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
 
-  // Metadata
+
   shipmentId?: string;
 }
 
 interface BatchContextType {
   batches: Batch[];
 
-  // CRUD
+
   createBatch: (name: string, description?: string) => Batch;
   updateBatch: (id: string, updates: Partial<Batch>) => void;
   deleteBatch: (id: string) => void;
 
-  // Product management
+
   addProductToBatch: (batchId: string, product: BatchProduct) => void;
   removeProductFromBatch: (batchId: string, productId: string) => void;
 
-  // Status
+
   publishBatch: (id: string) => Batch;
 
-  // Query
+
   getBatch: (id: string) => Batch | undefined;
   getBatchesByStatus: (status: BatchStatus | "all") => Batch[];
   getBatchByProduct: (productId: string) => Batch | undefined;
@@ -71,8 +71,8 @@ interface BatchContextType {
 
 const BatchContext = createContext<BatchContextType | undefined>(undefined);
 
-export const BatchProvider: React.FC<{ children: ReactNode }> = ({
-  children,
+export const BatchProvider: React.FC<{children: ReactNode;}> = ({
+  children
 }) => {
   const [batches, setBatches] = useState<Batch[]>([]);
 
@@ -89,22 +89,22 @@ export const BatchProvider: React.FC<{ children: ReactNode }> = ({
         totalCO2: 0,
         totalWeight: 0,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       setBatches((prev) => [newBatch, ...prev]);
       return newBatch;
     },
-    [],
+    []
   );
 
   const updateBatch = useCallback((id: string, updates: Partial<Batch>) => {
     setBatches((prev) =>
-      prev.map((b) =>
-        b.id === id
-          ? { ...b, ...updates, updatedAt: new Date().toISOString() }
-          : b,
-      ),
+    prev.map((b) =>
+    b.id === id ?
+    { ...b, ...updates, updatedAt: new Date().toISOString() } :
+    b
+    )
     );
   }, []);
 
@@ -116,56 +116,56 @@ export const BatchProvider: React.FC<{ children: ReactNode }> = ({
     totalProducts: products.length,
     totalQuantity: products.reduce((sum, p) => sum + p.quantity, 0),
     totalCO2: products.reduce((sum, p) => sum + p.quantity * p.co2PerUnit, 0),
-    totalWeight: products.reduce((sum, p) => sum + p.quantity * p.weight, 0),
+    totalWeight: products.reduce((sum, p) => sum + p.quantity * p.weight, 0)
   });
 
   const addProductToBatch = useCallback(
     (batchId: string, product: BatchProduct) => {
       setBatches((prev) =>
-        prev.map((b) => {
-          if (b.id !== batchId) return b;
+      prev.map((b) => {
+        if (b.id !== batchId) return b;
 
-          // Check if product already exists
-          if (b.products.some((p) => p.productId === product.productId)) {
-            return b;
-          }
 
-          const newProducts = [...b.products, product];
-          const totals = recalculateTotals(newProducts);
+        if (b.products.some((p) => p.productId === product.productId)) {
+          return b;
+        }
 
-          return {
-            ...b,
-            products: newProducts,
-            ...totals,
-            updatedAt: new Date().toISOString(),
-          };
-        }),
+        const newProducts = [...b.products, product];
+        const totals = recalculateTotals(newProducts);
+
+        return {
+          ...b,
+          products: newProducts,
+          ...totals,
+          updatedAt: new Date().toISOString()
+        };
+      })
       );
     },
-    [],
+    []
   );
 
   const removeProductFromBatch = useCallback(
     (batchId: string, productId: string) => {
       setBatches((prev) =>
-        prev.map((b) => {
-          if (b.id !== batchId) return b;
+      prev.map((b) => {
+        if (b.id !== batchId) return b;
 
-          const newProducts = b.products.filter(
-            (p) => p.productId !== productId,
-          );
-          const totals = recalculateTotals(newProducts);
+        const newProducts = b.products.filter(
+          (p) => p.productId !== productId
+        );
+        const totals = recalculateTotals(newProducts);
 
-          return {
-            ...b,
-            products: newProducts,
-            ...totals,
-            updatedAt: new Date().toISOString(),
-          };
-        }),
+        return {
+          ...b,
+          products: newProducts,
+          ...totals,
+          updatedAt: new Date().toISOString()
+        };
+      })
       );
     },
-    [],
+    []
   );
 
   const publishBatch = useCallback(
@@ -173,30 +173,30 @@ export const BatchProvider: React.FC<{ children: ReactNode }> = ({
       let publishedBatch: Batch | null = null;
 
       setBatches((prev) =>
-        prev.map((b) => {
-          if (b.id !== id) return b;
+      prev.map((b) => {
+        if (b.id !== id) return b;
 
-          publishedBatch = {
-            ...b,
-            status: "published",
-            publishedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
+        publishedBatch = {
+          ...b,
+          status: "published",
+          publishedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
 
-          return publishedBatch;
-        }),
+        return publishedBatch;
+      })
       );
 
       return publishedBatch || batches.find((b) => b.id === id)!;
     },
-    [batches],
+    [batches]
   );
 
   const getBatch = useCallback(
     (id: string) => {
       return batches.find((b) => b.id === id);
     },
-    [batches],
+    [batches]
   );
 
   const getBatchesByStatus = useCallback(
@@ -204,16 +204,16 @@ export const BatchProvider: React.FC<{ children: ReactNode }> = ({
       if (status === "all") return batches;
       return batches.filter((b) => b.status === status);
     },
-    [batches],
+    [batches]
   );
 
   const getBatchByProduct = useCallback(
     (productId: string) => {
       return batches.find((b) =>
-        b.products.some((p) => p.productId === productId),
+      b.products.some((p) => p.productId === productId)
       );
     },
-    [batches],
+    [batches]
   );
 
   return (
@@ -228,12 +228,12 @@ export const BatchProvider: React.FC<{ children: ReactNode }> = ({
         publishBatch,
         getBatch,
         getBatchesByStatus,
-        getBatchByProduct,
-      }}
-    >
+        getBatchByProduct
+      }}>
+      
       {children}
-    </BatchContext.Provider>
-  );
+    </BatchContext.Provider>);
+
 };
 
 export const useBatches = () => {

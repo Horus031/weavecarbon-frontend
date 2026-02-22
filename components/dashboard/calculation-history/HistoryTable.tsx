@@ -9,8 +9,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  TableRow } from
+"@/components/ui/table";
 
 interface HistoryRecord {
   id: string;
@@ -33,7 +33,7 @@ interface HistoryTableProps {
 
 const HistoryTable: React.FC<HistoryTableProps> = ({
   history,
-  onProductClick,
+  onProductClick
 }) => {
   const t = useTranslations("calculationHistory");
   const formatDate = (dateString: string) => {
@@ -42,34 +42,34 @@ const HistoryTable: React.FC<HistoryTableProps> = ({
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit",
+      minute: "2-digit"
     });
   };
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("columnProduct")}</TableHead>
-            <TableHead className="text-right">{t("columnMaterials")}</TableHead>
-            <TableHead className="text-right">{t("columnManufacturing")}</TableHead>
-            <TableHead className="text-right">{t("columnTransport")}</TableHead>
-            <TableHead className="text-right">{t("columnPackaging")}</TableHead>
-            <TableHead className="text-right">{t("columnTotalCO2")}</TableHead>
-            <TableHead>{t("columnVersion")}</TableHead>
-            <TableHead>{t("columnCreatedDate")}</TableHead>
-            <TableHead>{t("columnCreatedBy")}</TableHead>
+    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+      <Table className="w-full">
+        <TableHeader className="bg-slate-50/80">
+          <TableRow className="border-slate-200">
+            <TableHead className="font-semibold text-slate-700">{t("columnProduct")}</TableHead>
+            <TableHead className="text-right font-semibold text-slate-700">{t("columnMaterials")}</TableHead>
+            <TableHead className="text-right font-semibold text-slate-700">{t("columnManufacturing")}</TableHead>
+            <TableHead className="text-right font-semibold text-slate-700">{t("columnTransport")}</TableHead>
+            <TableHead className="text-right font-semibold text-slate-700">{t("columnPackaging")}</TableHead>
+            <TableHead className="text-right font-semibold text-slate-700">{t("columnTotalCO2")}</TableHead>
+            <TableHead className="font-semibold text-slate-700">{t("columnVersion")}</TableHead>
+            <TableHead className="font-semibold text-slate-700">{t("columnCreatedDate")}</TableHead>
+            <TableHead className="font-semibold text-slate-700">{t("columnCreatedBy")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {history.map((item) => (
-            <TableRow key={item.id}>
+          {history.map((item) =>
+          <TableRow key={item.id} className="border-slate-200 hover:bg-slate-50/70">
               <TableCell className="font-medium">
                 <button
-                  onClick={() => onProductClick(item.productId)}
-                  className="hover:text-primary hover:underline text-left"
-                >
+                onClick={() => onProductClick(item.productId)}
+                className="text-left text-slate-800 hover:text-primary hover:underline">
+
                   {item.productName}
                 </button>
               </TableCell>
@@ -85,26 +85,26 @@ const HistoryTable: React.FC<HistoryTableProps> = ({
               <TableCell className="text-right">
                 {item.packagingCO2.toFixed(2)}
               </TableCell>
-              <TableCell className="text-right font-bold text-primary">
+              <TableCell className="text-right font-bold text-emerald-700">
                 {item.totalCO2.toFixed(2)}
               </TableCell>
               <TableCell>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="border border-slate-200 bg-slate-100 text-slate-700 text-xs">
                   {item.carbonVersion}
                 </Badge>
               </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
+              <TableCell className="text-sm text-slate-600">
                 {formatDate(item.createdAt)}
               </TableCell>
-              <TableCell className="text-sm truncate max-w-37.5">
+              <TableCell className="text-sm text-slate-700 truncate max-w-37.5">
                 {item.createdBy}
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
-    </div>
-  );
+    </div>);
+
 };
 
 export default HistoryTable;

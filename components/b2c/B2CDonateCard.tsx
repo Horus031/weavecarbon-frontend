@@ -28,8 +28,8 @@ const B2CDonateCard: React.FC<B2CDonateCardProps> = ({ onStartDonate }) => {
           </Button>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default B2CDonateCard;

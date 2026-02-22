@@ -1,13 +1,8 @@
-@import url("https://api.mapbox.com/mapbox-gl-js/v3.0.0/mapbox-gl.css");
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap");
-
 @import "tailwindcss";
 
-/* Leaflet CSS for map support */
 
-/* =========================================================
-   DESIGN TOKENS (LIGHT MODE)
-========================================================= */
+
+
 
 @theme {
   --color-background: hsl(120 20% 98%);
@@ -19,19 +14,19 @@
   --color-popover: hsl(0 0% 100%);
   --color-popover-foreground: hsl(150 30% 10%);
 
-  /* Forest Green Primary */
+  
   --color-primary: hsl(150 60% 20%);
   --color-primary-foreground: hsl(40 30% 96%);
 
-  /* Warm Cream Secondary */
+  
   --color-secondary: hsl(40 30% 94%);
   --color-secondary-foreground: hsl(150 30% 15%);
 
-  /* Muted sage */
+  
   --color-muted: hsl(140 15% 92%);
   --color-muted-foreground: hsl(150 10% 45%);
 
-  /* Earth Accent */
+  
   --color-accent: hsl(30 45% 60%);
   --color-accent-foreground: hsl(40 30% 96%);
 
@@ -44,7 +39,7 @@
 
   --color-radius: 0.75rem;
 
-  /* Extended palette */
+  
   --color-forest-dark: hsl(150 40% 15%);
   --color-forest-light: hsl(150 35% 35%);
   --color-earth-warm: hsl(30 45% 60%);
@@ -52,13 +47,13 @@
   --color-cream: hsl(40 30% 96%);
   --color-charcoal: hsl(150 20% 15%);
 
-  /* Shadows */
+  
   --shadow-sm: 0 2px 8px -2px hsl(150 30% 10% / 0.08);
   --shadow-md: 0 8px 24px -4px hsl(150 30% 10% / 0.12);
   --shadow-lg: 0 16px 48px -8px hsl(150 30% 10% / 0.15);
   --shadow-glow: 0 0 40px -10px hsl(150 60% 30% / 0.3);
 
-  /* Sidebar */
+  
   --color-sidebar-background: hsl(0 0% 98%);
   --color-sidebar-foreground: hsl(240 5.3% 26.1%);
   --color-sidebar-primary: hsl(240 5.9% 10%);
@@ -69,53 +64,11 @@
   --color-sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
-/* @layer base {
-  .dark {
-    --background: hsl(150 20% 8%);
-    --foreground: hsl(40 20% 95%);
-    --card: hsl(150 20% 12%);
-    --card-foreground: hsl(40 20% 95%);
 
-    --popover: hsl(150 20% 12%);
-    --popover-foreground: hsl(40 20% 95%);
 
-    --primary: hsl(150 50% 45%);
-    --primary-foreground: hsl(150 30% 10%);
 
-    --secondary: hsl(150 15% 18%);
-    --secondary-foreground: hsl(40 20% 90%);
 
-    --muted: hsl(150 15% 18%);
-    --muted-foreground: hsl(140 10% 60%);
 
-    --accent: hsl(30 45% 55%);
-    --accent-foreground: hsl(40 30% 96%);
-
-    --destructive: hsl(0 62.8% 30.6%);
-    --destructive-foreground: hsl(210 40% 98%);
-
-    --border: hsl(150 15% 20%);
-    --input: hsl(150 15% 20%);
-    --ring: hsl(150 50% 45%);
-
-    --sidebar-background: hsl(240 5.9% 10%);
-    --sidebar-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-primary: hsl(224.3 76.3% 48%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(240 3.7% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(240 3.7% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  }
-} */
-
-/* =========================================================
-   DARK MODE
-========================================================= */
-
-/* =========================================================
-   BASE
-========================================================= */
 @layer base {
   * {
     border-color: var(--color-border);
@@ -130,22 +83,63 @@
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-family: var(--font-plus-jakarta-sans), system-ui, sans-serif;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: "DM Sans", system-ui, sans-serif;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
     font-weight: 700;
   }
 }
 
-/* =========================================================
-   COMPONENTS
-========================================================= */
+
 @layer components {
+  .hero-waves-static .path-0,
+  .hero-waves-static .path-1,
+  .hero-waves-static .path-2 {
+    animation: none !important;
+  }
+
+  .hero-waves-soft {
+    opacity: 0.76;
+    transform: translateY(-14px) scaleY(0.86);
+    transform-origin: top center;
+    animation: heroWaveBreath 6.2s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .hero-waves-soft .path-0,
+  .hero-waves-soft .path-1,
+  .hero-waves-soft .path-2 {
+    animation-duration: 14s !important;
+    animation-timing-function: ease-in-out !important;
+  }
+
+  .hero-waves-soft .path-0 {
+    opacity: 0.42;
+  }
+
+  .hero-waves-soft .path-1 {
+    opacity: 0.58;
+  }
+
+  .hero-waves-soft .path-2 {
+    opacity: 0.82;
+  }
+
+  @keyframes heroWaveBreath {
+    0%,
+    100% {
+      transform: translateY(-16px) scaleX(1) scaleY(0.84);
+    }
+    50% {
+      transform: translateY(-8px) scaleX(1.015) scaleY(0.9);
+    }
+  }
+
   .text-gradient-forest {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
@@ -184,9 +178,7 @@
   }
 }
 
-/* =========================================================
-   UTILITIES & ANIMATIONS
-========================================================= */
+
 @layer utilities {
   .animate-fade-up {
     animation: fadeUp 0.8s ease-out forwards;
@@ -276,11 +268,9 @@
   }
 }
 
-/* =========================================================
-   LEAFLET MAP
-========================================================= */
+
 .leaflet-container {
-  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  font-family: var(--font-plus-jakarta-sans), system-ui, sans-serif;
   z-index: 0;
 }
 
@@ -311,7 +301,7 @@
   border: none !important;
 }
 
-/* Dark mode support for Leaflet */
+
 .dark .leaflet-tile {
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }

@@ -1,4 +1,4 @@
-// Section F - Export & Compliance Status
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +8,8 @@ import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  TooltipTrigger } from
+"@/components/ui/tooltip";
 import {
   CheckCircle2,
   XCircle,
@@ -17,8 +17,8 @@ import {
   FileDown,
   QrCode,
   ShieldCheck,
-  Info,
-} from "lucide-react";
+  Info } from
+"lucide-react";
 import { ComplianceItem } from "@/lib/carbonDetailData";
 
 interface ComplianceStatusProps {
@@ -31,56 +31,53 @@ interface ComplianceStatusProps {
 const STATUS_ICON = {
   passed: CheckCircle2,
   partial: AlertCircle,
-  failed: XCircle,
+  failed: XCircle
 };
 
 const STATUS_COLOR = {
   passed: "text-green-600",
   partial: "text-yellow-600",
-  failed: "text-red-600",
+  failed: "text-red-600"
 };
 
 const ComplianceStatus: React.FC<ComplianceStatusProps> = ({
   compliance,
   exportReady,
   onDownloadReport,
-  onGenerateQR,
+  onGenerateQR
 }) => {
   const t = useTranslations("productDetail.compliance");
   const passedCount = compliance.filter((c) => c.status === "passed").length;
   const totalCount = compliance.length;
+  const exportBadgeClass = exportReady ?
+  "border border-emerald-200 bg-emerald-50 text-emerald-700" :
+  "border border-amber-200 bg-amber-50 text-amber-700";
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border border-slate-200 shadow-sm">
+      <CardHeader className="border-b border-slate-200 bg-slate-50/70">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <ShieldCheck className="w-5 h-5 text-primary" />
             {t("title")}
           </CardTitle>
-          <Badge
-            className={
-              exportReady
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700"
-            }
-          >
-            {exportReady ? (
-              <>
+          <Badge className={exportBadgeClass}>
+            {exportReady ?
+            <>
                 <CheckCircle2 className="w-3 h-3 mr-1" />
                 {t("exportReady")}
-              </>
-            ) : (
-              <>
+              </> :
+
+            <>
                 <AlertCircle className="w-3 h-3 mr-1" />
                 {t("needMoreData")}
               </>
-            )}
+            }
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Compliance Checklist */}
+        
         <div className="space-y-2">
           {compliance.map((item, index) => {
             const Icon = STATUS_ICON[item.status];
@@ -89,14 +86,14 @@ const ComplianceStatus: React.FC<ComplianceStatusProps> = ({
             return (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-              >
+                className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+
                 <div className="flex items-center gap-3">
                   <Icon className={`w-5 h-5 ${colorClass}`} />
                   <span className="font-medium">{item.criterion}</span>
                 </div>
-                {item.note && (
-                  <TooltipProvider>
+                {item.note &&
+                <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="w-4 h-4 text-muted-foreground" />
@@ -106,46 +103,49 @@ const ComplianceStatus: React.FC<ComplianceStatusProps> = ({
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                )}
-              </div>
-            );
+                }
+              </div>);
+
           })}
         </div>
 
-        {/* Summary */}
-        <div className="text-sm text-muted-foreground text-center py-2">
+        
+        <div className="py-2 text-center text-sm text-slate-600">
           {t("criteriaCount", { passed: passedCount, total: totalCount })}
         </div>
 
-        {/* Actions */}
+        
         <div className="grid grid-cols-2 gap-3 pt-2">
           <Button
             variant="outline"
-            className="w-full"
-            onClick={onDownloadReport}
-          >
+            className="w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            onClick={onDownloadReport}>
+
             <FileDown className="w-4 h-4 mr-2" />
             {t("downloadReport")}
           </Button>
           <Button
-            variant={exportReady ? "default" : "secondary"}
-            className="w-full"
+            className={
+            exportReady ?
+            "w-full bg-emerald-600 text-white hover:bg-emerald-700" :
+            "w-full border border-slate-200 bg-slate-100 text-slate-500"
+            }
             onClick={onGenerateQR}
-            disabled={!exportReady}
-          >
+            disabled={!exportReady}>
+
             <QrCode className="w-4 h-4 mr-2" />
             {t("generateQR")}
           </Button>
         </div>
 
-        {!exportReady && (
-          <p className="text-xs text-center text-muted-foreground">
+        {!exportReady &&
+        <p className="text-xs text-center text-slate-500">
             {t("qrNotAvailable")}
           </p>
-        )}
+        }
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default ComplianceStatus;

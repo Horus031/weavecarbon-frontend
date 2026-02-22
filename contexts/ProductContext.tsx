@@ -5,8 +5,8 @@ import React, {
   useContext,
   useState,
   useCallback,
-  ReactNode,
-} from "react";
+  ReactNode } from
+"react";
 
 import type { ProductStatus } from "@/types/product";
 
@@ -60,8 +60,8 @@ export interface PendingProductData {
 interface ProductContextType {
   products: DashboardProduct[];
   addProduct: (
-    product: Omit<DashboardProduct, "id" | "createdAt">,
-  ) => DashboardProduct;
+  product: Omit<DashboardProduct, "id" | "createdAt">)
+  => DashboardProduct;
   updateProduct: (id: string, updates: Partial<DashboardProduct>) => void;
   getProduct: (id: string) => DashboardProduct | undefined;
   getProductsByStatus: (status: ProductStatus | "all") => DashboardProduct[];
@@ -75,14 +75,14 @@ interface ProductContextType {
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
-export const ProductProvider: React.FC<{ children: ReactNode }> = ({
-  children,
+export const ProductProvider: React.FC<{children: ReactNode;}> = ({
+  children
 }) => {
   const [products, setProducts] = useState<DashboardProduct[]>([]);
   const [lastCreatedProduct, setLastCreatedProduct] =
-    useState<DashboardProduct | null>(null);
+  useState<DashboardProduct | null>(null);
   const [pendingProductData, setPendingProductData] =
-    useState<PendingProductData | null>(null);
+  useState<PendingProductData | null>(null);
 
   const clearPendingProduct = useCallback(() => {
     setPendingProductData(null);
@@ -90,12 +90,12 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({
 
   const addProduct = useCallback(
     (
-      productData: Omit<DashboardProduct, "id" | "createdAt">,
-    ): DashboardProduct => {
+    productData: Omit<DashboardProduct, "id" | "createdAt">)
+    : DashboardProduct => {
       const newProduct: DashboardProduct = {
         ...productData,
         id: `product-${Date.now()}`,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
       };
 
       setProducts((prev) => [newProduct, ...prev]);
@@ -103,23 +103,23 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({
 
       return newProduct;
     },
-    [],
+    []
   );
 
   const updateProduct = useCallback(
     (id: string, updates: Partial<DashboardProduct>) => {
       setProducts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      prev.map((p) => p.id === id ? { ...p, ...updates } : p)
       );
     },
-    [],
+    []
   );
 
   const getProduct = useCallback(
     (id: string) => {
       return products.find((p) => p.id === id);
     },
-    [products],
+    [products]
   );
 
   const getProductsByStatus = useCallback(
@@ -127,7 +127,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({
       if (status === "all") return products;
       return products.filter((p) => p.status === status);
     },
-    [products],
+    [products]
   );
 
   const getProductsByCategory = useCallback(
@@ -135,7 +135,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({
       if (category === "all") return products;
       return products.filter((p) => p.category === category);
     },
-    [products],
+    [products]
   );
 
   return (
@@ -151,12 +151,12 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({
         setLastCreatedProduct,
         pendingProductData,
         setPendingProductData,
-        clearPendingProduct,
-      }}
-    >
+        clearPendingProduct
+      }}>
+      
       {children}
-    </ProductContext.Provider>
-  );
+    </ProductContext.Provider>);
+
 };
 
 export const useProducts = () => {
@@ -167,7 +167,7 @@ export const useProducts = () => {
   return context;
 };
 
-// Carbon calculation helper (exported for use in other components)
+
 export const calculateCarbonFromProduct = (data: {
   weight: number;
   primaryMaterial: string;
@@ -188,7 +188,7 @@ export const calculateCarbonFromProduct = (data: {
     recycled_polyester: 2.5,
     organic_cotton: 4.5,
     bamboo: 3.8,
-    hemp: 2.9,
+    hemp: 2.9
   };
 
   const ENERGY_FACTORS: Record<string, number> = {
@@ -196,7 +196,7 @@ export const calculateCarbonFromProduct = (data: {
     solar: 0.4,
     wind: 0.35,
     mixed: 0.7,
-    coal: 1.5,
+    coal: 1.5
   };
 
   const TRANSPORT_FACTORS: Record<string, number> = {
@@ -204,7 +204,7 @@ export const calculateCarbonFromProduct = (data: {
     air: 0.602,
     road: 0.089,
     rail: 0.028,
-    multimodal: 0.05,
+    multimodal: 0.05
   };
 
   const MARKET_DISTANCES: Record<string, number> = {
@@ -212,7 +212,7 @@ export const calculateCarbonFromProduct = (data: {
     us: 14000,
     jp: 3500,
     kr: 3200,
-    domestic: 500,
+    domestic: 500
   };
 
   const PACKAGING_FACTORS: Record<string, number> = {
@@ -220,11 +220,11 @@ export const calculateCarbonFromProduct = (data: {
     paper: 1.5,
     biodegradable: 0.8,
     recycled: 0.5,
-    minimal: 0.3,
+    minimal: 0.3
   };
 
   const weightKg = data.weight;
-  const recycledDiscount = ((data.recycledContent || 0) / 100) * 0.5;
+  const recycledDiscount = (data.recycledContent || 0) / 100 * 0.5;
 
   const materialFactor = MATERIAL_FACTORS[data.primaryMaterial] || 5.0;
   const materialsCO2 = weightKg * materialFactor * (1 - recycledDiscount);
@@ -233,13 +233,13 @@ export const calculateCarbonFromProduct = (data: {
   const manufacturingCO2 = weightKg * 2.5 * energyFactor;
 
   const distance =
-    MARKET_DISTANCES[data.destinationMarket || "domestic"] || 5000;
+  MARKET_DISTANCES[data.destinationMarket || "domestic"] || 5000;
   const transportFactor =
-    TRANSPORT_FACTORS[data.transportMode || "sea"] || 0.05;
+  TRANSPORT_FACTORS[data.transportMode || "sea"] || 0.05;
   const transportCO2 = weightKg * (distance / 1000) * transportFactor;
 
   const packagingFactor =
-    PACKAGING_FACTORS[data.packagingType || "paper"] || 1.5;
+  PACKAGING_FACTORS[data.packagingType || "paper"] || 1.5;
   const packagingCO2 = (data.packagingWeight || 0) * packagingFactor;
 
   const total = materialsCO2 + manufacturingCO2 + transportCO2 + packagingCO2;
@@ -249,6 +249,6 @@ export const calculateCarbonFromProduct = (data: {
     manufacturing: Math.round(manufacturingCO2 * 100) / 100,
     transport: Math.round(transportCO2 * 100) / 100,
     packaging: Math.round(packagingCO2 * 100) / 100,
-    total: Math.round(total * 100) / 100,
+    total: Math.round(total * 100) / 100
   };
 };

@@ -17,7 +17,7 @@ const B2CHeader: React.FC<B2CHeaderProps> = ({
   profile,
   onSignOut,
   onNavigateBack,
-  onNavigateHome,
+  onNavigateHome
 }) => {
   return (
     <header className="bg-card border-b border-border sticky top-0 z-40">
@@ -28,16 +28,16 @@ const B2CHeader: React.FC<B2CHeaderProps> = ({
               variant="ghost"
               size="icon"
               onClick={onNavigateBack}
-              className="text-muted-foreground hover:text-foreground"
-            >
+              className="text-muted-foreground hover:text-foreground">
+              
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={onNavigateHome}
-              className="text-muted-foreground hover:text-foreground"
-            >
+              className="text-muted-foreground hover:text-foreground">
+              
               <Home className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
@@ -62,8 +62,8 @@ const B2CHeader: React.FC<B2CHeaderProps> = ({
           </div>
         </div>
       </div>
-    </header>
-  );
+    </header>);
+
 };
 
 export default B2CHeader;

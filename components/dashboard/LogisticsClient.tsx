@@ -16,8 +16,8 @@ const LogisticsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <ShippingOverviewMap />
-    </div>
-  );
+    </div>);
+
 };
 
 export default LogisticsPage;

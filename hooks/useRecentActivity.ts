@@ -44,7 +44,7 @@ export const useRecentActivity = (userEmail?: string) => {
           const newActivity: Activity = {
             ...activity,
             id: `activity-${Date.now()}`,
-            timestamp: Date.now(),
+            timestamp: Date.now()
           };
 
           const updated = [newActivity, ...activities].slice(0, 20);
@@ -57,12 +57,12 @@ export const useRecentActivity = (userEmail?: string) => {
       }
       return null;
     },
-    [activities, userEmail],
+    [activities, userEmail]
   );
 
   return {
     activities,
     isLoaded,
-    addActivity,
+    addActivity
   };
 };

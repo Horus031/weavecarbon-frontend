@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import * as XLSX from "xlsx";
 import { BulkProductRow, ValidationError, ValidationResult } from "./types";
 import { TEMPLATE_COLUMNS } from "./template";
 
-// Map Vietnamese values to system values
+
 const MATERIAL_MAP: Record<string, string> = {
   cotton: "cotton",
   polyester: "polyester",
@@ -15,7 +15,7 @@ const MATERIAL_MAP: Record<string, string> = {
   "cotton hữu cơ": "organic_cotton",
   bamboo: "bamboo",
   hemp: "hemp",
-  "pha trộn": "blend",
+  "pha trộn": "blend"
 };
 
 const PRODUCT_TYPE_MAP: Record<string, string> = {
@@ -28,14 +28,14 @@ const PRODUCT_TYPE_MAP: Record<string, string> = {
   giày: "shoes",
   túi: "bag",
   "phụ kiện": "accessories",
-  khác: "other",
+  khác: "other"
 };
 
 const ENERGY_SOURCE_MAP: Record<string, string> = {
   "điện lưới": "grid",
   "điện mặt trời": "solar",
   "than đá": "coal",
-  "hỗn hợp": "mixed",
+  "hỗn hợp": "mixed"
 };
 
 const TRANSPORT_MODE_MAP: Record<string, string> = {
@@ -43,18 +43,18 @@ const TRANSPORT_MODE_MAP: Record<string, string> = {
   "đường biển": "sea",
   "đường hàng không": "air",
   "đường sắt": "rail",
-  "đa phương thức": "multimodal",
+  "đa phương thức": "multimodal"
 };
 
 const MATERIAL_SOURCE_MAP: Record<string, string> = {
   "trong nước": "domestic",
   "nhập khẩu": "imported",
-  "không xác định": "unknown",
+  "không xác định": "unknown"
 };
 
 const MARKET_TYPE_MAP: Record<string, string> = {
   "nội địa": "domestic",
-  "xuất khẩu": "export",
+  "xuất khẩu": "export"
 };
 
 const EXPORT_COUNTRY_MAP: Record<string, string> = {
@@ -73,7 +73,7 @@ const EXPORT_COUNTRY_MAP: Record<string, string> = {
   kr: "kr",
   korea: "kr",
   khác: "other",
-  other: "other",
+  other: "other"
 };
 
 const PROCESS_MAP: Record<string, string> = {
@@ -82,7 +82,7 @@ const PROCESS_MAP: Record<string, string> = {
   "cắt may": "cutting",
   nhuộm: "dyeing",
   in: "printing",
-  "hoàn tất": "finishing",
+  "hoàn tất": "finishing"
 };
 
 function normalizeString(str: string): string {
@@ -90,23 +90,23 @@ function normalizeString(str: string): string {
 }
 
 function mapValue<T extends string>(
-  value: string,
-  map: Record<string, string>,
-  defaultValue: T,
-): T {
+value: string,
+map: Record<string, string>,
+defaultValue: T)
+: T {
   const normalized = normalizeString(value);
-  return (map[normalized] as T) || defaultValue;
+  return map[normalized] as T || defaultValue;
 }
 
 function parseProcesses(value: string): string[] {
   if (!value) return [];
-  return value
-    .split(/[,;]/)
-    .map((p) => {
-      const normalized = normalizeString(p);
-      return PROCESS_MAP[normalized] || normalized;
-    })
-    .filter(Boolean);
+  return value.
+  split(/[,;]/).
+  map((p) => {
+    const normalized = normalizeString(p);
+    return PROCESS_MAP[normalized] || normalized;
+  }).
+  filter(Boolean);
 }
 
 export function parseFile(file: File): Promise<Record<string, unknown>[]> {
@@ -118,23 +118,23 @@ export function parseFile(file: File): Promise<Record<string, unknown>[]> {
         const data = e.target?.result;
         const workbook = XLSX.read(data, { type: "array" });
 
-        // Get the first sheet (data sheet)
+
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
 
-        // Convert to JSON with header mapping
+
         const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(
           worksheet,
           {
             defval: "",
-            raw: false,
-          },
+            raw: false
+          }
         );
 
         resolve(jsonData);
       } catch (error) {
         reject(
-          new Error("Không thể đọc file. Vui lòng kiểm tra định dạng file."),
+          new Error("Không thể đọc file. Vui lòng kiểm tra định dạng file.")
         );
       }
     };
@@ -148,8 +148,8 @@ export function parseFile(file: File): Promise<Record<string, unknown>[]> {
 }
 
 export function validateAndTransformData(
-  rawData: Record<string, unknown>[],
-): ValidationResult {
+rawData: Record<string, unknown>[])
+: ValidationResult {
   const validRows: BulkProductRow[] = [];
   const invalidRows: {
     row: number;
@@ -157,8 +157,9 @@ export function validateAndTransformData(
     errors: ValidationError[];
   }[] = [];
   const warnings: ValidationError[] = [];
+  const skuRowNumbers = new Map<string, number[]>();
 
-  // Header mapping from Vietnamese to keys
+
   const headerKeyMap: Record<string, string> = {};
   TEMPLATE_COLUMNS.forEach((col) => {
     const cleanHeader = col.header.replace(" *", "").toLowerCase();
@@ -166,10 +167,10 @@ export function validateAndTransformData(
   });
 
   rawData.forEach((row, index) => {
-    const rowNumber = index + 2; // +2 because row 1 is header, index starts at 0
+    const rowNumber = index + 2;
     const rowErrors: ValidationError[] = [];
 
-    // Map row data to standardized keys
+
     const mappedRow: Record<string, unknown> = {};
     Object.entries(row).forEach(([key, value]) => {
       const cleanKey = key.replace(" *", "").toLowerCase();
@@ -177,9 +178,9 @@ export function validateAndTransformData(
       mappedRow[mappedKey] = value;
     });
 
-    // Validate required fields
+
     const requiredFields = TEMPLATE_COLUMNS.filter((col) => col.required).map(
-      (col) => col.key,
+      (col) => col.key
     );
     requiredFields.forEach((field) => {
       const headerInfo = TEMPLATE_COLUMNS.find((col) => col.key === field);
@@ -188,35 +189,35 @@ export function validateAndTransformData(
           row: rowNumber,
           field,
           message: `Trường "${headerInfo?.header.replace(" *", "")}" là bắt buộc`,
-          severity: "error",
+          severity: "error"
         });
       }
     });
 
-    // Parse and validate specific fields
+
     const sku = String(mappedRow.sku || "").trim();
     const productName = String(
-      mappedRow.productName || mappedRow["Tên sản phẩm"] || "",
+      mappedRow.productName || mappedRow["Tên sản phẩm"] || ""
     ).trim();
     const productType = mapValue(
       String(mappedRow.productType || mappedRow["Loại sản phẩm"] || ""),
       PRODUCT_TYPE_MAP,
-      "other",
+      "other"
     );
     const quantity = parseInt(
-      String(mappedRow.quantity || mappedRow["Số lượng"] || "0"),
+      String(mappedRow.quantity || mappedRow["Số lượng"] || "0")
     );
     const weightPerUnit = parseFloat(
-      String(mappedRow.weightPerUnit || mappedRow["Trọng lượng (gram)"] || "0"),
+      String(mappedRow.weightPerUnit || mappedRow["Trọng lượng (gram)"] || "0")
     );
 
-    // Validate numeric fields
+
     if (isNaN(quantity) || quantity <= 0) {
       rowErrors.push({
         row: rowNumber,
         field: "quantity",
         message: "Số lượng phải là số dương",
-        severity: "error",
+        severity: "error"
       });
     }
 
@@ -225,97 +226,98 @@ export function validateAndTransformData(
         row: rowNumber,
         field: "weightPerUnit",
         message: "Trọng lượng phải là số dương",
-        severity: "error",
+        severity: "error"
       });
     }
 
-    // Material validation
+
     const primaryMaterial = mapValue(
       String(mappedRow.primaryMaterial || mappedRow["Vải chính"] || ""),
       MATERIAL_MAP,
-      "cotton",
+      "cotton"
     );
     const primaryMaterialPercentage = parseFloat(
       String(
         mappedRow.primaryMaterialPercentage ||
-          mappedRow["Tỷ lệ vải chính (%)"] ||
-          "100",
-      ),
+        mappedRow["Tỷ lệ vải chính (%)"] ||
+        "100"
+      )
     );
     const secondaryMaterial = mapValue(
       String(mappedRow.secondaryMaterial || mappedRow["Vải phụ"] || ""),
       MATERIAL_MAP,
-      "",
+      ""
     );
     const secondaryMaterialPercentage = parseFloat(
       String(
         mappedRow.secondaryMaterialPercentage ||
-          mappedRow["Tỷ lệ vải phụ (%)"] ||
-          "0",
-      ),
+        mappedRow["Tỷ lệ vải phụ (%)"] ||
+        "0"
+      )
     );
 
-    // Validate material percentages
+
     const totalPercentage =
-      primaryMaterialPercentage + (secondaryMaterialPercentage || 0);
+    primaryMaterialPercentage + (secondaryMaterialPercentage || 0);
     if (totalPercentage !== 100) {
       warnings.push({
         row: rowNumber,
         field: "materialPercentage",
         message: `Tổng tỷ lệ vật liệu là ${totalPercentage}%, nên là 100%`,
-        severity: "warning",
+        severity: "warning"
       });
     }
 
     const accessories = String(
-      mappedRow.accessories || mappedRow["Phụ liệu"] || "",
+      mappedRow.accessories || mappedRow["Phụ liệu"] || ""
     );
     const materialSource = mapValue(
       String(mappedRow.materialSource || mappedRow["Nguồn nguyên liệu"] || ""),
       MATERIAL_SOURCE_MAP,
-      "unknown",
+      "unknown"
     ) as "domestic" | "imported" | "unknown";
 
-    // Manufacturing
+
     const processes = parseProcesses(
-      String(mappedRow.processes || mappedRow["Công đoạn sản xuất"] || ""),
+      String(mappedRow.processes || mappedRow["Công đoạn sản xuất"] || "")
     );
     const energySource = mapValue(
       String(mappedRow.energySource || mappedRow["Nguồn năng lượng"] || ""),
       ENERGY_SOURCE_MAP,
-      "grid",
+      "grid"
     ) as "grid" | "solar" | "coal" | "mixed";
 
-    // Export & Transport
+
     const marketType = mapValue(
       String(mappedRow.marketType || mappedRow["Thị trường"] || ""),
       MARKET_TYPE_MAP,
-      "domestic",
+      "domestic"
     ) as "domestic" | "export";
     const exportCountry = mapValue(
       String(mappedRow.exportCountry || mappedRow["Quốc gia xuất khẩu"] || ""),
       EXPORT_COUNTRY_MAP,
-      "",
+      ""
     );
     const transportMode = mapValue(
       String(
-        mappedRow.transportMode || mappedRow["Hình thức vận chuyển"] || "",
+        mappedRow.transportMode || mappedRow["Hình thức vận chuyển"] || ""
       ),
       TRANSPORT_MODE_MAP,
-      "sea",
+      "sea"
     ) as "road" | "sea" | "air" | "rail" | "multimodal";
 
-    // Warn if export but no country specified
+
     if (marketType === "export" && !exportCountry) {
       warnings.push({
         row: rowNumber,
         field: "exportCountry",
         message: "Sản phẩm xuất khẩu nhưng chưa chỉ định quốc gia đích",
-        severity: "warning",
+        severity: "warning"
       });
     }
 
     const transformedRow: BulkProductRow = {
+      sourceRow: rowNumber,
       sku,
       productName,
       productType,
@@ -331,18 +333,38 @@ export function validateAndTransformData(
       energySource,
       marketType,
       exportCountry: exportCountry || undefined,
-      transportMode,
+      transportMode
     };
 
     if (rowErrors.length > 0) {
       invalidRows.push({
         row: rowNumber,
         data: transformedRow,
-        errors: rowErrors,
+        errors: rowErrors
       });
     } else {
       validRows.push(transformedRow);
+
+      const normalizedSku = normalizeString(sku).toUpperCase();
+      if (normalizedSku) {
+        const rows = skuRowNumbers.get(normalizedSku) || [];
+        rows.push(rowNumber);
+        skuRowNumbers.set(normalizedSku, rows);
+      }
     }
+  });
+
+  skuRowNumbers.forEach((rows, normalizedSku) => {
+    if (rows.length <= 1) return;
+
+    rows.forEach((rowNumber) => {
+      warnings.push({
+        row: rowNumber,
+        field: "sku",
+        message: `SKU "${normalizedSku}" bị trùng trong file import`,
+        severity: "warning"
+      });
+    });
   });
 
   return {
@@ -353,6 +375,6 @@ export function validateAndTransformData(
     totalRows: rawData.length,
     validCount: validRows.length,
     errorCount: invalidRows.length,
-    warningCount: warnings.length,
+    warningCount: warnings.length
   };
 }

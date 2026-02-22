@@ -11,7 +11,7 @@ interface HistoryEmptyStateProps {
 }
 
 const HistoryEmptyState: React.FC<HistoryEmptyStateProps> = ({
-  onNavigateAssessment,
+  onNavigateAssessment
 }) => {
   const t = useTranslations("calculationHistory");
   return (
@@ -33,8 +33,8 @@ const HistoryEmptyState: React.FC<HistoryEmptyStateProps> = ({
           </Button>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default HistoryEmptyState;

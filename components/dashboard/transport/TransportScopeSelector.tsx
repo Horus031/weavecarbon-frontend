@@ -6,8 +6,8 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from
+"@/components/ui/card";
 import { CheckCircle2, Globe2, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,7 @@ interface TransportScopeSelectorProps {
 
 const TransportScopeSelector: React.FC<TransportScopeSelectorProps> = ({
   value,
-  onChange,
+  onChange
 }) => {
   const t = useTranslations("transport");
   return (
@@ -35,21 +35,21 @@ const TransportScopeSelector: React.FC<TransportScopeSelectorProps> = ({
             className={cn(
               "group relative w-full rounded-xl border px-4 py-4 text-left transition-all",
               "bg-muted/20 hover:bg-muted/40",
-              value === "domestic"
-                ? "border-primary bg-primary/10 shadow-md"
-                : "border-border hover:border-primary/40",
-            )}
-          >
+              value === "domestic" ?
+              "border-primary bg-primary/10 shadow-md" :
+              "border-border hover:border-primary/40"
+            )}>
+
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span
                   className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-full border",
-                    value === "domestic"
-                      ? "bg-primary text-primary-foreground border-primary/30"
-                      : "bg-background text-muted-foreground border-border",
-                  )}
-                >
+                    value === "domestic" ?
+                    "bg-primary text-primary-foreground border-primary/30" :
+                    "bg-background text-muted-foreground border-border"
+                  )}>
+
                   <MapPin className="h-5 w-5" />
                 </span>
                 <div>
@@ -58,9 +58,9 @@ const TransportScopeSelector: React.FC<TransportScopeSelectorProps> = ({
                   </p>
                 </div>
               </div>
-              {value === "domestic" && (
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-              )}
+              {value === "domestic" &&
+              <CheckCircle2 className="h-5 w-5 text-primary" />
+              }
             </div>
           </button>
 
@@ -71,21 +71,21 @@ const TransportScopeSelector: React.FC<TransportScopeSelectorProps> = ({
             className={cn(
               "group relative w-full rounded-xl border px-4 py-4 text-left transition-all",
               "bg-muted/20 hover:bg-muted/40",
-              value === "international"
-                ? "border-primary bg-primary/10 shadow-md"
-                : "border-border hover:border-primary/40",
-            )}
-          >
+              value === "international" ?
+              "border-primary bg-primary/10 shadow-md" :
+              "border-border hover:border-primary/40"
+            )}>
+
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span
                   className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-full border",
-                    value === "international"
-                      ? "bg-primary text-primary-foreground border-primary/30"
-                      : "bg-background text-muted-foreground border-border",
-                  )}
-                >
+                    value === "international" ?
+                    "bg-primary text-primary-foreground border-primary/30" :
+                    "bg-background text-muted-foreground border-border"
+                  )}>
+
                   <Globe2 className="h-5 w-5" />
                 </span>
                 <div>
@@ -94,15 +94,15 @@ const TransportScopeSelector: React.FC<TransportScopeSelectorProps> = ({
                   </p>
                 </div>
               </div>
-              {value === "international" && (
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-              )}
+              {value === "international" &&
+              <CheckCircle2 className="h-5 w-5 text-primary" />
+              }
             </div>
           </button>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default TransportScopeSelector;

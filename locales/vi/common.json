@@ -528,7 +528,8 @@
       "impact": "Ảnh hưởng nếu thiếu",
       "actionGuide": "Hướng dẫn thực hiện",
       "viewGuide": "Xem hướng dẫn",
-      "learnMore": "Tìm hiểu thêm"
+      "learnMore": "Tìm hiểu thêm",
+      "alreadyAvailable": "Đã có"
     },
     "documents": {
       "title": "Chứng chỉ & Giấy tờ",
@@ -536,10 +537,25 @@
       "requiredDocs": "Tài liệu bắt buộc",
       "recommendedDocs": "Tài liệu khuyến nghị",
       "requiredComplete": "{completed}/{total} bắt buộc",
+      "uploadManagerTitle": "Quản lý tải lên",
+      "uploadManagerDesc": "Tải tài liệu tập trung tại một nơi và gán đúng loại hồ sơ.",
+      "uploadManagerSelectLabel": "Loại tài liệu",
+      "uploadManagerSelectPlaceholder": "Chọn tài liệu",
+      "uploadManagerSearchLabel": "Tìm tài liệu",
+      "uploadManagerSearchPlaceholder": "Nhập tên tài liệu...",
+      "uploadManagerMarketFilterLabel": "Lọc theo thị trường",
+      "uploadManagerMarketFilterAll": "Tất cả thị trường",
+      "uploadManagerNoResults": "Không có tài liệu phù hợp",
+      "uploadSelected": "Tải tài liệu",
+      "uploadedCount": "{count} đã tải",
+      "missingCount": "{count} còn thiếu",
+      "pendingUpload": "Chưa tải lên",
+      "uploadManagedAtCertificates": "Việc tải hồ sơ được quản lý tập trung tại mục Chứng chỉ & Giấy tờ trên trang /export.",
       "uploadedBy": "Tải lên bởi {user}",
       "validUntil": "Hết hạn: {date}",
       "validTo": "Hết hạn: {date}",
       "upload": "Tải lên",
+      "uploadMore": "Tải thêm",
       "view": "Xem",
       "download": "Tải xuống",
       "remove": "Xóa"
@@ -586,7 +602,7 @@
   },
   "reports": {
     "title": "Báo cáo & Xuất dữ liệu",
-    "subtitle": "Tạo báo cáo hoặc xuất dữ liệu CSV/Excel với đầy đủ metadata",
+    "subtitle": "Tạo báo cáo hoặc xuất dữ liệu Excel (XLSX) với đầy đủ metadata",
     "fullReport": "Báo cáo đầy đủ",
     "stats": {
       "products": "Sản phẩm",
@@ -655,6 +671,7 @@
     "ready": "Sẵn sàng",
     "download": "Tải",
     "quickExport": "Xuất nhanh theo loại",
+    "exporting": "Đang xuất...",
     "selectFormat": "Chọn định dạng xuất",
     "selectFormatDesc": "Chọn loại dữ liệu và định dạng file",
     "formats": {
@@ -766,6 +783,12 @@
       "fullNamePlaceholder": "Nguyễn Văn A",
       "email": "Email",
       "emailPlaceholder": "email@company.com",
+      "password": "Mật khẩu",
+      "passwordPlaceholder": "Nhập mật khẩu hoặc bấm tự sinh",
+      "generatePassword": "Tự sinh",
+      "passwordHint": "Tối thiểu 8 ký tự. Để trống sẽ tự sinh mật khẩu ngẫu nhiên.",
+      "passwordTooShort": "Mật khẩu phải có ít nhất 8 ký tự",
+      "passwordCopied": "Đã sao chép mật khẩu",
       "role": "Vai trò",
       "roleDescription": "Member: Có thể xem và chỉnh sửa dữ liệu. Viewer: Chỉ có thể xem.",
       "member": "Member",
@@ -831,12 +854,12 @@
     "clickInstruction": "Nhấn vào sản phẩm để xem chi tiết tuyến đường",
     "new": "Mới",
     "qrCodeTitle": "Tạo QR Code",
-    "viewRouteDetails": "Xem chi tiết tuyến đường",
     "viewTrackingDetails": "Xem chi tiết theo dõi vận chuyển",
     "statuses": {
       "delivered": "Đã giao",
       "inTransit": "Đang vận chuyển",
       "pending": "Chờ xử lý",
+      "cancelled": "Đã hủy",
       "totalCO2": "kg CO₂e tổng",
       "totalShipments": "Tổng shipments"
     },
@@ -855,6 +878,7 @@
     "filterInTransit": "Đang chuyển",
     "filterPending": "Chờ xuất",
     "filterDelivered": "Đã giao",
+    "filterCancelled": "Đã hủy",
     "progress": "Tiến độ",
     "selectShipment": "Chọn một lô hàng để xem chi tiết",
     "currentLocation": "Vị trí hiện tại",
@@ -872,6 +896,7 @@
       "delivered": "Đã giao",
       "inTransit": "Đang vận chuyển",
       "pending": "Chờ xuất phát",
+      "cancelled": "Đã hủy",
       "unknown": "Không xác định"
     }
   },

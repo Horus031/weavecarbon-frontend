@@ -12,10 +12,10 @@ interface UseWeaveyChatOptions {
   carbonData?: Record<string, unknown>;
 }
 
-// Custom API endpoint for WeaveCarbon AI
+
 const WEAVEY_API_URL = process.env.NEXT_PUBLIC_WEAVEY_API_URL;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 export function useWeaveyChat(_options: UseWeaveyChatOptions = {}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,41 +28,41 @@ export function useWeaveyChat(_options: UseWeaveyChatOptions = {}) {
         id: `user_${Date.now()}`,
         role: "user",
         content: input,
-        createdAt: new Date(),
+        createdAt: new Date()
       };
 
       setMessages((prev) => [...prev, userMessage]);
       setIsLoading(true);
 
       try {
-        // Call WeaveCarbon API
+
         const assistantContent = await getWeaveyResponse(input);
 
         const assistantMessage: ChatMessage = {
           id: `assistant_${Date.now()}`,
           role: "assistant",
           content: assistantContent,
-          createdAt: new Date(),
+          createdAt: new Date()
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
       } catch (error) {
         console.error("Weavey chat error:", error);
         setMessages((prev) => [
-          ...prev,
-          {
-            id: `error_${Date.now()}`,
-            role: "assistant",
-            content:
-              "Xin lỗi, tôi gặp sự cố khi xử lý yêu cầu của bạn. Vui lòng thử lại.",
-            createdAt: new Date(),
-          },
-        ]);
+        ...prev,
+        {
+          id: `error_${Date.now()}`,
+          role: "assistant",
+          content:
+          "Xin lỗi, tôi gặp sự cố khi xử lý yêu cầu của bạn. Vui lòng thử lại.",
+          createdAt: new Date()
+        }]
+        );
       } finally {
         setIsLoading(false);
       }
     },
-    [isLoading],
+    [isLoading]
   );
 
   const clearHistory = useCallback(() => {
@@ -73,11 +73,11 @@ export function useWeaveyChat(_options: UseWeaveyChatOptions = {}) {
     messages,
     isLoading,
     sendMessage,
-    clearHistory,
+    clearHistory
   };
 }
 
-// Custom API response handler
+
 async function getWeaveyResponse(input: string): Promise<string> {
   if (!WEAVEY_API_URL) {
     throw new Error("WEAVEY_API_URL is not configured");
@@ -88,12 +88,12 @@ async function getWeaveyResponse(input: string): Promise<string> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "true", // Skip ngrok browser warning
+        "ngrok-skip-browser-warning": "true"
       },
       body: JSON.stringify({
         columns_to_answer: ["cau hoi"],
-        query: input,
-      }),
+        query: input
+      })
     });
 
     if (!response.ok) {
@@ -102,7 +102,7 @@ async function getWeaveyResponse(input: string): Promise<string> {
 
     const data = await response.json();
 
-    // Extract the answer from the response
+
     if (data.answer) {
       return data.answer;
     }

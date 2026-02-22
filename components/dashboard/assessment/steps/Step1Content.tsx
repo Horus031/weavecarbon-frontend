@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -6,10 +7,10 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from
+"@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Info, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import { ProductAssessmentData, PRODUCT_TYPES } from "./types";
 
 interface Step1SKUInfoProps {
@@ -18,13 +19,43 @@ interface Step1SKUInfoProps {
 }
 
 const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
-  // Generate SKU instances preview
+  const hasShownQuantityNoticeRef = useRef(false);
+
+  useEffect(() => {
+    if (hasShownQuantityNoticeRef.current) return;
+    hasShownQuantityNoticeRef.current = true;
+
+    const storageKey = "assessment_quantity_notice_shown";
+    const hasShownInSession =
+    typeof window !== "undefined" &&
+    window.sessionStorage.getItem(storageKey) === "1";
+
+    if (hasShownInSession) return;
+
+    toast.warning("Về số lượng sản xuất", {
+      id: "assessment-quantity-note",
+      duration: 12000,
+      description:
+      <ul className="list-disc pl-4 space-y-1 text-sm">
+          <li>Hệ thống sẽ tính carbon cho từng sản phẩm và tổng lô hàng</li>
+          <li>Các SKU instance dùng để nhóm theo batch/lô xuất khẩu</li>
+          <li>Bạn không cần nhập từng SKU, việc đánh số là tự động</li>
+        </ul>
+
+    });
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(storageKey, "1");
+    }
+  }, []);
+
+
   const generateSKUPreview = () => {
     if (!data.productCode || !data.quantity || data.quantity <= 0) return [];
-    const count = Math.min(data.quantity, 5); // Show max 5 examples
+    const count = Math.min(data.quantity, 5);
     return Array.from(
       { length: count },
-      (_, i) => `${data.productCode}-${String(i + 1).padStart(2, "0")}`,
+      (_, i) => `${data.productCode}-${String(i + 1).padStart(2, "0")}`
     );
   };
 
@@ -32,7 +63,7 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
 
   return (
     <div className="space-y-6">
-      {/* Basic Info */}
+      
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="productCode">Mã sản phẩm (Product Code) *</Label>
@@ -40,10 +71,10 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
             id="productCode"
             value={data.productCode}
             onChange={(e) =>
-              onChange({ productCode: e.target.value.toUpperCase() })
+            onChange({ productCode: e.target.value.toUpperCase() })
             }
-            placeholder="VD: SKU-2024-001"
-          />
+            placeholder="VD: SKU-2024-001" />
+          
           <p className="text-xs text-muted-foreground">
             Mã định danh duy nhất cho sản phẩm
           </p>
@@ -54,8 +85,8 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
             id="productName"
             value={data.productName}
             onChange={(e) => onChange({ productName: e.target.value })}
-            placeholder="VD: Áo T-shirt Organic Cotton"
-          />
+            placeholder="VD: Áo T-shirt Organic Cotton" />
+          
         </div>
       </div>
 
@@ -64,17 +95,17 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
           <Label>Loại sản phẩm *</Label>
           <Select
             value={data.productType}
-            onValueChange={(v) => onChange({ productType: v })}
-          >
+            onValueChange={(v) => onChange({ productType: v })}>
+            
             <SelectTrigger>
               <SelectValue placeholder="Chọn loại sản phẩm" />
             </SelectTrigger>
             <SelectContent>
-              {PRODUCT_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
+              {PRODUCT_TYPES.map((type) =>
+              <SelectItem key={type.value} value={type.value}>
                   {type.label}
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -89,17 +120,17 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
             step="1"
             value={data.weightPerUnit || ""}
             onChange={(e) =>
-              onChange({ weightPerUnit: Number(e.target.value) })
+            onChange({ weightPerUnit: Number(e.target.value) })
             }
-            placeholder="VD: 250"
-          />
+            placeholder="VD: 250" />
+          
           <p className="text-xs text-muted-foreground">
             Trọng lượng trung bình của 1 sản phẩm hoàn thiện
           </p>
         </div>
       </div>
 
-      {/* Quantity - Key Feature */}
+      
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="pt-6">
           <div className="flex items-start gap-4">
@@ -123,61 +154,42 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
                   max="100000"
                   value={data.quantity || ""}
                   onChange={(e) =>
-                    onChange({ quantity: Number(e.target.value) })
+                  onChange({ quantity: Number(e.target.value) })
                   }
                   placeholder="VD: 30"
-                  className="text-lg font-medium"
-                />
+                  className="text-lg font-medium" />
+                
               </div>
 
-              {/* SKU Preview */}
-              {skuPreviews.length > 0 && (
-                <div className="pt-2">
+              
+              {skuPreviews.length > 0 &&
+              <div className="pt-2">
                   <p className="text-sm font-medium mb-2">
                     SKU instances sẽ được tạo:
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {skuPreviews.map((sku, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 bg-background rounded border text-xs font-mono"
-                      >
+                    {skuPreviews.map((sku, i) =>
+                  <span
+                    key={i}
+                    className="px-2 py-1 bg-background rounded border text-xs font-mono">
+                    
                         {sku}
                       </span>
-                    ))}
-                    {data.quantity > 5 && (
-                      <span className="px-2 py-1 text-xs text-muted-foreground">
+                  )}
+                    {data.quantity > 5 &&
+                  <span className="px-2 py-1 text-xs text-muted-foreground">
                         ... và {data.quantity - 5} SKU khác
                       </span>
-                    )}
+                  }
                   </div>
                 </div>
-              )}
+              }
             </div>
           </div>
         </CardContent>
       </Card>
+    </div>);
 
-      {/* Info Box */}
-      <div className="p-4 rounded-lg bg-muted/50 border border-border">
-        <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-muted-foreground mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-foreground mb-1">
-              Về số lượng sản xuất
-            </p>
-            <ul className="text-muted-foreground space-y-1">
-              <li>
-                • Hệ thống sẽ tính carbon cho từng sản phẩm và tổng lô hàng
-              </li>
-              <li>• Các SKU instance dùng để nhóm theo batch/lô xuất khẩu</li>
-              <li>• Bạn không cần nhập từng SKU - việc đánh số là tự động</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 };
 
 export default Step1SKUInfo;

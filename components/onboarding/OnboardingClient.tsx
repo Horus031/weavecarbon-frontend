@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/useToast";
 import { api } from "@/lib/apiClient";
@@ -10,9 +9,11 @@ import OnboardingHeader from "./OnboardingHeader";
 import OnboardingForm from "./OnboardingForm";
 
 const OnboardingClient: React.FC = () => {
-  const { user, loading, refreshUser, updateUser } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+  const isGoogleFlow = searchParams.get("source") === "google";
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [companyName, setCompanyName] = useState("");
@@ -20,22 +21,17 @@ const OnboardingClient: React.FC = () => {
   const [targetMarkets, setTargetMarkets] = useState<string[]>([]);
 
   useEffect(() => {
-    // Wait for loading to complete before any redirects
     if (loading) return;
 
-    // If no user (not authenticated at all), redirect to auth
     if (!user) {
-      console.log("No user found, redirecting to auth");
       router.push("/auth");
       return;
     }
 
-    // If user profile exists and already has a company, redirect to dashboard
-    if (user?.company_id) {
-      console.log("User has company_id, redirecting to overview");
+    if (user.company_id && !isGoogleFlow) {
       router.push("/overview");
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isGoogleFlow]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,19 +40,16 @@ const OnboardingClient: React.FC = () => {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
 
-    // Get auth user ID
-    const authUserId = user?.id;
-
-    if (!authUserId) {
+    if (!user?.id) {
       toast({
         title: "Error",
         description: "User not authenticated",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -64,38 +57,48 @@ const OnboardingClient: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Insert company with proper error handling
-      const company = await api.post<{ id: string }>("/companies", {
+      const companyPayload = {
         name: companyName,
         business_type: businessType as "shop_online" | "brand" | "factory",
-        target_markets: targetMarkets.length > 0 ? targetMarkets : null,
-        current_plan: "starter",
-      });
+        target_markets: targetMarkets
+      };
 
-      console.log("Company created:", company.id);
+      if (user.company_id) {
+        await api.put("/account/company", companyPayload);
+      } else {
+        try {
+          await api.post("/account/company", companyPayload);
+        } catch (error) {
+          const message =
+          error instanceof Error ? error.message.toLowerCase() : "";
+          const canFallbackToUpdate =
+          message.includes("already") ||
+          message.includes("duplicate") ||
+          message.includes("exists");
 
-      // Update user with company_id
-      await api.patch(`/users/${authUserId}`, { company_id: company.id });
+          if (!canFallbackToUpdate) {
+            throw error;
+          }
 
-      console.log("User updated with company_id");
-      updateUser({ company_id: company.id });
+          await api.put("/account/company", companyPayload);
+        }
+      }
 
       toast({
-        title: "Success! 🎉",
-        description: "Your company has been created successfully!",
+        title: "Success",
+        description: "Company information has been saved successfully."
       });
 
-      // Refresh user context
       await refreshUser();
-
-      // Redirect to dashboard
       router.push("/overview");
-    } catch (error: any) {
+    } catch (error) {
+      const message =
+      error instanceof Error ? error.message : "Something went wrong";
       console.error("Onboarding error:", error);
       toast({
         title: "Error",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
+        description: message,
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
@@ -109,8 +112,8 @@ const OnboardingClient: React.FC = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           <p className="text-muted-foreground">Loading your profile...</p>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -125,11 +128,11 @@ const OnboardingClient: React.FC = () => {
           targetMarkets={targetMarkets}
           setTargetMarkets={setTargetMarkets}
           isSubmitting={isSubmitting}
-          onSubmit={handleSubmit}
-        />
+          onSubmit={handleSubmit} />
+
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default OnboardingClient;

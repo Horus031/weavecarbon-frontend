@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,8 @@ import {
   Navigation,
   Globe,
   ChevronRight,
-  RefreshCw,
-} from "lucide-react";
+  RefreshCw } from
+"lucide-react";
 import type { TransportLeg } from "@/types/transport";
 import { useTranslations } from "next-intl";
 
@@ -23,9 +24,16 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 interface TransportMapProps {
   legs: TransportLeg[];
   onRefresh?: () => void;
+  mapSubject?: string;
+  mapSubjectMeta?: string;
 }
 
-const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
+const TransportMap: React.FC<TransportMapProps> = ({
+  legs,
+  onRefresh,
+  mapSubject,
+  mapSubjectMeta
+}) => {
   const t = useTranslations("trackShipment");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -35,6 +43,8 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
   const [selectedLeg, setSelectedLeg] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
+  const formatDistanceKm = (value: number) =>
+  value.toLocaleString("en-US", { maximumFractionDigits: 3 });
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -82,7 +92,7 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
     }
   };
 
-  // Initialize map
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -97,10 +107,10 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
         projection: "mercator" as any,
         bearing: 0,
         pitch: 0,
-        maxPitch: 0,
+        maxPitch: 0
       });
 
-      // Set map ref immediately so drawing effect can access it
+
       mapRef.current = map;
 
       map.addControl(new mapboxgl.NavigationControl());
@@ -131,24 +141,24 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
     }
   }, []);
 
-  // Animate marker along a route
+
   const animateMarker = (leg: TransportLeg, legIndex: number) => {
     if (!mapRef.current) return;
 
     const map = mapRef.current;
     setIsAnimating(true);
 
-    // Remove existing animation marker
+
     if (animationMarkerRef.current) {
       animationMarkerRef.current.remove();
     }
 
-    // Cancel any existing animation
+
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
 
-    // Create animated marker element
+
     const el = document.createElement("div");
     el.className = "animate-marker";
     el.innerHTML = `
@@ -176,37 +186,37 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
     const start = [leg.origin.lng, leg.origin.lat];
     const end = [leg.destination.lng, leg.destination.lat];
 
-    // Calculate total steps based on distance (longer routes = more steps)
+
     const distance = Math.sqrt(
-      Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2),
+      Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2)
     );
     const totalSteps = Math.max(100, Math.min(300, distance * 20));
     let currentStep = 0;
 
-    // Zoom to the route with better zoom levels
+
     const bounds = new mapboxgl.LngLatBounds();
     bounds.extend([leg.origin.lng, leg.origin.lat]);
     bounds.extend([leg.destination.lng, leg.destination.lat]);
 
-    // Calculate zoom level based on distance
+
     let maxZoom;
     if (distance < 0.5) {
-      maxZoom = 12; // Very close routes (domestic)
+      maxZoom = 12;
     } else if (distance < 2) {
-      maxZoom = 9; // Short routes
+      maxZoom = 9;
     } else if (distance < 10) {
-      maxZoom = 6; // Medium routes
+      maxZoom = 6;
     } else {
-      maxZoom = 4; // Long international routes
+      maxZoom = 4;
     }
 
     map.fitBounds(bounds, {
       padding: { top: 80, bottom: 80, left: 80, right: 80 },
       duration: 1000,
-      maxZoom: maxZoom,
+      maxZoom: maxZoom
     });
 
-    // Highlight the selected route
+
     const lineId = `route-line-${legIndex}`;
     const glowId = `route-glow-${legIndex}`;
     if (map.getLayer(lineId)) {
@@ -220,17 +230,17 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
 
     const animate = () => {
       if (currentStep >= totalSteps) {
-        // Loop: restart animation instead of stopping
+
         currentStep = 0;
       }
 
       const progress = currentStep / totalSteps;
 
-      // Ease-in-out interpolation
+
       const easeProgress =
-        progress < 0.5
-          ? 2 * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      progress < 0.5 ?
+      2 * progress * progress :
+      1 - Math.pow(-2 * progress + 2, 2) / 2;
 
       const currentLng = start[0] + (end[0] - start[0]) * easeProgress;
       const currentLat = start[1] + (end[1] - start[1]) * easeProgress;
@@ -244,25 +254,25 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
     animate();
   };
 
-  // Handle leg selection
+
   const handleLegClick = (legIndex: number) => {
     if (selectedLeg === legIndex) {
       setSelectedLeg(null);
       setIsAnimating(false);
 
-      // Stop animation
+
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
 
-      // Remove animation marker
+
       if (animationMarkerRef.current) {
         animationMarkerRef.current.remove();
         animationMarkerRef.current = null;
       }
 
-      // Reset all line styles
+
       if (mapRef.current) {
         legs.forEach((_, idx) => {
           const lineId = `route-line-${idx}`;
@@ -278,7 +288,7 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
         });
       }
 
-      // Zoom back to show all routes
+
       if (mapRef.current && legs.length > 0) {
         const allPoints: any[] = [];
         legs.forEach((leg, index) => {
@@ -286,13 +296,13 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
             allPoints.push({
               ...leg.origin,
               isOrigin: true,
-              isDestination: false,
+              isDestination: false
             });
           }
           allPoints.push({
             ...leg.destination,
             isOrigin: false,
-            isDestination: index === legs.length - 1,
+            isDestination: index === legs.length - 1
           });
         });
 
@@ -301,7 +311,7 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
         mapRef.current.fitBounds(bounds, {
           padding: { top: 80, bottom: 80, left: 80, right: 80 },
           maxZoom: 10,
-          duration: 1000,
+          duration: 1000
         });
       }
     } else {
@@ -310,7 +320,7 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
     }
   };
 
-  // Clean up animation when legs change (product switches)
+
   useEffect(() => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -326,7 +336,7 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
     setIsAnimating(false);
   }, [legs]);
 
-  // Draw routes when legs change (but not during initial map setup)
+
   useEffect(() => {
     if (!mapRef.current || legs.length === 0) return;
 
@@ -336,11 +346,11 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
       if (!map.loaded() || !map.isStyleLoaded()) return;
 
       try {
-        // Clear existing markers
+
         markersRef.current.forEach((marker) => marker.remove());
         markersRef.current = [];
 
-        // Remove existing layers and sources
+
         legs.forEach((_, idx) => {
           const lineId = `route-line-${idx}`;
           const glowId = `route-glow-${idx}`;
@@ -350,7 +360,7 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
           if (map.getSource(sourceId)) map.removeSource(sourceId);
         });
 
-        // Add route lines with glow effect
+
         legs.forEach((leg, idx) => {
           const sourceId = `route-source-${idx}`;
           const lineId = `route-line-${idx}`;
@@ -364,64 +374,64 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
               geometry: {
                 type: "LineString",
                 coordinates: [
-                  [leg.origin.lng, leg.origin.lat],
-                  [leg.destination.lng, leg.destination.lat],
-                ],
-              },
-            } as GeoJSON.Feature,
+                [leg.origin.lng, leg.origin.lat],
+                [leg.destination.lng, leg.destination.lat]]
+
+              }
+            } as GeoJSON.Feature
           });
 
-          // Add glow layer
+
           map.addLayer({
             id: glowId,
             type: "line",
             source: sourceId,
             layout: {
               "line-join": "round",
-              "line-cap": "round",
+              "line-cap": "round"
             },
             paint: {
               "line-color": getModeColor(leg.mode),
               "line-width": 8,
               "line-opacity": 0.3,
-              "line-blur": 4,
-            },
+              "line-blur": 4
+            }
           });
 
-          // Add main line
+
           map.addLayer({
             id: lineId,
             type: "line",
             source: sourceId,
             layout: {
               "line-join": "round",
-              "line-cap": "round",
+              "line-cap": "round"
             },
             paint: {
               "line-color": getModeColor(leg.mode),
               "line-width": 3,
               "line-opacity": 0.8,
               ...(leg.mode === "air" && {
-                "line-dasharray": [2, 2],
-              }),
-            },
+                "line-dasharray": [2, 2]
+              })
+            }
           });
         });
 
-        // Add markers for all unique locations
+
         const allPoints: any[] = [];
         legs.forEach((leg, index) => {
           if (index === 0) {
             allPoints.push({
               ...leg.origin,
               isOrigin: true,
-              isDestination: false,
+              isDestination: false
             });
           }
           allPoints.push({
             ...leg.destination,
             isOrigin: false,
-            isDestination: index === legs.length - 1,
+            isDestination: index === legs.length - 1
           });
         });
 
@@ -456,22 +466,22 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
             </div>
           `);
 
-          const marker = new mapboxgl.Marker(el)
-            .setLngLat([point.lng, point.lat])
-            .setPopup(popup)
-            .addTo(map);
+          const marker = new mapboxgl.Marker(el).
+          setLngLat([point.lng, point.lat]).
+          setPopup(popup).
+          addTo(map);
 
           markersRef.current.push(marker);
         });
 
-        // Fit map to show all points
+
         if (allPoints.length > 0) {
           const bounds = new mapboxgl.LngLatBounds();
           allPoints.forEach((point) => bounds.extend([point.lng, point.lat]));
           map.fitBounds(bounds, {
             padding: { top: 80, bottom: 80, left: 80, right: 80 },
             maxZoom: 10,
-            duration: 1000, // Smooth transition
+            duration: 1000
           });
         }
       } catch (err) {
@@ -479,11 +489,11 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
       }
     };
 
-    // If map is already loaded, draw immediately
+
     if (map.loaded() && map.isStyleLoaded()) {
       drawRoutes();
     } else {
-      // Otherwise wait for it to load
+
       const handleLoad = () => {
         drawRoutes();
       };
@@ -498,13 +508,18 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
   const totalDistance = legs.reduce((sum, leg) => sum + leg.distanceKm, 0);
   const totalCO2 = legs.reduce((sum, leg) => sum + leg.co2Kg, 0);
   const estimatedDays = legs.reduce((days, leg) => {
-    if (leg.mode === "ship") return days + Math.ceil(leg.distanceKm / 500);
+    const distanceKm = Math.max(0, leg.distanceKm);
     if (leg.mode === "air") return days + 1;
-    return days + Math.ceil(leg.distanceKm / 800);
+    if (leg.mode === "ship") {
+      if (distanceKm > 0) return days + Math.max(1, Math.ceil(distanceKm / 500));
+      return days + (leg.co2Kg > 0 ? 1 : 0);
+    }
+    if (distanceKm > 0) return days + Math.max(1, Math.ceil(distanceKm / 800));
+    return days + (leg.co2Kg > 0 ? 1 : 0);
   }, 0);
 
   return (
-    <Card className="overflow-hidden border border-border/60 shadow-sm">
+    <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm">
       <style jsx global>{`
         @keyframes pulse {
           0%,
@@ -518,32 +533,39 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
           }
         }
       `}</style>
-      <CardHeader className="pb-2 bg-background">
+      <CardHeader className="border-b border-slate-200 bg-slate-50/70 pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Globe className="w-5 h-5 text-primary" />
-            Bản đồ tuyến vận chuyển
-          </CardTitle>
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Globe className="w-5 h-5 text-primary" />
+              {mapSubject ?
+              `Bản đồ vận chuyển ${mapSubject}` :
+              "Bản đồ tuyến vận chuyển"}
+            </CardTitle>
+            {mapSubjectMeta &&
+            <p className="pl-7 text-xs text-muted-foreground">{mapSubjectMeta}</p>
+            }
+          </div>
           <div className="flex items-center gap-2">
-            {isAnimating && (
-              <Badge variant="outline" className="animate-pulse">
+            {isAnimating &&
+            <Badge variant="outline" className="animate-pulse">
                 Đang mô phỏng...
               </Badge>
-            )}
-              {onRefresh && (
-                <Button variant="outline" size="sm" onClick={onRefresh}>
+            }
+              {onRefresh &&
+            <Button variant="outline" size="sm" onClick={onRefresh}>
                   <RefreshCw className="w-4 h-4 mr-2" />
                   {t("refresh")}
                 </Button>
-              )}
+            }
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0 bg-background">
-        {/* Map Container */}
-        <div className="relative h-100 bg-muted border-b border-border">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
+      <CardContent className="bg-white p-0">
+        
+        <div className="relative h-100 border-b border-slate-200 bg-slate-100/60">
+          {isLoading &&
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-100/90">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                 <p className="text-sm text-muted-foreground">
@@ -551,40 +573,40 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
                 </p>
               </div>
             </div>
-          )}
+          }
           <div ref={mapContainerRef} className="w-full h-full" />
         </div>
 
-        {/* Stats Panel */}
-        <div className="p-4 bg-background">
+        
+        <div className="bg-white p-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            <div className="text-center rounded-lg border border-border bg-muted/30 p-3">
-              <p className="text-2xl font-bold text-primary">
-                {totalDistance.toLocaleString()}
+            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-center">
+              <p className="text-2xl font-bold text-slate-800">
+                {formatDistanceKm(totalDistance)}
               </p>
               <p className="text-xs text-muted-foreground">
                 km tổng quãng đường
               </p>
             </div>
-            <div className="text-center rounded-lg border border-border bg-muted/30 p-3">
-              <p className="text-2xl font-bold text-orange-500">
+            <div className="rounded-lg border border-orange-200 bg-orange-50/70 p-3 text-center">
+              <p className="text-2xl font-bold text-orange-600">
                 {totalCO2.toFixed(1)}
               </p>
               <p className="text-xs text-muted-foreground">kg CO₂e phát thải</p>
             </div>
-            <div className="text-center rounded-lg border border-border bg-muted/30 p-3">
-              <p className="text-2xl font-bold text-blue-500">{legs.length}</p>
+            <div className="rounded-lg border border-sky-200 bg-sky-50/70 p-3 text-center">
+              <p className="text-2xl font-bold text-sky-600">{legs.length}</p>
               <p className="text-xs text-muted-foreground">chặng vận chuyển</p>
             </div>
-            <div className="text-center rounded-lg border border-border bg-muted/30 p-3">
-              <p className="text-2xl font-bold text-green-500">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-center">
+              <p className="text-2xl font-bold text-emerald-600">
                 ~{estimatedDays}
               </p>
               <p className="text-xs text-muted-foreground">ngày vận chuyển</p>
             </div>
           </div>
 
-          {/* Legs breakdown */}
+          
           <div className="space-y-2">
             <p className="text-sm font-medium flex items-center gap-2">
               <Navigation className="w-4 h-4" />
@@ -599,13 +621,13 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
                 <div
                   key={leg.id}
                   className={`flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer
-                    ${selectedLeg === index ? "bg-primary/10 border-2 border-primary shadow-lg scale-[1.02]" : "bg-muted/30 hover:bg-muted/50 border border-border"}`}
-                  onClick={() => handleLegClick(index)}
-                >
+                    ${selectedLeg === index ? "border border-sky-300 bg-sky-50/70 shadow-sm" : "border border-slate-200 bg-white hover:bg-slate-50"}`}
+                  onClick={() => handleLegClick(index)}>
+                  
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white transition-transform hover:scale-110"
-                    style={{ backgroundColor: getModeColor(leg.mode) }}
-                  >
+                    style={{ backgroundColor: getModeColor(leg.mode) }}>
+                    
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -619,31 +641,31 @@ const TransportMap: React.FC<TransportMapProps> = ({ legs, onRefresh }) => {
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span>{leg.distanceKm.toLocaleString()} km</span>
+                      <span>{formatDistanceKm(leg.distanceKm)} km</span>
                       <span>•</span>
                       <span>{getRouteTypeLabel(leg.routeType)}</span>
                       <span>•</span>
-                      <span className="text-orange-500">
+                      <span className="text-orange-600">
                         {leg.co2Kg.toFixed(2)} kg CO₂
                       </span>
                     </div>
                   </div>
                   <Badge
                     variant={
-                      leg.type === "international" ? "default" : "secondary"
+                    leg.type === "international" ? "default" : "secondary"
                     }
-                    className="text-xs"
-                  >
+                    className="text-xs">
+                    
                     {leg.type === "international" ? "Quốc tế" : "Nội địa"}
                   </Badge>
-                </div>
-              );
+                </div>);
+
             })}
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default TransportMap;

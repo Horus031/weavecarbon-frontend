@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React, { useState, useMemo } from "react";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,24 +10,24 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
+  CommandSeparator } from
+"@/components/ui/command";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  PopoverTrigger } from
+"@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import {
   CatalogMaterial,
   MaterialType,
   MATERIAL_CATALOG,
   MATERIAL_TYPE_LABELS,
-  MATERIAL_FAMILY_LABELS,
-} from "./materialCatalog";
+  MATERIAL_FAMILY_LABELS } from
+"./materialCatalog";
 
 interface MaterialComboboxProps {
-  value?: string; // catalogMaterialId
+  value?: string;
   onSelect: (material: CatalogMaterial | null) => void;
   onOtherClick: () => void;
   materialType?: MaterialType;
@@ -41,46 +41,46 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
   onOtherClick,
   materialType,
   placeholder = "Tìm vật liệu...",
-  disabled = false,
+  disabled = false
 }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  // Filter materials
+
   const filteredMaterials = useMemo(() => {
     const query = search.toLowerCase().trim();
 
     return MATERIAL_CATALOG.filter(
-      (m: { status: string }) => m.status === "active",
-    )
-      .filter(
-        (m: { materialType: any }) =>
-          !materialType || m.materialType === materialType,
-      )
-      .filter(
-        (m: {
-          displayNameVi: string;
-          displayNameEn: string;
-          materialFamily: string | string[];
-        }) => {
-          if (!query) return true;
-          return (
-            m.displayNameVi.toLowerCase().includes(query) ||
-            m.displayNameEn.toLowerCase().includes(query) ||
-            m.materialFamily.includes(query)
-          );
-        },
-      )
-      .slice(0, 15);
+      (m: {status: string;}) => m.status === "active"
+    ).
+    filter(
+      (m: {materialType: any;}) =>
+      !materialType || m.materialType === materialType
+    ).
+    filter(
+      (m: {
+        displayNameVi: string;
+        displayNameEn: string;
+        materialFamily: string | string[];
+      }) => {
+        if (!query) return true;
+        return (
+          m.displayNameVi.toLowerCase().includes(query) ||
+          m.displayNameEn.toLowerCase().includes(query) ||
+          m.materialFamily.includes(query));
+
+      }
+    ).
+    slice(0, 15);
   }, [search, materialType]);
 
-  // Group by type
+
   const groupedMaterials = useMemo(() => {
     const groups: Record<MaterialType, CatalogMaterial[]> = {
       fabric: [],
       trim: [],
       accessory: [],
-      packaging: [],
+      packaging: []
     };
 
     filteredMaterials.forEach((m) => {
@@ -90,10 +90,10 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
     return groups;
   }, [filteredMaterials]);
 
-  // Get selected material
-  const selectedMaterial = value
-    ? MATERIAL_CATALOG.find((m) => m.id === value)
-    : null;
+
+  const selectedMaterial = value ?
+  MATERIAL_CATALOG.find((m) => m.id === value) :
+  null;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -104,22 +104,22 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
           aria-expanded={open}
           className={cn(
             "w-full justify-between",
-            !selectedMaterial && "text-muted-foreground",
+            !selectedMaterial && "text-muted-foreground"
           )}
-          disabled={disabled}
-        >
-          {selectedMaterial ? (
-            <span className="flex items-center gap-2 truncate">
+          disabled={disabled}>
+          
+          {selectedMaterial ?
+          <span className="flex items-center gap-2 truncate">
               {selectedMaterial.displayNameVi}
-              {selectedMaterial.isRecycled && (
-                <Badge variant="secondary" className="text-xs">
+              {selectedMaterial.isRecycled &&
+            <Badge variant="secondary" className="text-xs">
                   Tái chế
                 </Badge>
-              )}
-            </span>
-          ) : (
-            placeholder
-          )}
+            }
+            </span> :
+
+          placeholder
+          }
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -128,8 +128,8 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
           <CommandInput
             placeholder="Tìm vật liệu..."
             value={search}
-            onValueChange={setSearch}
-          />
+            onValueChange={setSearch} />
+          
           <CommandList>
             <CommandEmpty>
               <div className="py-4 text-center">
@@ -142,40 +142,40 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
                   onClick={() => {
                     setOpen(false);
                     onOtherClick();
-                  }}
-                >
+                  }}>
+                  
                   <Plus className="w-4 h-4 mr-1" />
                   Thêm vật liệu khác
                 </Button>
               </div>
             </CommandEmpty>
 
-            {/* Grouped materials */}
+            
             {Object.entries(groupedMaterials).map(([type, materials]) => {
               if (materials.length === 0) return null;
 
               return (
                 <CommandGroup
                   key={type}
-                  heading={MATERIAL_TYPE_LABELS[type as MaterialType]}
-                >
-                  {materials.map((material) => (
-                    <CommandItem
-                      key={material.id}
-                      value={material.id}
-                      onSelect={() => {
-                        onSelect(material);
-                        setOpen(false);
-                      }}
-                      className="flex items-center justify-between"
-                    >
+                  heading={MATERIAL_TYPE_LABELS[type as MaterialType]}>
+                  
+                  {materials.map((material) =>
+                  <CommandItem
+                    key={material.id}
+                    value={material.id}
+                    onSelect={() => {
+                      onSelect(material);
+                      setOpen(false);
+                    }}
+                    className="flex items-center justify-between">
+                    
                       <div className="flex items-center gap-2">
                         <Check
-                          className={cn(
-                            "h-4 w-4",
-                            value === material.id ? "opacity-100" : "opacity-0",
-                          )}
-                        />
+                        className={cn(
+                          "h-4 w-4",
+                          value === material.id ? "opacity-100" : "opacity-0"
+                        )} />
+                      
                         <div>
                           <span>{material.displayNameVi}</span>
                           <span className="text-xs text-muted-foreground ml-2">
@@ -184,32 +184,32 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        {material.isRecycled && (
-                          <Badge variant="secondary" className="text-xs">
+                        {material.isRecycled &&
+                      <Badge variant="secondary" className="text-xs">
                             ♻
                           </Badge>
-                        )}
+                      }
                         <span className="text-xs text-muted-foreground">
                           {material.co2Factor} kg CO₂/kg
                         </span>
                       </div>
                     </CommandItem>
-                  ))}
-                </CommandGroup>
-              );
+                  )}
+                </CommandGroup>);
+
             })}
 
             <CommandSeparator />
 
-            {/* "Other" option */}
+            
             <CommandGroup>
               <CommandItem
                 onSelect={() => {
                   setOpen(false);
                   onOtherClick();
                 }}
-                className="text-primary"
-              >
+                className="text-primary">
+                
                 <Plus className="w-4 h-4 mr-2" />
                 <span>Không thấy vật liệu phù hợp? Thêm vật liệu khác</span>
               </CommandItem>
@@ -217,8 +217,8 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
           </CommandList>
         </Command>
       </PopoverContent>
-    </Popover>
-  );
+    </Popover>);
+
 };
 
 export default MaterialCombobox;

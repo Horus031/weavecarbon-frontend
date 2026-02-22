@@ -1,8 +1,9 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { Badge } from "@/components/ui/badge";
 import type { SupplyChainNode, SupplyChainRoute } from "./SupplyChainMap";
 
@@ -64,7 +65,7 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
   zoom = 4,
   height = "500px",
   onNodeClick,
-  onRouteClick,
+  onRouteClick
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -72,7 +73,7 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize map
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -84,11 +85,11 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: "mapbox://styles/mapbox/satellite-streets-v12",
-        center: center, // ...FIX: Use center directly, already [lng, lat]
+        center: center,
         zoom: zoom,
         pitch: 45,
         bearing: -17.6,
-        antialias: true,
+        antialias: true
       });
 
       map.addControl(new mapboxgl.NavigationControl());
@@ -127,14 +128,14 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
     }
   }, [center, zoom]);
 
-  // Draw routes and markers
+
   useEffect(() => {
     if (!mapRef.current) return;
 
     const map = mapRef.current;
 
     const addRoutesAndMarkers = () => {
-      // ...existing code...
+
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
 
@@ -157,11 +158,11 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
             geometry: {
               type: "LineString",
               coordinates: [
-                [route.from.lng, route.from.lat],
-                [route.to.lng, route.to.lat],
-              ],
-            },
-          } as GeoJSON.Feature,
+              [route.from.lng, route.from.lat],
+              [route.to.lng, route.to.lat]]
+
+            }
+          } as GeoJSON.Feature
         });
 
         map.addLayer({
@@ -170,14 +171,14 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
           source: sourceId,
           layout: {
             "line-join": "round",
-            "line-cap": "round",
+            "line-cap": "round"
           },
           paint: {
             "line-color": getRouteColor(route.mode, route.status),
             "line-width": route.status === "in_transit" ? 4 : 2,
             "line-opacity": route.status === "pending" ? 0.5 : 0.8,
-            ...(route.status === "pending" && { "line-dasharray": [2, 2] }),
-          },
+            ...(route.status === "pending" && { "line-dasharray": [2, 2] })
+          }
         });
 
         map.on("click", lineId, () => {
@@ -217,7 +218,7 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
 
         const popup = new mapboxgl.Popup({
           offset: 25,
-          closeButton: true,
+          closeButton: true
         }).setHTML(`
           <div style="padding: 12px; min-width: 220px; font-family: system-ui;">
             <h3 style="font-weight: bold; margin-bottom: 8px;">${node.name}</h3>
@@ -227,10 +228,10 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
           </div>
         `);
 
-        const marker = new mapboxgl.Marker(el)
-          .setLngLat([node.lng, node.lat])
-          .setPopup(popup)
-          .addTo(map);
+        const marker = new mapboxgl.Marker(el).
+        setLngLat([node.lng, node.lat]).
+        setPopup(popup).
+        addTo(map);
 
         if (onNodeClick) {
           el.addEventListener("click", () => onNodeClick(node));
@@ -244,7 +245,7 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
         nodes.forEach((node) => bounds.extend([node.lng, node.lat]));
         map.fitBounds(bounds, {
           padding: { top: 50, bottom: 50, left: 50, right: 50 },
-          maxZoom: 10,
+          maxZoom: 10
         });
       }
     };
@@ -260,28 +261,28 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
     return (
       <div
         style={{ height }}
-        className="flex items-center justify-center bg-muted rounded-lg border"
-      >
+        className="flex items-center justify-center bg-muted rounded-lg border">
+        
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
           <p className="text-sm text-muted-foreground">Loading 3D map...</p>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   if (error) {
     return (
       <div
         style={{ height }}
-        className="flex items-center justify-center bg-muted rounded-lg border"
-      >
+        className="flex items-center justify-center bg-muted rounded-lg border">
+        
         <div className="text-center">
           <p className="text-destructive mb-2">{error}</p>
           <Badge variant="secondary">Replace token in code</Badge>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -313,8 +314,8 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
           🖱️ Drag to rotate • Scroll to zoom
         </p>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default SupplyChainMap3D;

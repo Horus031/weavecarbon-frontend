@@ -5,15 +5,15 @@ import {
   localeFlagCodes,
   localeNames,
   locales,
-  type Locale,
-} from "@/lib/i18n/config";
+  type Locale } from
+"@/lib/i18n/config";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from
+"@/components/ui/select";
 import "flag-icons/css/flag-icons.min.css";
 
 export function LanguageToggle() {
@@ -23,21 +23,21 @@ export function LanguageToggle() {
     <Select
       value={locale}
       onValueChange={(value) => setLocale(value as Locale)}
-      disabled={isLoading}
-    >
+      disabled={isLoading}>
+
       <SelectTrigger className="w-20 bg-transparent border-primary-foreground/50 items-center cursor-pointer ">
         <SelectValue>
           <span className={`fi fi-${localeFlagCodes[locale]} text-xl`} />
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {locales.map((loc) => (
-          <SelectItem className="cursor-pointer" key={loc} value={loc}>
+        {locales.map((loc) =>
+        <SelectItem className="cursor-pointer" key={loc} value={loc}>
             <span className={`fi fi-${localeFlagCodes[loc]} text-xl`} />
             <span className="px-2">{localeNames[loc]}</span>
           </SelectItem>
-        ))}
+        )}
       </SelectContent>
-    </Select>
-  );
+    </Select>);
+
 }

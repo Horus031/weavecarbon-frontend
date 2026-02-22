@@ -1,78 +1,93 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { api } from "@/lib/apiClient";
+import { api, authTokenStore, isUnauthorizedApiError } from "@/lib/apiClient";
 import PricingModal from "@/components/dashboard/PricingModal";
 import { useToast } from "@/hooks/useToast";
 
 export default function PricingModalGate() {
   const [open, setOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { toast } = useToast();
   const pathname = usePathname();
 
   useEffect(() => {
     const checkPricingStatus = async () => {
-      // Only show on overview page
       if (pathname !== "/overview") {
         setOpen(false);
         return;
       }
 
-      // Don't show if no user or no company
-      if (!user?.company_id) return;
+      if (loading || !user || user.user_type !== "b2b") {
+        setOpen(false);
+        return;
+      }
+
+      const hasToken = Boolean(
+        authTokenStore.getAccessToken() || authTokenStore.getRefreshToken()
+      );
+      if (!hasToken) {
+        setOpen(false);
+        return;
+      }
 
       try {
-        // Fetch company to check current_plan
-        const company = await api.get<{ current_plan: string }>(
-          `/companies/${user.company_id}`,
+        const subscription = await api.get<{current_plan?: string;}>(
+          "/subscription"
         );
-
-        // Show modal if plan is 'starter' (default plan after onboarding)
-        // This means user hasn't upgraded yet
-        if (company?.current_plan === "starter") {
-          // Always show on overview page for starter plan users
+        if (subscription?.current_plan === "starter") {
           setOpen(true);
         }
       } catch (error) {
-        console.error("Error checking pricing status:", error);
+        if (isUnauthorizedApiError(error)) {
+          setOpen(false);
+          await signOut();
+          return;
+        }
       }
     };
 
-    checkPricingStatus();
-  }, [user?.company_id, pathname]);
+    void checkPricingStatus();
+  }, [loading, user, pathname, signOut]);
 
   const handleClose = () => {
-    // Just close the modal, it will show again when user returns to overview
     setOpen(false);
   };
 
   const handleSelectPlan = async (planId: string) => {
-    if (!user?.company_id) return;
+    if (!user || user.user_type !== "b2b") return;
 
     try {
-      // Update company plan in database
-      await api.patch(`/companies/${user.company_id}`, {
-        current_plan: planId,
-      });
+      const upgrade = await api.post<{checkout_url?: string;}>(
+        "/subscription/upgrade",
+        {
+          target_plan: planId,
+          billing_cycle: "monthly"
+        }
+      );
+
+      if (upgrade?.checkout_url && typeof window !== "undefined") {
+        window.open(upgrade.checkout_url, "_blank", "noopener,noreferrer");
+      }
 
       toast({
-        title: "Plan Updated! 🎉",
-        description: `You've selected the ${planId.charAt(0).toUpperCase() + planId.slice(1)} plan.`,
+        title: "Upgrade Started",
+        description: `Checkout for ${planId.charAt(0).toUpperCase() + planId.slice(1)} plan has been created.`
       });
 
-      // Mark as permanently seen after selecting a plan
       localStorage.setItem("weavecarbon_pricing_seen", "true");
       setOpen(false);
     } catch (error) {
-      console.error("Error selecting plan:", error);
+      if (isUnauthorizedApiError(error)) {
+        await signOut();
+        return;
+      }
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -81,7 +96,7 @@ export default function PricingModalGate() {
     <PricingModal
       open={open}
       onClose={handleClose}
-      onSelectPlan={handleSelectPlan}
-    />
-  );
+      onSelectPlan={handleSelectPlan} />);
+
+
 }

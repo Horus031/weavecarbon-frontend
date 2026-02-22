@@ -6,8 +6,8 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from
+"@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,8 +16,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from
+"@/components/ui/select";
 import { Ship, Plane, Truck, Trash2, MapPin, Info } from "lucide-react";
 import AddressSelection from "@/components/ui/AddressSelection";
 import { LegInput, AddressData } from "./TransportClient";
@@ -27,7 +27,7 @@ const EMISSION_FACTORS: Record<string, number> = {
   truck_heavy: 0.105,
   ship: 0.016,
   air: 0.602,
-  rail: 0.028,
+  rail: 0.028
 };
 
 interface TransportLegCardProps {
@@ -47,7 +47,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
   hasLocationPermission,
   onUpdate,
   onRemove,
-  calculateCO2,
+  calculateCO2
 }) => {
   const t = useTranslations("transport");
   const getModeIcon = (mode: string) => {
@@ -69,26 +69,26 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
             {getModeIcon(leg.mode)}
             {t("legCardTitle")} {index + 1}
           </CardTitle>
-          {canRemove && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onRemove(leg.id)}
-              className="text-destructive"
-            >
+          {canRemove &&
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onRemove(leg.id)}
+            className="text-destructive">
+            
               <Trash2 className="w-4 h-4" />
             </Button>
-          )}
+          }
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-5">
-        {/* Transport Mode */}
+        
         <div>
           <Label>{t("transportMode")}</Label>
           <Select
             value={leg.mode}
-            onValueChange={(v) => onUpdate(leg.id, "mode", v)}
-          >
+            onValueChange={(v) => onUpdate(leg.id, "mode", v)}>
+
             <SelectTrigger className="mt-1 bg-background border border-foreground/10">
               <SelectValue />
             </SelectTrigger>
@@ -127,7 +127,7 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
           </Select>
         </div>
 
-        {/* Origin */}
+        
         <div className="p-4 bg-muted/30 border border-border/60 rounded-lg space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium mb-3">
             <MapPin className="w-4 h-4 text-emerald-600" />
@@ -136,11 +136,11 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
           <AddressSelection
             value={leg.origin}
             onChange={(address) => onUpdate(leg.id, "origin", address)}
-            showCoordinates={true}
-          />
+            showCoordinates={true} />
+          
         </div>
 
-        {/* Destination */}
+        
         <div className="p-4 bg-muted/30 border border-border/60 rounded-lg space-y-3">
           <div className="flex items-center gap-2 text-sm font-medium mb-3">
             <MapPin className="w-4 h-4 text-destructive" />
@@ -149,11 +149,11 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
           <AddressSelection
             value={leg.destination}
             onChange={(address) => onUpdate(leg.id, "destination", address)}
-            showCoordinates={true}
-          />
+            showCoordinates={true} />
+          
         </div>
 
-        {/* Distance */}
+        
         <div>
           <Label>{t("distance")}</Label>
           <Input
@@ -161,19 +161,19 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
             placeholder={t("distancePlaceholder")}
             value={leg.distanceKm}
             onChange={(e) => onUpdate(leg.id, "distanceKm", e.target.value)}
-            className="mt-1 bg-background border border-foreground/10"
-          />
-          {!hasLocationPermission && (
-            <p className="text-xs text-muted-foreground mt-1">
+            className="mt-1 bg-background border border-foreground/10" />
+
+          {!hasLocationPermission &&
+          <p className="text-xs text-muted-foreground mt-1">
               <Info className="w-3 h-3 inline mr-1" />
               {t("locationPermissionHint")}
             </p>
-          )}
+          }
         </div>
 
-        {/* Leg CO2 Result */}
-        {parseFloat(leg.distanceKm) > 0 && (
-          <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+        
+        {parseFloat(leg.distanceKm) > 0 &&
+        <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t("legCO2")}</span>
               <span className="font-medium text-primary">
@@ -184,10 +184,10 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
               {t("emissionFactor")}: {EMISSION_FACTORS[leg.mode]} kg CO₂/km
             </p>
           </div>
-        )}
+        }
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default TransportLegCard;

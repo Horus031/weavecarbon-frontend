@@ -1,19 +1,19 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+
 "use client";
 
 import { useState, useEffect } from "react";
 import LoadingScreen from "@/app/loading";
 
 export default function HomeClient({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+  children
+
+
+}: {children: React.ReactNode;}) {
   const [isLoading, setIsLoading] = useState(true);
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
-    // Check if user has already seen loading screen in this session
+
     const hasSeenLoading = sessionStorage.getItem("hasSeenLoading");
     if (hasSeenLoading) {
       setIsLoading(false);
@@ -29,15 +29,17 @@ export default function HomeClient({
 
   return (
     <>
-      {isLoading && (
-        <LoadingScreen onComplete={handleLoadingComplete} minDuration={2500} />
-      )}
+      {isLoading &&
+      <LoadingScreen onComplete={handleLoadingComplete} minDuration={2500} />
+      }
 
+      {!isLoading &&
       <div
-        className={`min-h-screen bg-background transition-opacity duration-500 ${showContent ? "opacity-100" : "opacity-0"}`}
-      >
-        {children}
-      </div>
-    </>
-  );
+        className={`min-h-screen bg-background transition-opacity duration-500 ${showContent ? "opacity-100" : "opacity-0"}`}>
+
+          {children}
+        </div>
+      }
+    </>);
+
 }

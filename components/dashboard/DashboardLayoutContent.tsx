@@ -10,7 +10,7 @@ interface DashboardLayoutContentProps {
 }
 
 export default function DashboardLayoutContent({
-  children,
+  children
 }: DashboardLayoutContentProps) {
   const { title, subtitle } = useDashboardTitle();
 
@@ -32,6 +32,6 @@ export default function DashboardLayoutContent({
       </header>
 
       <div className="flex-1 p-3 pt-24 md:p-6 md:pt-24 lg:pt-3">{children}</div>
-    </>
-  );
+    </>);
+
 }

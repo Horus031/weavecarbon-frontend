@@ -8,8 +8,8 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from
+"@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,8 @@ import {
   Plane,
   Truck,
   CheckCircle2,
-} from "lucide-react";
+  XCircle } from
+"lucide-react";
 import { TRANSPORT_MODE_LABELS } from "@/lib/productLabels";
 import type { TrackShipment } from "./types";
 import TransportMap from "@/components/ui/TransportMap";
@@ -31,38 +32,89 @@ interface ShipmentDetailsProps {
   onRefresh?: () => void;
 }
 
+const STATUS_PALETTE = {
+  in_transit: {
+    badge: "border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50",
+    header: "bg-sky-50/50 border-sky-100",
+    location: "bg-sky-50/50 border-sky-200",
+    locationDot: "bg-sky-500",
+    locationText: "text-sky-700"
+  },
+  delivered: {
+    badge: "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50",
+    header: "bg-emerald-50/50 border-emerald-100",
+    location: "bg-emerald-50/50 border-emerald-200",
+    locationDot: "bg-emerald-500",
+    locationText: "text-emerald-700"
+  },
+  pending: {
+    badge: "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50",
+    header: "bg-amber-50/50 border-amber-100",
+    location: "bg-amber-50/50 border-amber-200",
+    locationDot: "bg-amber-500",
+    locationText: "text-amber-700"
+  },
+  cancelled: {
+    badge: "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-50",
+    header: "bg-rose-50/50 border-rose-100",
+    location: "bg-rose-50/50 border-rose-200",
+    locationDot: "bg-rose-500",
+    locationText: "text-rose-700"
+  },
+  unknown: {
+    badge: "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50",
+    header: "bg-slate-50/50 border-slate-100",
+    location: "bg-slate-50/50 border-slate-200",
+    locationDot: "bg-slate-500",
+    locationText: "text-slate-700"
+  }
+} as const;
+
 const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
   shipment,
-  onRefresh,
+  onRefresh
 }) => {
   const t = useTranslations("trackShipment");
   const router = useRouter();
+  const formatDistanceKm = (value: number) =>
+  value.toLocaleString("en-US", { maximumFractionDigits: 3 });
+  const statusPalette =
+  shipment && shipment.status in STATUS_PALETTE ?
+  STATUS_PALETTE[shipment.status as keyof typeof STATUS_PALETTE] :
+  STATUS_PALETTE.unknown;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "delivered":
         return (
-          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+          <Badge className={STATUS_PALETTE.delivered.badge}>
             <CheckCircle2 className="w-3 h-3 mr-1" />
             {t("statuses.delivered")}
-          </Badge>
-        );
+          </Badge>);
+
       case "in_transit":
         return (
-          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+          <Badge className={STATUS_PALETTE.in_transit.badge}>
             <Truck className="w-3 h-3 mr-1" />
             {t("statuses.inTransit")}
-          </Badge>
-        );
+          </Badge>);
+
       case "pending":
         return (
-          <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
+          <Badge className={STATUS_PALETTE.pending.badge}>
             <Clock className="w-3 h-3 mr-1" />
             {t("statuses.pending")}
-          </Badge>
-        );
+          </Badge>);
+
+      case "cancelled":
+        return (
+          <Badge className={STATUS_PALETTE.cancelled.badge}>
+            <XCircle className="w-3 h-3 mr-1" />
+            {t("statuses.cancelled")}
+          </Badge>);
+
       default:
-        return <Badge variant="secondary">{t("statuses.unknown")}</Badge>;
+        return <Badge className={STATUS_PALETTE.unknown.badge}>{t("statuses.unknown")}</Badge>;
     }
   };
 
@@ -86,25 +138,30 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
             <p>{t("selectShipment")}</p>
           </div>
         </Card>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div className="lg:col-span-2 space-y-6">
-      {/* Map */}
-      <TransportMap legs={shipment.legs} onRefresh={onRefresh} />
+      
+      <TransportMap
+        legs={shipment.legs}
+        onRefresh={onRefresh}
+        mapSubject={shipment.productName}
+        mapSubjectMeta={`SKU: ${shipment.sku}`} />
 
-      {/* Shipment Details */}
-      <Card>
-        <CardHeader>
+
+      
+      <Card className="border border-slate-200 shadow-sm">
+        <CardHeader className={`border-b ${statusPalette.header}`}>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Package className="w-5 h-5" />
                 {shipment.productName}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-slate-600">
                 {shipment.id} • Container: {shipment.containerNo}
               </CardDescription>
             </div>
@@ -112,146 +169,169 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Current Location */}
-          <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+          
+          <div className={`rounded-lg border p-4 ${statusPalette.location}`}>
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-primary rounded-full animate-pulse" />
+              <div className={`w-3 h-3 rounded-full animate-pulse ${statusPalette.locationDot}`} />
               <span className="font-medium">{t("currentLocation")}</span>
             </div>
-            <p className="text-lg font-semibold text-primary">
+            <p className={`text-lg font-semibold ${statusPalette.locationText}`}>
               {shipment.currentLocation}
             </p>
           </div>
 
-          {/* Info Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <Calendar className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">{t("departureDate")}</p>
-              <p className="font-medium">
+          
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-center">
+              <Calendar className="mx-auto mb-1 h-5 w-5 text-slate-500" />
+              <p className="text-xs text-slate-500">{t("departureDate")}</p>
+              <p className="font-medium text-slate-800">
                 {new Date(shipment.departureDate).toLocaleDateString("vi-VN")}
               </p>
             </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <Clock className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">{t("estimatedArrival")}</p>
-              <p className="font-medium">
+            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-center">
+              <Clock className="mx-auto mb-1 h-5 w-5 text-slate-500" />
+              <p className="text-xs text-slate-500">{t("estimatedArrival")}</p>
+              <p className="font-medium text-slate-800">
                 {new Date(shipment.estimatedArrival).toLocaleDateString(
-                  "vi-VN",
+                  "vi-VN"
                 )}
               </p>
             </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <Anchor className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">{t("carrier")}</p>
-              <p className="font-medium text-sm truncate">{shipment.carrier}</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-center">
+              <Anchor className="mx-auto mb-1 h-5 w-5 text-slate-500" />
+              <p className="text-xs text-slate-500">{t("carrier")}</p>
+              <p className="truncate text-sm font-medium text-slate-800">{shipment.carrier}</p>
             </div>
-            <div className="text-center p-3 bg-orange-50 rounded-lg">
-              <div className="w-5 h-5 mx-auto mb-1 text-orange-500 font-bold text-xs flex items-center justify-center">
+            <div className="rounded-lg border border-orange-200 bg-orange-50/70 p-3 text-center">
+              <div className="mx-auto mb-1 flex h-5 w-5 items-center justify-center text-xs font-bold text-orange-500">
                 CO₂
               </div>
-              <p className="text-xs text-muted-foreground">{t("emissions")}</p>
+              <p className="text-xs text-slate-500">{t("emissions")}</p>
               <p className="font-medium text-orange-600">
                 {shipment.totalCO2.toFixed(1)} kg
               </p>
             </div>
           </div>
 
-          {/* Progress Timeline */}
+          
           <div>
             <h4 className="font-medium mb-4">{t("timeline")}</h4>
             <div className="space-y-4">
               {shipment.legs.map((leg, index) => {
                 const Icon = getModeIcon(leg.mode);
                 const isComplete =
-                  shipment.progress >=
-                  ((index + 1) / shipment.legs.length) * 100;
+                shipment.progress >=
+                (index + 1) / shipment.legs.length * 100;
                 const isActive =
-                  shipment.progress > (index / shipment.legs.length) * 100 &&
-                  shipment.progress <
-                    ((index + 1) / shipment.legs.length) * 100;
+                shipment.progress > index / shipment.legs.length * 100 &&
+                shipment.progress <
+                (index + 1) / shipment.legs.length * 100;
 
                 return (
-                  <div key={leg.id} className="flex gap-4">
+                  <div
+                    key={leg.id}
+                    className="flex gap-4 rounded-lg border border-slate-200 bg-slate-50/40 p-3">
+
                     <div className="flex flex-col items-center">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          isComplete
-                            ? "bg-green-100 text-green-600"
-                            : isActive
-                              ? "bg-primary text-white animate-pulse"
-                              : "bg-muted text-muted-foreground"
-                        }`}
-                      >
+                        isComplete ?
+                        "bg-emerald-100 text-emerald-600" :
+                        isActive ?
+                        "bg-sky-500 text-white animate-pulse" :
+                        "bg-slate-100 text-slate-500"}`
+                        }>
+
                         <Icon className="w-5 h-5" />
                       </div>
-                      {index < shipment.legs.length - 1 && (
-                        <div
-                          className={`w-0.5 flex-1 my-2 ${
-                            isComplete ? "bg-green-300" : "bg-muted"
-                          }`}
-                        />
-                      )}
+                      {index < shipment.legs.length - 1 &&
+                      <div
+                        className={`w-0.5 flex-1 my-2 ${
+                        isComplete ? "bg-emerald-300" : "bg-slate-200"}`
+                        } />
+
+                      }
                     </div>
-                    <div className="flex-1 pb-4">
+                    <div className="flex-1 pb-1">
                       <div className="flex items-center justify-between">
-                        <h5 className="font-medium">
+                        <h5 className="font-medium text-slate-800">
                           {t("legNumber")} {leg.legNumber}:{" "}
                           {TRANSPORT_MODE_LABELS[leg.mode]}
                         </h5>
                         <Badge
-                          variant={
-                            leg.type === "international"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="text-xs"
-                        >
+                          className={
+                          leg.type === "international" ?
+                          "border border-sky-200 bg-sky-50 text-sky-700 text-xs" :
+                          "border border-slate-200 bg-slate-50 text-slate-700 text-xs"
+                          }>
+
                           {leg.type === "international" ? t("international") : t("domestic")}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="mt-1 text-sm text-slate-600">
                         {leg.origin.name} → {leg.destination.name}
                       </p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>{leg.distanceKm.toLocaleString()} km</span>
-                        <span className="text-orange-500">
+                      <div className="mt-2 flex items-center gap-4 text-xs text-slate-500">
+                        <span>{formatDistanceKm(leg.distanceKm)} km</span>
+                        <span className="text-orange-600">
                           {leg.co2Kg.toFixed(2)} kg CO₂
                         </span>
                       </div>
                     </div>
-                  </div>
-                );
+                  </div>);
+
               })}
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t">
+          
+          <div className="flex gap-3 border-t border-slate-200 pt-4">
             <Button
               variant="outline"
-              className="flex-1"
-              onClick={() =>
-                router.push(`/transport?productId=${shipment.productId}`)
-              }
-            >
+              className="flex-1 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                const params = new URLSearchParams();
+
+                if (shipment.shipmentId) {
+                  params.set("shipmentId", shipment.shipmentId);
+                }
+                if (shipment.productId) {
+                  params.set("productId", shipment.productId);
+                }
+                if (shipment.productName) {
+                  params.set("productName", shipment.productName);
+                }
+                if (shipment.sku) {
+                  params.set("productCode", shipment.sku);
+                }
+
+                router.push(
+                  params.toString().length > 0 ? `/transport?${params.toString()}` : "/transport"
+                );
+              }}>
+
               {t("viewLogistics")}
             </Button>
             <Button
-              className="flex-1"
-              onClick={() =>
-                router.push(
-                  `/calculation-history?productId=${shipment.productId}`,
-                )
-              }
-            >
+              className="flex-1 !bg-emerald-600 !text-white hover:!bg-emerald-700"
+              onClick={() => {
+                if (shipment.productId) {
+                  router.push(
+                    `/calculation-history?productId=${encodeURIComponent(shipment.productId)}`
+                  );
+                  return;
+                }
+                router.push("/calculation-history");
+              }}>
+              
               {t("viewCarbonHistory")}
             </Button>
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 };
 
 export default ShipmentDetails;

@@ -7,8 +7,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+  CardDescription } from
+"@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -24,59 +24,59 @@ interface NotificationSetting {
 
 const NotificationSettings: React.FC = () => {
   const t = useTranslations("settings.notifications");
-  
+
   const DEFAULT_NOTIFICATIONS: NotificationSetting[] = [
-    {
-      id: "product_created",
-      label: t("productCreated"),
-      description: t("productCreatedDesc"),
-      email: false,
-    },
-    {
-      id: "product_updated",
-      label: t("productUpdated"),
-      description: t("productUpdatedDesc"),
-      email: false,
-    },
-    {
-      id: "shipment_status",
-      label: t("shipmentStatus"),
-      description: t("shipmentStatusDesc"),
-      email: true,
-    },
-    {
-      id: "report_ready",
-      label: t("reportReady"),
-      description: t("reportReadyDesc"),
-      email: true,
-    },
-    {
-      id: "export_completed",
-      label: t("exportCompleted"),
-      description: t("exportCompletedDesc"),
-      email: false,
-    },
-    {
-      id: "user_invited",
-      label: t("userInvited"),
-      description: t("userInvitedDesc"),
-      email: true,
-    },
-    {
-      id: "compliance_deadline",
-      label: t("complianceDeadline"),
-      description: t("complianceDeadlineDesc"),
-      email: true,
-    },
-  ];
-  
+  {
+    id: "product_created",
+    label: t("productCreated"),
+    description: t("productCreatedDesc"),
+    email: false
+  },
+  {
+    id: "product_updated",
+    label: t("productUpdated"),
+    description: t("productUpdatedDesc"),
+    email: false
+  },
+  {
+    id: "shipment_status",
+    label: t("shipmentStatus"),
+    description: t("shipmentStatusDesc"),
+    email: true
+  },
+  {
+    id: "report_ready",
+    label: t("reportReady"),
+    description: t("reportReadyDesc"),
+    email: true
+  },
+  {
+    id: "export_completed",
+    label: t("exportCompleted"),
+    description: t("exportCompletedDesc"),
+    email: false
+  },
+  {
+    id: "user_invited",
+    label: t("userInvited"),
+    description: t("userInvitedDesc"),
+    email: true
+  },
+  {
+    id: "compliance_deadline",
+    label: t("complianceDeadline"),
+    description: t("complianceDeadlineDesc"),
+    email: true
+  }];
+
+
   const [notifications, setNotifications] = useState<NotificationSetting[]>(
-    DEFAULT_NOTIFICATIONS,
+    DEFAULT_NOTIFICATIONS
   );
 
   const handleToggle = (id: string, value: boolean) => {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, email: value } : n)),
+    prev.map((n) => n.id === id ? { ...n, email: value } : n)
     );
   };
 
@@ -96,9 +96,9 @@ const NotificationSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Email Notifications */}
-      <Card>
-        <CardHeader>
+      
+      <Card className="overflow-hidden border border-slate-200 shadow-sm">
+        <CardHeader className="rounded-t-[inherit] border-b border-slate-200 bg-slate-50/70">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -110,44 +110,61 @@ const NotificationSettings: React.FC = () => {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleEnableAll}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                onClick={handleEnableAll}>
+
                 {t("enableAll")}
               </Button>
-              <Button variant="outline" size="sm" onClick={handleDisableAll}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                onClick={handleDisableAll}>
+
                 {t("disableAll")}
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {notifications.map((notification) => (
-            <div
-              key={notification.id}
-              className="flex items-center justify-between py-3 border-b last:border-0"
-            >
+        <CardContent className="space-y-3 bg-white">
+          {notifications.map((notification) =>
+          <div
+            key={notification.id}
+            className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3">
+
               <div className="flex-1">
-                <Label className="font-medium">{notification.label}</Label>
-                <p className="text-sm text-muted-foreground">
+                <Label className="font-medium text-slate-800">
+                  {notification.label}
+                </Label>
+                <p className="text-sm text-slate-600">
                   {notification.description}
                 </p>
               </div>
               <Switch
-                checked={notification.email}
-                onCheckedChange={(v: boolean) =>
-                  handleToggle(notification.id, v)
-                }
-              />
+              checked={notification.email}
+              onCheckedChange={(v: boolean) =>
+              handleToggle(notification.id, v)
+              } />
+            
             </div>
-          ))}
+          )}
         </CardContent>
       </Card>
 
-      {/* Save Button */}
+      
       <div className="flex justify-end">
-        <Button onClick={handleSave}>{t("saveSettings")}</Button>
+        <Button
+          className="bg-emerald-600 text-white hover:bg-emerald-700"
+          onClick={handleSave}>
+
+          {t("saveSettings")}
+        </Button>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default NotificationSettings;

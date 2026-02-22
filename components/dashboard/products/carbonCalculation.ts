@@ -1,6 +1,6 @@
 import { BulkProductRow } from "./types";
 
-// Carbon emission factors (kg CO2e)
+
 const MATERIAL_FACTORS: Record<string, number> = {
   cotton: 8.0,
   polyester: 5.5,
@@ -12,14 +12,14 @@ const MATERIAL_FACTORS: Record<string, number> = {
   organic_cotton: 4.5,
   bamboo: 3.8,
   hemp: 2.9,
-  blend: 5.5,
+  blend: 5.5
 };
 
 const ENERGY_FACTORS: Record<string, number> = {
   grid: 1.0,
   solar: 0.4,
   coal: 1.5,
-  mixed: 0.7,
+  mixed: 0.7
 };
 
 const PROCESS_FACTORS: Record<string, number> = {
@@ -28,7 +28,7 @@ const PROCESS_FACTORS: Record<string, number> = {
   cutting: 0.3,
   dyeing: 1.5,
   printing: 0.6,
-  finishing: 0.4,
+  finishing: 0.4
 };
 
 const TRANSPORT_FACTORS: Record<string, number> = {
@@ -36,7 +36,7 @@ const TRANSPORT_FACTORS: Record<string, number> = {
   sea: 0.016,
   air: 0.602,
   rail: 0.028,
-  multimodal: 0.05,
+  multimodal: 0.05
 };
 
 const MARKET_DISTANCES: Record<string, number> = {
@@ -45,13 +45,13 @@ const MARKET_DISTANCES: Record<string, number> = {
   us: 14000,
   jp: 3500,
   kr: 3200,
-  other: 8000,
+  other: 8000
 };
 
 const MATERIAL_SOURCE_FACTORS: Record<string, number> = {
   domestic: 0.8,
   imported: 1.2,
-  unknown: 1.0, // Proxy value
+  unknown: 1.0
 };
 
 export interface CarbonCalculationResult {
@@ -65,62 +65,62 @@ export interface CarbonCalculationResult {
 }
 
 export function calculateCarbonForProduct(
-  row: BulkProductRow,
-): CarbonCalculationResult {
-  const weightKg = row.weightPerUnit / 1000; // Convert grams to kg
+row: BulkProductRow)
+: CarbonCalculationResult {
+  const weightKg = row.weightPerUnit / 1000;
 
-  // 1. Calculate Materials CO2 (Scope 3 upstream)
+
   const primaryMaterialFactor = MATERIAL_FACTORS[row.primaryMaterial] || 5.5;
   const primaryMaterialCO2 =
-    weightKg * (row.primaryMaterialPercentage / 100) * primaryMaterialFactor;
+  weightKg * (row.primaryMaterialPercentage / 100) * primaryMaterialFactor;
 
   let secondaryMaterialCO2 = 0;
   if (row.secondaryMaterial && row.secondaryMaterialPercentage) {
     const secondaryMaterialFactor =
-      MATERIAL_FACTORS[row.secondaryMaterial] || 5.5;
+    MATERIAL_FACTORS[row.secondaryMaterial] || 5.5;
     secondaryMaterialCO2 =
-      weightKg *
-      (row.secondaryMaterialPercentage / 100) *
-      secondaryMaterialFactor;
+    weightKg * (
+    row.secondaryMaterialPercentage / 100) *
+    secondaryMaterialFactor;
   }
 
-  // Apply material source factor
+
   const sourceMultiplier = MATERIAL_SOURCE_FACTORS[row.materialSource];
   const materialsCO2 =
-    (primaryMaterialCO2 + secondaryMaterialCO2) * sourceMultiplier;
+  (primaryMaterialCO2 + secondaryMaterialCO2) * sourceMultiplier;
 
-  // 2. Calculate Manufacturing CO2 (Scope 1 & 2)
+
   const energyFactor = ENERGY_FACTORS[row.energySource] || 1.0;
   const processTotal = row.processes.reduce((sum, process) => {
     return sum + (PROCESS_FACTORS[process] || 0.5);
   }, 0);
   const manufacturingCO2 = weightKg * processTotal * energyFactor;
 
-  // 3. Calculate Transport CO2 (Scope 3 downstream)
+
   const transportFactor = TRANSPORT_FACTORS[row.transportMode] || 0.05;
   const distance =
-    MARKET_DISTANCES[
-      row.marketType === "domestic" ? "domestic" : row.exportCountry || "other"
-    ];
+  MARKET_DISTANCES[
+  row.marketType === "domestic" ? "domestic" : row.exportCountry || "other"];
+
   const transportCO2 = weightKg * (distance / 1000) * transportFactor;
 
-  // 4. Total CO2
+
   const totalCO2 = materialsCO2 + manufacturingCO2 + transportCO2;
 
-  // 5. Determine scope based on data completeness
+
   let scope: "scope1" | "scope1_2" | "scope1_2_3" = "scope1";
   let confidenceScore = 50;
 
-  // Check data completeness for scope determination
+
   const hasFullMaterialData =
-    (row.primaryMaterial && row.primaryMaterialPercentage === 100) ||
-    (row.secondaryMaterial &&
-      (row.primaryMaterialPercentage || 0) +
-        (row.secondaryMaterialPercentage || 0) ===
-        100);
+  row.primaryMaterial && row.primaryMaterialPercentage === 100 ||
+  row.secondaryMaterial &&
+  (row.primaryMaterialPercentage || 0) + (
+  row.secondaryMaterialPercentage || 0) ===
+  100;
   const hasFullManufacturingData = row.processes.length > 0 && row.energySource;
   const hasFullTransportData =
-    row.transportMode && (row.marketType === "domestic" || row.exportCountry);
+  row.transportMode && (row.marketType === "domestic" || row.exportCountry);
 
   if (hasFullManufacturingData) {
     scope = "scope1_2";
@@ -132,15 +132,15 @@ export function calculateCarbonForProduct(
     confidenceScore += 30;
   }
 
-  // Additional confidence adjustments
+
   if (row.materialSource !== "unknown") confidenceScore += 5;
   if (row.processes.length >= 2) confidenceScore += 5;
   if (row.marketType === "export" && row.exportCountry) confidenceScore += 5;
 
-  // Cap confidence score at 100
+
   confidenceScore = Math.min(confidenceScore, 100);
 
-  // 6. Determine confidence level
+
   let confidenceLevel: "high" | "medium" | "low" = "low";
   if (confidenceScore >= 85) {
     confidenceLevel = "high";
@@ -155,7 +155,7 @@ export function calculateCarbonForProduct(
     totalCO2: Math.round(totalCO2 * 1000) / 1000,
     scope,
     confidenceLevel,
-    confidenceScore,
+    confidenceScore
   };
 }
 
@@ -166,7 +166,7 @@ export function calculateBulkCarbon(rows: BulkProductRow[]): BulkProductRow[] {
       ...row,
       calculatedCO2: result.totalCO2,
       scope: result.scope,
-      confidenceLevel: result.confidenceLevel,
+      confidenceLevel: result.confidenceLevel
     };
   });
 }
@@ -177,24 +177,24 @@ export function getAggregateStats(rows: BulkProductRow[]) {
   const totalProducts = calculatedRows.length;
   const totalQuantity = calculatedRows.reduce(
     (sum, row) => sum + row.quantity,
-    0,
+    0
   );
   const totalCO2 = calculatedRows.reduce(
     (sum, row) => sum + (row.calculatedCO2 || 0) * row.quantity,
-    0,
+    0
   );
   const avgCO2PerProduct = totalCO2 / totalQuantity;
 
   const byConfidence = {
     high: calculatedRows.filter((r) => r.confidenceLevel === "high").length,
     medium: calculatedRows.filter((r) => r.confidenceLevel === "medium").length,
-    low: calculatedRows.filter((r) => r.confidenceLevel === "low").length,
+    low: calculatedRows.filter((r) => r.confidenceLevel === "low").length
   };
 
   const byScope = {
     scope1: calculatedRows.filter((r) => r.scope === "scope1").length,
     scope1_2: calculatedRows.filter((r) => r.scope === "scope1_2").length,
-    scope1_2_3: calculatedRows.filter((r) => r.scope === "scope1_2_3").length,
+    scope1_2_3: calculatedRows.filter((r) => r.scope === "scope1_2_3").length
   };
 
   return {
@@ -204,6 +204,6 @@ export function getAggregateStats(rows: BulkProductRow[]) {
     avgCO2PerProduct: Math.round(avgCO2PerProduct * 1000) / 1000,
     byConfidence,
     byScope,
-    calculatedRows,
+    calculatedRows
   };
 }

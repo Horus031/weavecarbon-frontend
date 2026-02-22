@@ -6,8 +6,8 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from
+"@/components/ui/card";
 import { TrendingUp } from "lucide-react";
 import {
   AreaChart,
@@ -18,8 +18,8 @@ import {
   PieChart,
   Pie,
   Cell,
-  Tooltip,
-} from "recharts";
+  Tooltip } from
+"recharts";
 import { useTranslations } from "next-intl";
 
 export interface TrendDataPoint {
@@ -43,7 +43,7 @@ interface OverviewChartsProps {
 export default function OverviewCharts({
   carbonTrendData = [],
   emissionBreakdown = [],
-  isLoading = false,
+  isLoading = false
 }: OverviewChartsProps) {
   const t = useTranslations("overview");
 
@@ -61,144 +61,144 @@ export default function OverviewCharts({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
-      <Card className="lg:col-span-2">
-        <CardHeader>
+      <Card className="lg:col-span-2 overflow-hidden border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
+        <CardHeader className="rounded-t-[inherit] border-b border-slate-300 bg-slate-100">
           <CardTitle className="flex items-center gap-2 text-lg md:text-base">
             <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
             <span className="truncate">{t("chart.carbon.title")}</span>
           </CardTitle>
-          <CardDescription className="text-xs md:text-sm">
+          <CardDescription className="text-xs text-slate-700 md:text-sm">
             {t("chart.carbon.description")}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="bg-white pt-5">
           <div className="h-48 md:h-64">
-            {isLoading ? (
-              <div className="h-full w-full rounded-md bg-muted animate-pulse" />
-            ) : hasTrendData ? (
-              <ResponsiveContainer width="100%" height="100%">
+            {isLoading ?
+            <div className="h-full w-full rounded-md border border-slate-300 bg-slate-200/70 animate-pulse" /> :
+            hasTrendData ?
+            <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={carbonTrendData}>
                   <defs>
                     <linearGradient
-                      id="colorEmissions"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
+                    id="colorEmissions"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1">
+
                       <stop
-                        offset="5%"
-                        stopColor="hsl(150 60% 20%)"
-                        stopOpacity={0.3}
-                      />
+                      offset="5%"
+                      stopColor="hsl(150 60% 20%)"
+                      stopOpacity={0.3} />
+
                       <stop
-                        offset="95%"
-                        stopColor="hsl(150 60% 20%)"
-                        stopOpacity={0}
-                      />
+                      offset="95%"
+                      stopColor="hsl(150 60% 20%)"
+                      stopOpacity={0} />
+
                     </linearGradient>
                   </defs>
                   <XAxis
-                    dataKey="month"
-                    stroke="hsl(150 10% 45%)"
-                    fontSize={12}
-                  />
-                  <YAxis stroke="hsl(150 10% 45%)" fontSize={12} />
+                  dataKey="month"
+                  stroke="hsl(150 12% 35%)"
+                  fontSize={12} />
+
+                  <YAxis stroke="hsl(150 12% 35%)" fontSize={12} />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0 0% 100%)",
-                      border: "1px solid hsl(140 20% 88%)",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                  />
+                  contentStyle={{
+                    backgroundColor: "hsl(0 0% 100%)",
+                    border: "1px solid hsl(215 16% 78%)",
+                    borderRadius: "8px",
+                    fontSize: "12px"
+                  }} />
+
                   <Area
-                    type="monotone"
-                    dataKey="emissions"
-                    stroke="hsl(150 60% 20%)"
-                    strokeWidth={2}
-                    fill="url(#colorEmissions)"
-                    name={t("chart.carbon.outcome")}
-                  />
+                  type="monotone"
+                  dataKey="emissions"
+                  stroke="hsl(150 60% 20%)"
+                  strokeWidth={2}
+                  fill="url(#colorEmissions)"
+                  name={t("chart.carbon.outcome")} />
+
                   <Area
-                    type="monotone"
-                    dataKey="target"
-                    stroke="hsl(150 60% 20%)"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    fill="transparent"
-                    name={t("chart.carbon.expect")}
-                  />
+                  type="monotone"
+                  dataKey="target"
+                  stroke="hsl(150 60% 20%)"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  fill="transparent"
+                  name={t("chart.carbon.expect")} />
+
                 </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-sm text-muted-foreground border rounded-md">
+              </ResponsiveContainer> :
+
+            <div className="flex h-full items-center justify-center rounded-md border border-slate-300 bg-slate-100 text-sm text-slate-700">
                 No chart data yet
               </div>
-            )}
+            }
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <Card className="overflow-hidden border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
+        <CardHeader className="rounded-t-[inherit] border-b border-slate-300 bg-slate-100">
           <CardTitle className="flex items-center gap-2 text-lg md:text-base">
             <TrendingUp className="w-4 h-4 md:w-5 md:h-5" />
             <span className="truncate">{t("chart.pie.title")}</span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="bg-white pt-5">
           <div className="h-48 md:h-48 flex items-center justify-center">
-            {isLoading ? (
-              <div className="h-full w-full rounded-md bg-muted animate-pulse" />
-            ) : hasBreakdownData ? (
-              <ResponsiveContainer width="100%" height="100%">
+            {isLoading ?
+            <div className="h-full w-full rounded-md border border-slate-300 bg-slate-200/70 animate-pulse" /> :
+            hasBreakdownData ?
+            <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={emissionBreakdown}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {emissionBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                  data={emissionBreakdown}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={70}
+                  paddingAngle={2}
+                  dataKey="value">
+
+                    {emissionBreakdown.map((entry, index) =>
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  )}
                   </Pie>
                 </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full w-full flex items-center justify-center text-sm text-muted-foreground border rounded-md">
+              </ResponsiveContainer> :
+
+            <div className="flex h-full w-full items-center justify-center rounded-md border border-slate-300 bg-slate-100 text-sm text-slate-700">
                 No breakdown data yet
               </div>
-            )}
+            }
           </div>
 
-          {hasBreakdownData && (
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              {emissionBreakdown.map((item) => (
-                <div
-                  key={item.name}
-                  className="flex items-center gap-2 text-xs md:text-sm"
-                >
+          {hasBreakdownData &&
+          <div className="grid grid-cols-2 gap-2 mt-4">
+              {emissionBreakdown.map((item) =>
+            <div
+              key={item.name}
+              className="flex items-center gap-2 text-xs md:text-sm">
+
                   <div
-                    className="w-2 h-2 md:w-3 md:h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-muted-foreground truncate">
+                className="w-2 h-2 md:w-3 md:h-3 rounded-full shrink-0"
+                style={{ backgroundColor: item.color }} />
+
+                  <span className="truncate text-slate-700">
                     {getLabel(item.name)}
                   </span>
-                  <span className="font-medium ml-auto text-xs md:text-sm">
+                  <span className="ml-auto text-xs font-semibold text-slate-900 md:text-sm">
                     {item.value}%
                   </span>
                 </div>
-              ))}
+            )}
             </div>
-          )}
+          }
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }

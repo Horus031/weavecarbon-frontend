@@ -11,8 +11,8 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  TableRow } from
+"@/components/ui/table";
 import { Package, Plus, Trash2, Edit, AlertCircle } from "lucide-react";
 import { ProductScopeItem } from "./types";
 
@@ -29,7 +29,7 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
   marketName,
   onAddProduct,
   onEditProduct,
-  onRemoveProduct,
+  onRemoveProduct
 }) => {
   const t = useTranslations("export.productScope");
   const totalVolume = products.reduce((sum, p) => sum + p.exportVolume, 0);
@@ -56,8 +56,8 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
             </div>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>);
+
   }
 
   return (
@@ -91,8 +91,8 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.productId}>
+              {products.map((product) =>
+              <TableRow key={product.productId}>
                   <TableCell className="font-mono text-xs">
                     {product.productId}
                   </TableCell>
@@ -111,28 +111,28 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
                   <TableCell>
                     <div className="flex items-center gap-1 justify-end">
                       <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => onEditProduct(product.productId)}
-                      >
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => onEditProduct(product.productId)}>
+                      
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => onRemoveProduct(product.productId)}
-                      >
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => onRemoveProduct(product.productId)}>
+                      
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>
 
-        {/* Summary */}
+        
         <div className="flex items-center justify-between mt-4 p-3 rounded-lg bg-muted/50">
           <span className="text-sm text-muted-foreground">
             {t("totalExportVolume")}
@@ -142,8 +142,8 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
           </span>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default ComplianceProductScope;

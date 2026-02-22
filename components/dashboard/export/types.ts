@@ -1,6 +1,6 @@
-// Compliance types for Export module
 
-export type MarketCode = "EU" | "US" | "JP" | "KR";
+
+export type MarketCode = "EU" | "US" | "JP" | "KR" | "VN";
 
 export type ComplianceStatus = "draft" | "incomplete" | "ready" | "verified";
 
@@ -59,6 +59,8 @@ export interface EmissionFactor {
 
 export interface Recommendation {
   id: string;
+  apiIdCandidates?: string[];
+  relatedDocumentId?: string;
   type: "document" | "carbon_data" | "verification" | "product_scope";
   missingItem: string;
   regulatoryReason: string;
@@ -77,6 +79,13 @@ export interface MarketCompliance {
   score: number;
   status: ComplianceStatus;
   lastUpdated: string;
+  requiredDocuments: string[];
+  requiredDocumentsCount: number;
+  requiredDocumentsUploadedCount: number;
+  requiredDocumentsMissingCount: number;
+  documentsTotalCount: number;
+  documentsUploadedCount: number;
+  documentsMissingCount: number;
   documents: ComplianceDocument[];
   carbonData: CarbonDataItem[];
   productScope: ProductScopeItem[];
@@ -88,36 +97,41 @@ export interface MarketCompliance {
   approvalNote?: string;
 }
 
-// Market-specific document requirements
+
 export const MARKET_DOCUMENT_REQUIREMENTS: Record<
   MarketCode,
-  { name: string; required: boolean }[]
-> = {
+  {name: string;required: boolean;}[]> =
+{
   EU: [
-    { name: "CBAM Quarterly Report", required: true },
-    { name: "Product Carbon Footprint (PCF)", required: true },
-    { name: "Emission Calculation Methodology", required: true },
-    { name: "Supplier Emission Statement", required: false },
-    { name: "Third-party Verification Report", required: false },
-  ],
+  { name: "CBAM Quarterly Report", required: true },
+  { name: "Product Carbon Footprint (PCF)", required: true },
+  { name: "Emission Calculation Methodology", required: true },
+  { name: "Supplier Emission Statement", required: false },
+  { name: "Third-party Verification Report", required: false }],
+
   US: [
-    { name: "GHG Disclosure Report", required: true },
-    { name: "Product Carbon Declaration", required: false },
-    { name: "Internal ESG Policy", required: false },
-  ],
+  { name: "GHG Disclosure Report", required: true },
+  { name: "Product Carbon Declaration", required: false },
+  { name: "Internal ESG Policy", required: false }],
+
   JP: [
-    { name: "JIS Carbon Calculation Sheet", required: true },
-    { name: "Product Environmental Declaration", required: false },
-    { name: "Verification Statement", required: false },
-  ],
+  { name: "JIS Carbon Calculation Sheet", required: true },
+  { name: "Product Environmental Declaration", required: false },
+  { name: "Verification Statement", required: false }],
+
   KR: [
-    { name: "GHG Emission Report (K-ETS)", required: true },
-    { name: "Facility-level Emission Proof", required: true },
-    { name: "Third-party Verification", required: false },
-  ],
+  { name: "GHG Emission Report (K-ETS)", required: true },
+  { name: "Facility-level Emission Proof", required: true },
+  { name: "Third-party Verification", required: false }],
+
+  VN: [
+  { name: "Kiem ke khi thai co so", required: true },
+  { name: "Ho so phuong phap tinh phat thai", required: true },
+  { name: "Bang tong hop du lieu nang luong", required: false }]
+
 };
 
-// Market regulations data
+
 export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
   EU: {
     code: "EU CBAM",
@@ -127,7 +141,7 @@ export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
     reportingFrequency: "Quarterly",
     enforcementDate: "2026-01-01",
     description:
-      "Cơ chế điều chỉnh biên giới carbon của EU nhằm ngăn chặn rò rỉ carbon và đảm bảo công bằng cạnh tranh.",
+    "Cơ chế điều chỉnh biên giới carbon của EU nhằm ngăn chặn rò rỉ carbon và đảm bảo công bằng cạnh tranh."
   },
   US: {
     code: "US Climate Act",
@@ -137,7 +151,7 @@ export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
     reportingFrequency: "Annual",
     enforcementDate: "2026-01-01",
     description:
-      "Quy định báo cáo phát thải GHG bắt buộc cho các công ty hoạt động tại California.",
+    "Quy định báo cáo phát thải GHG bắt buộc cho các công ty hoạt động tại California."
   },
   JP: {
     code: "JIS Standards",
@@ -147,7 +161,7 @@ export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
     reportingFrequency: "Annual",
     enforcementDate: "2025-04-01",
     description:
-      "Tiêu chuẩn công nghiệp Nhật Bản về khai báo carbon footprint sản phẩm.",
+    "Tiêu chuẩn công nghiệp Nhật Bản về khai báo carbon footprint sản phẩm."
   },
   KR: {
     code: "K-ETS",
@@ -156,73 +170,82 @@ export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
     reportingScope: "Facility & Product-level",
     reportingFrequency: "Annual",
     enforcementDate: "2025-01-01",
-    description: "Hệ thống giao dịch phát thải Hàn Quốc, phù hợp với CBAM.",
+    description: "Hệ thống giao dịch phát thải Hàn Quốc, phù hợp với CBAM."
   },
+  VN: {
+    code: "VN GHG",
+    name: "Vietnam GHG Inventory",
+    legalReference: "Nghi dinh 06/2022/ND-CP",
+    reportingScope: "Company & Facility-level",
+    reportingFrequency: "Annual",
+    enforcementDate: "2026-01-01",
+    description: "Yeu cau kiem ke va bao cao phat thai theo quy dinh trong nuoc."
+  }
 };
 
-// Priority colors and labels
+
 export const PRIORITY_CONFIG: Record<
   Priority,
-  { label: string; color: string; bgColor: string }
-> = {
+  {label: string;color: string;bgColor: string;}> =
+{
   mandatory: {
     label: "Bắt buộc",
     color: "text-red-700",
-    bgColor: "bg-red-100",
+    bgColor: "bg-red-100"
   },
   important: {
     label: "Quan trọng",
     color: "text-orange-700",
-    bgColor: "bg-orange-100",
+    bgColor: "bg-orange-100"
   },
   recommended: {
     label: "Nên có",
     color: "text-yellow-700",
-    bgColor: "bg-yellow-100",
-  },
+    bgColor: "bg-yellow-100"
+  }
 };
 
-// Status colors
+
 export const STATUS_CONFIG: Record<
   ComplianceStatus,
-  { label: string; color: string; bgColor: string }
-> = {
+  {label: string;color: string;bgColor: string;}> =
+{
   draft: { label: "Nháp", color: "text-gray-700", bgColor: "bg-gray-100" },
   incomplete: {
     label: "Chưa hoàn thiện",
     color: "text-yellow-700",
-    bgColor: "bg-yellow-100",
+    bgColor: "bg-yellow-100"
   },
   ready: {
     label: "Sẵn sàng xuất khẩu",
     color: "text-green-700",
-    bgColor: "bg-green-100",
+    bgColor: "bg-green-100"
   },
   verified: {
     label: "Đã xác minh",
     color: "text-blue-700",
-    bgColor: "bg-blue-100",
-  },
+    bgColor: "bg-blue-100"
+  }
 };
 
 export const DOCUMENT_STATUS_CONFIG: Record<
   DocumentStatus,
-  { label: string; color: string; bgColor: string }
-> = {
+  {label: string;color: string;bgColor: string;}> =
+{
   missing: { label: "Chưa có", color: "text-red-700", bgColor: "bg-red-100" },
   uploaded: {
     label: "Đã tải lên",
     color: "text-blue-700",
-    bgColor: "bg-blue-100",
+    bgColor: "bg-blue-100"
   },
   approved: {
     label: "Đã duyệt",
     color: "text-green-700",
-    bgColor: "bg-green-100",
+    bgColor: "bg-green-100"
   },
   expired: {
     label: "Hết hạn",
     color: "text-orange-700",
-    bgColor: "bg-orange-100",
-  },
+    bgColor: "bg-orange-100"
+  }
 };

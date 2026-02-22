@@ -5,10 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, Building2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue } from
+"@/components/ui/select";
 import { useTranslations } from "next-intl";
 
 interface EmailAuthTabsProps {
+  userType: "b2b" | "b2c";
   activeTab: string;
   setActiveTab: (tab: string) => void;
   email: string;
@@ -17,10 +25,16 @@ interface EmailAuthTabsProps {
   setPassword: (password: string) => void;
   fullName: string;
   setFullName: (name: string) => void;
+  companyName: string;
+  setCompanyName: (name: string) => void;
+  businessType: "" | "shop_online" | "brand" | "factory";
+  setBusinessType: (type: "" | "shop_online" | "brand" | "factory") => void;
   errors: {
     email?: string;
     password?: string;
     name?: string;
+    companyName?: string;
+    businessType?: string;
   };
   isLoading: boolean;
   onLogin: (e: React.FormEvent) => void;
@@ -28,6 +42,7 @@ interface EmailAuthTabsProps {
 }
 
 export default function EmailAuthTabs({
+  userType,
   activeTab,
   setActiveTab,
   email,
@@ -36,12 +51,17 @@ export default function EmailAuthTabs({
   setPassword,
   fullName,
   setFullName,
+  companyName,
+  setCompanyName,
+  businessType,
+  setBusinessType,
   errors,
   isLoading,
   onLogin,
-  onSignUp,
+  onSignUp
 }: EmailAuthTabsProps) {
   const t = useTranslations("auth");
+  const tOnboarding = useTranslations("onboarding");
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
@@ -62,12 +82,12 @@ export default function EmailAuthTabs({
                 className="pl-10"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
+                disabled={isLoading} />
+              
             </div>
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email}</p>
-            )}
+            {errors.email &&
+            <p className="text-sm text-destructive">{errors.email}</p>
+            }
           </div>
 
           <div className="space-y-2">
@@ -81,12 +101,12 @@ export default function EmailAuthTabs({
                 className="pl-10"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
+                disabled={isLoading} />
+              
             </div>
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password}</p>
-            )}
+            {errors.password &&
+            <p className="text-sm text-destructive">{errors.password}</p>
+            }
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
@@ -108,13 +128,67 @@ export default function EmailAuthTabs({
                 className="pl-10"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                disabled={isLoading}
-              />
+                disabled={isLoading} />
+              
             </div>
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name}</p>
-            )}
+            {errors.name &&
+            <p className="text-sm text-destructive">{errors.name}</p>
+            }
           </div>
+
+          {userType === "b2b" &&
+          <>
+              <div className="space-y-2">
+                <Label htmlFor="signup-company">{tOnboarding("companyName")}</Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                  id="signup-company"
+                  type="text"
+                  placeholder={tOnboarding("companyNamePlaceholder")}
+                  className="pl-10"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  disabled={isLoading} />
+
+                </div>
+                {errors.companyName &&
+              <p className="text-sm text-destructive">{errors.companyName}</p>
+              }
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-business-type">
+                  {tOnboarding("businessType")}
+                </Label>
+                <Select
+                value={businessType}
+                onValueChange={(value: "shop_online" | "brand" | "factory") =>
+                setBusinessType(value)
+                }
+                disabled={isLoading}>
+
+                  <SelectTrigger id="signup-business-type">
+                    <SelectValue
+                    placeholder={tOnboarding("businessType")} />
+
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="shop_online">
+                      {tOnboarding("shopOnline")}
+                    </SelectItem>
+                    <SelectItem value="brand">{tOnboarding("brand")}</SelectItem>
+                    <SelectItem value="factory">
+                      {tOnboarding("factory")}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.businessType &&
+              <p className="text-sm text-destructive">{errors.businessType}</p>
+              }
+              </div>
+            </>
+          }
 
           <div className="space-y-2">
             <Label htmlFor="signup-email">{t("email")}</Label>
@@ -127,12 +201,12 @@ export default function EmailAuthTabs({
                 className="pl-10"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
+                disabled={isLoading} />
+              
             </div>
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email}</p>
-            )}
+            {errors.email &&
+            <p className="text-sm text-destructive">{errors.email}</p>
+            }
           </div>
 
           <div className="space-y-2">
@@ -146,12 +220,12 @@ export default function EmailAuthTabs({
                 className="pl-10"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
+                disabled={isLoading} />
+              
             </div>
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password}</p>
-            )}
+            {errors.password &&
+            <p className="text-sm text-destructive">{errors.password}</p>
+            }
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
@@ -159,6 +233,6 @@ export default function EmailAuthTabs({
           </Button>
         </form>
       </TabsContent>
-    </Tabs>
-  );
+    </Tabs>);
+
 }

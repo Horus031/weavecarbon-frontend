@@ -1,6 +1,6 @@
-/* eslint-disable react-hooks/static-components */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// Section C - Carbon Breakdown by Stage
+
+
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,21 +11,21 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
-} from "recharts";
+  Legend } from
+"recharts";
 import {
   BarChart3,
   ChevronDown,
   ChevronUp,
   AlertCircle,
-  Clock,
-} from "lucide-react";
+  Clock } from
+"lucide-react";
 import { CarbonBreakdownItem } from "@/lib/carbonDetailData";
 import {
   Collapsible,
   CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+  CollapsibleTrigger } from
+"@/components/ui/collapsible";
 
 interface CarbonBreakdownChartProps {
   breakdown: CarbonBreakdownItem[];
@@ -34,20 +34,20 @@ interface CarbonBreakdownChartProps {
 const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#64748b"];
 
 const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
-  breakdown,
+  breakdown
 }) => {
   const t = useTranslations("productDetail.carbonBreakdown");
   const [expandedStage, setExpandedStage] = useState<string | null>(null);
 
-  // Filter items with data for the chart
-  const chartData = breakdown
-    .filter((item) => item.hasData && item.percentage !== null)
-    .map((item, index) => ({
-      name: item.label,
-      value: item.percentage || 0,
-      co2e: item.co2e || 0,
-      fill: COLORS[index % COLORS.length],
-    }));
+
+  const chartData = breakdown.
+  filter((item) => item.hasData && item.percentage !== null).
+  map((item, index) => ({
+    name: item.label,
+    value: item.percentage || 0,
+    co2e: item.co2e || 0,
+    fill: COLORS[index % COLORS.length]
+  }));
 
   const hasAwaitingData = breakdown.some((item) => !item.hasData);
 
@@ -55,157 +55,160 @@ const CarbonBreakdownChart: React.FC<CarbonBreakdownChartProps> = ({
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-popover border rounded-lg shadow-lg p-3">
-          <p className="font-medium">{data.name}</p>
-          <p className="text-sm text-muted-foreground">
+        <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+          <p className="font-medium text-slate-800">{data.name}</p>
+          <p className="text-sm text-slate-600">
             {data.value}% ({data.co2e.toFixed(2)} kg CO₂e)
           </p>
-        </div>
-      );
+        </div>);
+
     }
     return null;
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border border-slate-200 shadow-sm">
+      <CardHeader className="border-b border-slate-200 bg-slate-50/70">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <BarChart3 className="w-5 h-5 text-primary" />
             {t("title")}
           </CardTitle>
-          {hasAwaitingData && (
-            <Badge
-              variant="outline"
-              className="text-yellow-700 border-yellow-400"
-            >
+          {hasAwaitingData &&
+          <Badge
+            variant="outline"
+            className="border-amber-200 bg-amber-50 text-amber-700">
+
               <Clock className="w-3 h-3 mr-1" />
               {t("awaitingData")}
             </Badge>
-          )}
+          }
         </div>
       </CardHeader>
       <CardContent>
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Donut Chart */}
+          
           <div className="h-70">
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+            {chartData.length > 0 ?
+            <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={2}
+                  dataKey="value">
+                  
+                    {chartData.map((entry, index) =>
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                  )}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
                   <Legend
-                    verticalAlign="bottom"
-                    height={36}
-                    formatter={(value) => (
-                      <span className="text-sm">{value}</span>
-                    )}
-                  />
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value) =>
+                  <span className="text-sm">{value}</span>
+                  } />
+                
                 </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
+              </ResponsiveContainer> :
+
+            <div className="h-full flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
                   <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p>{t("waitingForData")}</p>
                 </div>
               </div>
-            )}
+            }
           </div>
 
-          {/* Breakdown Table */}
+          
           <div className="space-y-2">
-            {breakdown.map((item, index) => (
-              <Collapsible
-                key={item.stage}
-                open={expandedStage === item.stage}
-                onOpenChange={() =>
-                  setExpandedStage(
-                    expandedStage === item.stage ? null : item.stage,
-                  )
-                }
-              >
+            {breakdown.map((item, index) =>
+            <Collapsible
+              key={item.stage}
+              open={expandedStage === item.stage}
+              onOpenChange={() =>
+              setExpandedStage(
+                expandedStage === item.stage ? null : item.stage
+              )
+              }>
+              
                 <CollapsibleTrigger asChild>
                   <div
-                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${item.hasData ? "bg-muted/50 hover:bg-muted" : "bg-yellow-50 border border-dashed border-yellow-300"}`}
-                  >
+                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${item.hasData ? "border border-slate-200 bg-slate-50/60 hover:bg-slate-50" : "border border-dashed border-amber-200 bg-amber-50/60"}`}>
+                  
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-3 h-3 rounded-full ${!item.hasData ? "bg-gray-300" : ""}`}
-                        style={{
-                          backgroundColor: item.hasData
-                            ? COLORS[index % COLORS.length]
-                            : undefined,
-                        }}
-                      />
+                      className={`w-3 h-3 rounded-full ${!item.hasData ? "bg-gray-300" : ""}`}
+                      style={{
+                        backgroundColor: item.hasData ?
+                        COLORS[index % COLORS.length] :
+                        undefined
+                      }} />
+                    
                       <span
-                        className={`font-medium ${!item.hasData ? "text-muted-foreground" : ""}`}
-                      >
+                      className={`font-medium ${!item.hasData ? "text-muted-foreground" : ""}`}>
+                      
                         {item.label}
                       </span>
-                      {!item.hasData && (
-                        <Badge
-                          variant="outline"
-                          className="text-xs text-yellow-600 border-yellow-400"
-                        >
+                      {!item.hasData &&
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-amber-200 bg-amber-50 text-amber-700">
+
                           <Clock className="w-3 h-3 mr-1" />
                           {t("awaitingDataBadge")}
                         </Badge>
-                      )}
-                      {item.hasData && item.isProxy && (
-                        <Badge variant="outline" className="text-xs">
+                    }
+                      {item.hasData && item.isProxy &&
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-slate-200 bg-white text-slate-700">
+
                           <AlertCircle className="w-3 h-3 mr-1" />
                           {t("proxyBadge")}
                         </Badge>
-                      )}
+                    }
                     </div>
                     <div className="flex items-center gap-3">
-                      {item.hasData ? (
-                        <div className="text-right">
+                      {item.hasData ?
+                    <div className="text-right">
                           <span className="font-bold">{item.percentage}%</span>
-                          <span className="text-sm text-muted-foreground ml-2">
+                          <span className="ml-2 text-sm text-slate-600">
                             ({item.co2e?.toFixed(2)} kg)
                           </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-yellow-600">—</span>
-                      )}
-                      {expandedStage === item.stage ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
+                        </div> :
+
+                    <span className="text-sm text-amber-700">—</span>
+                    }
+                      {expandedStage === item.stage ?
+                    <ChevronUp className="w-4 h-4" /> :
+
+                    <ChevronDown className="w-4 h-4" />
+                    }
                     </div>
                   </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div
-                    className={`px-3 py-2 text-sm rounded-b-lg -mt-1 ${item.hasData ? "text-muted-foreground bg-muted/30" : "text-yellow-700 bg-yellow-50"}`}
-                  >
+                  className={`px-3 py-2 text-sm rounded-b-lg -mt-1 ${item.hasData ? "text-slate-600 bg-slate-50" : "text-amber-700 bg-amber-50"}`}>
+                  
                     <p className="flex items-center gap-2">
                       <span className="font-medium">{t("note")}</span> {item.note}
                     </p>
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-            ))}
+            )}
           </div>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default CarbonBreakdownChart;

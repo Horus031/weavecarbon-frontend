@@ -13,9 +13,9 @@ export default function DashboardHeaderButton() {
     <button
       onClick={handleToggleSidebar}
       className="lg:hidden p-2 hover:bg-muted rounded-lg transition-colors"
-      title="Toggle sidebar"
-    >
+      title="Toggle sidebar">
+      
       <Menu className="w-5 h-5" />
-    </button>
-  );
+    </button>);
+
 }

@@ -7,20 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   FileText,
-  Upload,
   Download,
   Trash2,
   Eye,
   CheckCircle2,
   AlertCircle,
   Clock,
-  XCircle,
+  XCircle
 } from "lucide-react";
 import { ComplianceDocument, DOCUMENT_STATUS_CONFIG } from "./types";
 
 interface ComplianceDocumentsProps {
   documents: ComplianceDocument[];
-  onUpload: (docId: string) => void;
+  requiredDocumentsCount?: number;
+  requiredDocumentsUploadedCount?: number;
   onDownload: (docId: string) => void;
   onRemove: (docId: string) => void;
   onView: (docId: string) => void;
@@ -30,41 +30,58 @@ const STATUS_ICONS = {
   missing: XCircle,
   uploaded: Clock,
   approved: CheckCircle2,
-  expired: AlertCircle,
+  expired: AlertCircle
 };
+
+const isRequiredDocumentCompleted = (status: ComplianceDocument["status"]) =>
+  status === "approved";
 
 const ComplianceDocuments: React.FC<ComplianceDocumentsProps> = ({
   documents,
-  onUpload,
+  requiredDocumentsCount,
+  requiredDocumentsUploadedCount,
   onDownload,
   onRemove,
-  onView,
+  onView
 }) => {
   const t = useTranslations("export.documents");
-  const requiredDocs = documents.filter((d) => d.required);
-  const optionalDocs = documents.filter((d) => !d.required);
-  const completedRequired = requiredDocs.filter(
-    (d) => d.status === "uploaded" || d.status === "approved",
+  const requiredDocs = documents.filter((doc) => doc.required);
+  const optionalDocs = documents.filter((doc) => !doc.required && doc.status !== "missing");
+
+  const completedRequiredFromDocuments = requiredDocs.filter((doc) =>
+    isRequiredDocumentCompleted(doc.status)
   ).length;
+  const completedRequired =
+    requiredDocs.length > 0
+      ? completedRequiredFromDocuments
+      : typeof requiredDocumentsUploadedCount === "number"
+        ? requiredDocumentsUploadedCount
+        : completedRequiredFromDocuments;
+  const totalRequired =
+    typeof requiredDocumentsCount === "number" ? requiredDocumentsCount : requiredDocs.length;
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <FileText className="w-5 h-5 text-primary" />
+            <FileText className="h-5 w-5 text-primary" />
             {t("title")}
           </CardTitle>
           <Badge variant="outline">
-            {t("requiredComplete", { completed: completedRequired, total: requiredDocs.length })}
+            {t("requiredComplete", { completed: completedRequired, total: totalRequired })}
           </Badge>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-4">
-        {/* Required Documents */}
+        <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+          {t("uploadManagedAtCertificates")}
+        </div>
+
         <div>
-          <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+          <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <span className="h-2 w-2 rounded-full bg-red-500"></span>
             {t("requiredDocs")}
           </h4>
           <div className="space-y-2">
@@ -72,7 +89,6 @@ const ComplianceDocuments: React.FC<ComplianceDocumentsProps> = ({
               <DocumentRow
                 key={doc.id}
                 document={doc}
-                onUpload={onUpload}
                 onDownload={onDownload}
                 onRemove={onRemove}
                 onView={onView}
@@ -81,11 +97,10 @@ const ComplianceDocuments: React.FC<ComplianceDocumentsProps> = ({
           </div>
         </div>
 
-        {/* Optional Documents */}
         {optionalDocs.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
+            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
               {t("recommendedDocs")}
             </h4>
             <div className="space-y-2">
@@ -93,7 +108,6 @@ const ComplianceDocuments: React.FC<ComplianceDocumentsProps> = ({
                 <DocumentRow
                   key={doc.id}
                   document={doc}
-                  onUpload={onUpload}
                   onDownload={onDownload}
                   onRemove={onRemove}
                   onView={onView}
@@ -109,80 +123,69 @@ const ComplianceDocuments: React.FC<ComplianceDocumentsProps> = ({
 
 interface DocumentRowProps {
   document: ComplianceDocument;
-  onUpload: (docId: string) => void;
   onDownload: (docId: string) => void;
   onRemove: (docId: string) => void;
   onView: (docId: string) => void;
 }
 
-const DocumentRow: React.FC<DocumentRowProps> = ({
-  document,
-  onUpload,
-  onDownload,
-  onRemove,
-  onView,
-}) => {
+const DocumentRow: React.FC<DocumentRowProps> = ({ document, onDownload, onRemove, onView }) => {
   const t = useTranslations("export.documents");
   const statusConfig = DOCUMENT_STATUS_CONFIG[document.status];
   const StatusIcon = STATUS_ICONS[document.status];
+  const hasUploadedFile = document.status !== "missing";
 
   return (
-    <div
-      className={`flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors`}
-    >
-      <div className={`p-2 rounded-lg ${statusConfig.bgColor} shrink-0 w-fit`}>
-        <StatusIcon className={`w-4 h-4 ${statusConfig.color}`} />
+    <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-muted/50 md:flex-row md:items-center">
+      <div className={`w-fit shrink-0 rounded-lg p-2 ${statusConfig.bgColor}`}>
+        <StatusIcon className={`h-4 w-4 ${statusConfig.color}`} />
       </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="font-medium text-sm truncate">{document.name}</p>
-          <Badge
-            className={`${statusConfig.bgColor} ${statusConfig.color} text-xs shrink-0`}
-          >
+          <p className="truncate text-sm font-medium">{document.name}</p>
+          <Badge className={`${statusConfig.bgColor} ${statusConfig.color} shrink-0 text-xs`}>
             {statusConfig.label}
           </Badge>
         </div>
+
         {document.status !== "missing" && (
-          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-            {document.uploadedBy && (
-              <span>{t("uploadedBy", { user: document.uploadedBy })}</span>
-            )}
+          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+            {document.uploadedBy && <span>{t("uploadedBy", { user: document.uploadedBy })}</span>}
             {document.validTo && <span>{t("validUntil", { date: document.validTo })}</span>}
           </div>
         )}
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        {document.status === "missing" ? (
-          <Button size="sm" className="w-full" onClick={() => onUpload(document.id)}>
-            <Upload className="w-4 h-4 mr-1" />
-            {t("upload")}
-          </Button>
-        ) : (
+        {hasUploadedFile ? (
           <>
             <Button
               size="icon"
               variant="ghost"
               onClick={() => onView(document.id)}
+              aria-label={t("view")}
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="h-4 w-4" />
             </Button>
             <Button
               size="icon"
               variant="ghost"
               onClick={() => onDownload(document.id)}
+              aria-label={t("download")}
             >
-              <Download className="w-4 h-4" />
+              <Download className="h-4 w-4" />
             </Button>
             <Button
               size="icon"
               variant="ghost"
               onClick={() => onRemove(document.id)}
+              aria-label={t("remove")}
             >
-              <Trash2 className="w-4 h-4 text-destructive" />
+              <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </>
+        ) : (
+          <Badge variant="secondary">{t("pendingUpload")}</Badge>
         )}
       </div>
     </div>

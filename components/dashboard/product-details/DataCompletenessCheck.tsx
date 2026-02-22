@@ -1,4 +1,4 @@
-// Section C (new) - Data Completeness Check
+
 "use client";
 
 import React from "react";
@@ -10,8 +10,8 @@ import {
   AlertCircle,
   XCircle,
   ClipboardList,
-  ExternalLink,
-} from "lucide-react";
+  ExternalLink } from
+"lucide-react";
 import { DataCompletenessItem } from "@/lib/carbonDetailData";
 
 interface DataCompletenessCheckProps {
@@ -24,33 +24,33 @@ const STATUS_CONFIG = {
     icon: CheckCircle2,
     color: "text-green-600",
     bg: "bg-green-50",
-    label: "Đầy đủ",
+    label: "Đầy đủ"
   },
   partial: {
     icon: AlertCircle,
     color: "text-yellow-600",
     bg: "bg-yellow-50",
-    label: "Một phần",
+    label: "Một phần"
   },
   missing: {
     icon: XCircle,
     color: "text-red-600",
     bg: "bg-red-50",
-    label: "Thiếu",
-  },
+    label: "Thiếu"
+  }
 };
 
 const DataCompletenessCheck: React.FC<DataCompletenessCheckProps> = ({
   completeness,
-  productId,
+  productId
 }) => {
   const router = useRouter();
 
   const completeCount = completeness.filter(
-    (c) => c.status === "complete",
+    (c) => c.status === "complete"
   ).length;
   const totalCount = completeness.length;
-  const completionPercentage = Math.round((completeCount / totalCount) * 100);
+  const completionPercentage = Math.round(completeCount / totalCount * 100);
 
   const handleJumpTo = (jumpTo?: string) => {
     if (jumpTo) {
@@ -79,45 +79,45 @@ const DataCompletenessCheck: React.FC<DataCompletenessCheckProps> = ({
           return (
             <div
               key={item.field}
-              className={`flex items-center justify-between p-3 rounded-lg ${config.bg}`}
-            >
+              className={`flex items-center justify-between p-3 rounded-lg ${config.bg}`}>
+              
               <div className="flex items-center gap-3">
                 <Icon className={`w-5 h-5 ${config.color}`} />
                 <div>
                   <span className="font-medium">{item.label}</span>
-                  {item.note && (
-                    <p className="text-xs text-muted-foreground">{item.note}</p>
-                  )}
+                  {item.note &&
+                  <p className="text-xs text-muted-foreground">{item.note}</p>
+                  }
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`text-sm ${config.color}`}>
                   {config.label}
                 </span>
-                {item.status !== "complete" && item.jumpTo && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2"
-                    onClick={() => handleJumpTo(item.jumpTo)}
-                  >
+                {item.status !== "complete" && item.jumpTo &&
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => handleJumpTo(item.jumpTo)}>
+                  
                     <ExternalLink className="w-3 h-3 mr-1" />
                     Bổ sung
                   </Button>
-                )}
+                }
               </div>
-            </div>
-          );
+            </div>);
+
         })}
 
-        {completionPercentage < 100 && (
-          <p className="text-xs text-center text-muted-foreground pt-2">
+        {completionPercentage < 100 &&
+        <p className="text-xs text-center text-muted-foreground pt-2">
             Nhấn vào &quot;Bổ sung&quot; để nhập dữ liệu còn thiếu
           </p>
-        )}
+        }
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default DataCompletenessCheck;

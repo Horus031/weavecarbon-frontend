@@ -12,8 +12,8 @@ const PlanInfo = () => {
         </div>
         <span className="text-lg font-bold text-primary">149k - 299k VNĐ</span>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default PlanInfo;

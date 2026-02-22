@@ -14,7 +14,7 @@ const B2CStatsGrid: React.FC<B2CStatsGridProps> = ({ profile }) => {
     circularPoints: profile?.circularPoints || 0,
     garmentsDonated: profile?.garmentsDonated || 0,
     co2Saved: profile?.co2Saved || 0,
-    treesEquivalent: profile?.treesEquivalent || 0,
+    treesEquivalent: profile?.treesEquivalent || 0
   };
 
   return (
@@ -50,8 +50,8 @@ const B2CStatsGrid: React.FC<B2CStatsGridProps> = ({ profile }) => {
           <p className="text-xs text-muted-foreground">Trees equivalent</p>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 };
 
 export default B2CStatsGrid;

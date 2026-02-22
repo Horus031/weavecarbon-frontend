@@ -17,21 +17,21 @@ const B2CRecentActivity: React.FC<B2CRecentActivityProps> = ({ activities }) => 
         <CardTitle className="text-lg">Recent Activity</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {activities.map((activity) => (
-          <div
-            key={activity.id}
-            className="flex items-center gap-4 p-3 rounded-lg bg-muted/50"
-          >
+        {activities.map((activity) =>
+        <div
+          key={activity.id}
+          className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+          
             <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                activity.type === "donate" ? "bg-primary/10" : "bg-green-100"
-              }`}
-            >
-              {activity.type === "donate" ? (
-                <Gift className="w-5 h-5 text-primary" />
-              ) : (
-                <Recycle className="w-5 h-5 text-green-600" />
-              )}
+            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            activity.type === "donate" ? "bg-primary/10" : "bg-green-100"}`
+            }>
+            
+              {activity.type === "donate" ?
+            <Gift className="w-5 h-5 text-primary" /> :
+
+            <Recycle className="w-5 h-5 text-green-600" />
+            }
             </div>
             <div className="flex-1">
               <p className="font-medium text-sm">{activity.item}</p>
@@ -41,10 +41,10 @@ const B2CRecentActivity: React.FC<B2CRecentActivityProps> = ({ activities }) => 
               +{activity.points} pts
             </Badge>
           </div>
-        ))}
+        )}
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 };
 
 export default B2CRecentActivity;

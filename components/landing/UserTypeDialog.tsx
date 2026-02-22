@@ -23,12 +23,12 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
         </DialogHeader>
 
         <div className="grid grid-cols-1 gap-4 py-6">
-          {/* B2B Option */}
+          
           <Link
-            href="/auth?type=b2b"
+            href="/auth?type=b2b&forceLogin=1"
             onClick={() => onOpenChange(false)}
-            className="group flex items-center gap-4 p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
-          >
+            className="group flex items-center gap-4 p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all duration-300">
+
             <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
               <Building2 className="w-7 h-7" />
             </div>
@@ -43,12 +43,12 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
             <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
           </Link>
 
-          {/* B2C Option */}
+          
           <Link
-            href="/auth?type=b2c"
+            href="/auth?type=b2c&forceLogin=1"
             onClick={() => onOpenChange(false)}
-            className="group flex items-center gap-4 p-5 rounded-xl border-2 border-border bg-card hover:border-accent/50 hover:bg-accent/5 transition-all duration-300"
-          >
+            className="group flex items-center gap-4 p-5 rounded-xl border-2 border-border bg-card hover:border-accent/50 hover:bg-accent/5 transition-all duration-300">
+
             <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
               <User className="w-7 h-7" />
             </div>
@@ -65,8 +65,8 @@ const UserTypeDialog = ({ open, onOpenChange }: UserTypeDialogProps) => {
 
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 };
 
 export default UserTypeDialog;

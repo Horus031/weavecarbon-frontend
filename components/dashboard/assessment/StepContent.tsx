@@ -26,44 +26,44 @@ export default function StepContent({
   draftHistory,
   onSaveDraft,
   onPublish,
-  isSubmitting,
+  isSubmitting
 }: StepContentProps) {
   switch (currentStep) {
     case 1:
       return (
         <Step1Content
           data={data}
-          onChange={onChange}
-        />
-      );
+          onChange={onChange} />);
+
+
     case 2:
       return (
         <Step2Content
           data={data}
-          onChange={onChange}
-        />
-      );
+          onChange={onChange} />);
+
+
     case 3:
       return (
         <Step3Content
           data={data}
-          onChange={onChange}
-        />
-      );
+          onChange={onChange} />);
+
+
     case 4:
       return (
         <Step4Content
           data={data}
-          onChange={onChange}
-        />
-      );
+          onChange={onChange} />);
+
+
     case 5:
       return (
         <Step5Content
           data={data}
-          onChange={onChange}
-        />
-      );
+          onChange={onChange} />);
+
+
     case 6:
       return (
         <Step6Content
@@ -71,9 +71,9 @@ export default function StepContent({
           draftHistory={draftHistory}
           onSaveDraft={onSaveDraft}
           onPublish={onPublish}
-          isSubmitting={isSubmitting}
-        />
-      );
+          isSubmitting={isSubmitting} />);
+
+
     default:
       return null;
   }

@@ -19,19 +19,19 @@ const SettingsPage: React.FC = () => {
   }, [setPageTitle, t]);
 
   const SETTINGS_TABS = [
-    { id: "system", label: t("tabs.system"), icon: SettingsIcon },
-    { id: "users", label: t("tabs.users"), icon: Users },
-    { id: "notifications", label: t("tabs.notifications"), icon: Bell },
-  ];
+  { id: "system", label: t("tabs.system"), icon: SettingsIcon },
+  { id: "users", label: t("tabs.users"), icon: Users },
+  { id: "notifications", label: t("tabs.notifications"), icon: Bell }];
+
 
   return (
     <div className="space-y-6">
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="space-y-6"
-      >
-        {/* Tab Navigation */}
+        className="space-y-6">
+        
+        
         <div className="w-full">
           <TabsList className="grid h-auto w-full grid-cols-1 gap-3 overflow-visible bg-transparent p-0 sm:grid-cols-3">
             {SETTINGS_TABS.map((tab) => {
@@ -40,19 +40,19 @@ const SettingsPage: React.FC = () => {
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="group flex h-auto items-center justify-center gap-3 rounded-xl border border-border/60 bg-background/80 px-4 py-3 text-sm font-semibold text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition-all group-data-[state=active]:bg-primary/15 group-data-[state=active]:text-primary">
+                  className="group flex h-auto items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md data-[state=active]:border-primary/55 data-[state=active]:bg-primary/12 data-[state=active]:text-primary data-[state=active]:ring-1 data-[state=active]:ring-primary/30 data-[state=active]:shadow-md">
+
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-slate-600 transition-all group-data-[state=active]:bg-primary/20 group-data-[state=active]:text-primary">
                     <Icon className="w-4 h-4" />
                   </span>
                   <span>{tab.label}</span>
-                </TabsTrigger>
-              );
+                </TabsTrigger>);
+
             })}
           </TabsList>
         </div>
 
-        {/* Tab Contents */}
+        
         <TabsContent value="system" className="mt-4">
           <SystemSettings />
         </TabsContent>
@@ -65,8 +65,8 @@ const SettingsPage: React.FC = () => {
           <NotificationSettings />
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>);
+
 };
 
 export default SettingsPage;

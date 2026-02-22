@@ -11,7 +11,7 @@ interface PermissionState {
 export const usePermissions = () => {
   const [permissions, setPermissions] = useState<PermissionState>({
     camera: "prompt",
-    location: "prompt",
+    location: "prompt"
   });
 
   const requestCameraPermission = useCallback(async (): Promise<boolean> => {
@@ -22,7 +22,7 @@ export const usePermissions = () => {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      // Stop all tracks immediately after getting permission
+
       stream.getTracks().forEach((track) => track.stop());
 
       setPermissions((prev) => ({ ...prev, camera: "granted" }));
@@ -30,9 +30,9 @@ export const usePermissions = () => {
     } catch (error) {
       if (error instanceof Error) {
         if (
-          error.name === "NotAllowedError" ||
-          error.name === "PermissionDeniedError"
-        ) {
+        error.name === "NotAllowedError" ||
+        error.name === "PermissionDeniedError")
+        {
           setPermissions((prev) => ({ ...prev, camera: "denied" }));
         } else {
           setPermissions((prev) => ({ ...prev, camera: "unavailable" }));
@@ -63,7 +63,7 @@ export const usePermissions = () => {
           }
           resolve(false);
         },
-        { enableHighAccuracy: true, timeout: 10000 },
+        { enableHighAccuracy: true, timeout: 10000 }
       );
     });
   }, []);
@@ -73,14 +73,14 @@ export const usePermissions = () => {
       if (type === "camera") {
         try {
           const result = await navigator.permissions.query({
-            name: "camera" as PermissionName,
+            name: "camera" as PermissionName
           });
           const status =
-            result.state === "granted"
-              ? "granted"
-              : result.state === "denied"
-                ? "denied"
-                : "prompt";
+          result.state === "granted" ?
+          "granted" :
+          result.state === "denied" ?
+          "denied" :
+          "prompt";
           setPermissions((prev) => ({ ...prev, camera: status }));
           return status;
         } catch {
@@ -91,14 +91,14 @@ export const usePermissions = () => {
       if (type === "location") {
         try {
           const result = await navigator.permissions.query({
-            name: "geolocation",
+            name: "geolocation"
           });
           const status =
-            result.state === "granted"
-              ? "granted"
-              : result.state === "denied"
-                ? "denied"
-                : "prompt";
+          result.state === "granted" ?
+          "granted" :
+          result.state === "denied" ?
+          "denied" :
+          "prompt";
           setPermissions((prev) => ({ ...prev, location: status }));
           return status;
         } catch {
@@ -108,13 +108,13 @@ export const usePermissions = () => {
 
       return "prompt";
     },
-    [],
+    []
   );
 
   return {
     permissions,
     requestCameraPermission,
     requestLocationPermission,
-    checkPermissionStatus,
+    checkPermissionStatus
   };
 };

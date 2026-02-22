@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { useBatches } from "@/contexts/BatchContext";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle } from
+"@/components/ui/dialog";
 import {
   Package,
   PlusCircle,
@@ -25,61 +25,72 @@ import {
   TrendingUp,
   Upload,
   Layers,
-} from "lucide-react";
+  Pencil,
+  X } from
+"lucide-react";
 import ProductQRCode from "@/components/dashboard/ProductQRCode";
 import BulkUploadModal from "@/components/dashboard/products/BulkUploadModal";
 import BatchManagementModal from "@/components/dashboard/products/BatchManagementModal";
+import AssessmentClient from "@/components/dashboard/assessment/AssessmentClient";
 import { useRouter } from "next/navigation";
-import { ProductAssessmentData } from "./assessment/steps/types";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { ProductAssessmentData } from "@/components/dashboard/assessment/steps/types";
+import {
+  fetchProducts,
+  formatApiErrorMessage,
+  isValidProductId,
+  type ProductRecord,
+  type ProductStatus } from
+"@/lib/productsApi";
 
-// Type for stored products in localStorage
-interface StoredProduct extends ProductAssessmentData {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  status: "draft" | "published";
-}
+const ITEMS_PER_PAGE = 20;
 
 const ProductsClient: React.FC = () => {
   const router = useRouter();
-  const { batches } = useBatches();
   const t = useTranslations("products");
   const { setPageTitle } = useDashboardTitle();
 
   const STATUS_CONFIG: Record<
-    "draft" | "published",
-    { label: string; className: string }
-  > = {
+    ProductStatus,
+    {label: string;className: string;}> =
+  {
     draft: {
       label: t("statusLabel.draft"),
-      className: "bg-gray-100 text-gray-700",
+      className: "border border-slate-300 bg-slate-200 text-slate-800"
     },
     published: {
       label: t("statusLabel.published"),
-      className: "bg-green-100 text-green-700",
+      className: "border border-emerald-300 bg-emerald-100 text-emerald-800"
     },
+    archived: {
+      label: "Archived",
+      className: "border border-amber-300 bg-amber-100 text-amber-800"
+    }
   };
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<
-    "draft" | "published" | "all"
-  >("all");
+    "draft" | "published" | "all">(
+    "all");
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
-
-  const loadProducts = useCallback((): StoredProduct[] => {
-    if (typeof window === "undefined") return [];
-
-    const storedProducts = JSON.parse(
-      localStorage.getItem("weavecarbonProducts") || "[]",
-    ) as StoredProduct[];
-
-    return storedProducts;
-  }, []);
-
-  const products = useMemo<StoredProduct[]>(() => {
-    return loadProducts();
-  }, [loadProducts]);
+  const [products, setProducts] = useState<ProductRecord[]>([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    page_size: ITEMS_PER_PAGE,
+    total: 0,
+    total_pages: 0
+  });
+  const [stats, setStats] = useState({
+    total: 0,
+    draft: 0,
+    published: 0
+  });
+  const [batchCount, setBatchCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const loadRequestSeqRef = useRef(0);
 
   const [selectedProductForQR, setSelectedProductForQR] = useState<{
     id: string;
@@ -88,67 +99,203 @@ const ProductsClient: React.FC = () => {
   } | null>(null);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
-
-  // Filter and search products
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesSearch =
-        product.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.productCode.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === "all" || product.status === statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [products, searchQuery, statusFilter]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredProducts.length / ITEMS_PER_PAGE),
+  const [showAssessmentModal, setShowAssessmentModal] = useState(false);
+  const [assessmentProductId, setAssessmentProductId] = useState<string | null>(
+    null
   );
+  const [assessmentInitialData, setAssessmentInitialData] =
+  useState<ProductAssessmentData | null>(null);
+
+  const triggerRefresh = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, []);
+
+  const mapProductToAssessmentData = useCallback(
+    (product: ProductRecord): ProductAssessmentData => ({
+      productCode: product.productCode,
+      productName: product.productName,
+      productType: product.productType,
+      weightPerUnit: product.weightPerUnit,
+      quantity: product.quantity,
+      materials: product.materials,
+      accessories: product.accessories,
+      productionProcesses: product.productionProcesses,
+      energySources: product.energySources,
+      manufacturingLocation: product.manufacturingLocation,
+      wasteRecovery: product.wasteRecovery,
+      destinationMarket: product.destinationMarket,
+      originAddress: product.originAddress,
+      destinationAddress: product.destinationAddress,
+      transportLegs: product.transportLegs,
+      estimatedTotalDistance: product.estimatedTotalDistance,
+      carbonResults: product.carbonResults,
+      status: product.status === "published" ? "published" : "draft",
+      version: product.version,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt
+    }),
+    []
+  );
+
+  const closeAssessmentModal = useCallback(() => {
+    setShowAssessmentModal(false);
+    setAssessmentProductId(null);
+    setAssessmentInitialData(null);
+  }, []);
+
+  const openCreateAssessment = useCallback(() => {
+    setAssessmentProductId(null);
+    setAssessmentInitialData(null);
+    setShowAssessmentModal(true);
+  }, []);
+
+  const openEditAssessment = useCallback(
+    (product: ProductRecord) => {
+      if (!isValidProductId(product.id)) {
+        toast.error("Product ID is invalid. Please refresh and try again.");
+        return;
+      }
+
+      setAssessmentProductId(product.id);
+      setAssessmentInitialData(mapProductToAssessmentData(product));
+      setShowAssessmentModal(true);
+    },
+    [mapProductToAssessmentData]
+  );
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchQuery]);
+
+  const loadProducts = useCallback(async () => {
+    const requestSeq = loadRequestSeqRef.current + 1;
+    loadRequestSeqRef.current = requestSeq;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await fetchProducts({
+        search: debouncedSearchQuery.trim() || undefined,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        page: currentPage,
+        page_size: ITEMS_PER_PAGE
+      });
+      if (requestSeq !== loadRequestSeqRef.current) {
+        return;
+      }
+
+      setProducts(result.items);
+      setPagination(result.pagination);
+      setBatchCount(0);
+
+      const draftCount = result.items.filter((item) => item.status === "draft").length;
+      const publishedCount = result.items.filter(
+        (item) => item.status === "published"
+      ).length;
+      const isGlobalQuery =
+      debouncedSearchQuery.trim().length === 0 && statusFilter === "all";
+
+      setStats((previous) => {
+        if (isGlobalQuery) {
+          return {
+            total: result.pagination.total,
+            draft:
+            result.pagination.total <= result.items.length ?
+            draftCount :
+            Math.max(previous.draft, draftCount),
+            published:
+            result.pagination.total <= result.items.length ?
+            publishedCount :
+            Math.max(previous.published, publishedCount)
+          };
+        }
+
+        if (previous.total === 0 && result.pagination.total > 0) {
+          return {
+            total: result.pagination.total,
+            draft: draftCount,
+            published: publishedCount
+          };
+        }
+
+        return previous;
+      });
+
+      const totalPages = Math.max(1, result.pagination.total_pages || 1);
+      if (currentPage > totalPages) {
+        setCurrentPage(totalPages);
+      }
+    } catch (loadError) {
+      if (requestSeq !== loadRequestSeqRef.current) {
+        return;
+      }
+      setProducts([]);
+      setPagination({
+        page: 1,
+        page_size: ITEMS_PER_PAGE,
+        total: 0,
+        total_pages: 0
+      });
+      setError(formatApiErrorMessage(loadError, "Failed to load products"));
+    } finally {
+      if (requestSeq === loadRequestSeqRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [debouncedSearchQuery, statusFilter, currentPage]);
+
+  useEffect(() => {
+    void loadProducts();
+  }, [loadProducts, refreshKey]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, products.length]);
+  }, [searchQuery, statusFilter]);
 
-  useEffect(() => {
-    setCurrentPage((prev) => Math.min(prev, totalPages));
-  }, [totalPages]);
+  const totalPages = Math.max(1, pagination.total_pages || 1);
+  const statCardClass = (target: "all" | "draft" | "published") => {
+    const base =
+    "cursor-pointer border bg-white shadow transition-all hover:border-slate-400 hover:shadow-lg";
+    if (statusFilter !== target) return `${base} border-slate-300`;
+    if (target === "draft") return `${base} border-slate-400 bg-slate-200/80`;
+    if (target === "published") return `${base} border-emerald-400 bg-emerald-100/75`;
+    return `${base} border-primary/45 bg-primary/10`;
+  };
 
-  const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredProducts, currentPage]);
+  const filterChipClass = (target: "all" | "draft" | "published") => {
+    const base = "h-9 px-3 border text-sm font-medium transition-colors";
+    if (statusFilter !== target) {
+      return `${base} border-slate-300 bg-white text-slate-800 hover:bg-slate-100`;
+    }
+    if (target === "draft") {
+      return `${base} border-amber-400 bg-amber-100 text-amber-900 hover:bg-amber-200`;
+    }
+    if (target === "published") {
+      return `${base} border-emerald-400 bg-emerald-100 text-emerald-900 hover:bg-emerald-200`;
+    }
+    return `${base} border-slate-500 bg-slate-200 text-slate-900 hover:bg-slate-300`;
+  };
 
   const rangeStart =
-    filteredProducts.length === 0
-      ? 0
-      : (currentPage - 1) * ITEMS_PER_PAGE + 1;
-  const rangeEnd = Math.min(
-    currentPage * ITEMS_PER_PAGE,
-    filteredProducts.length,
-  );
-
-  // Statistics
-  const stats = useMemo(
-    () => ({
-      total: products.length,
-      draft: products.filter((p) => p.status === "draft").length,
-      published: products.filter((p) => p.status === "published").length,
-    }),
-    [products],
-  );
+  products.length === 0 ? 0 : (pagination.page - 1) * pagination.page_size + 1;
+  const rangeEnd =
+  products.length === 0 ? 0 : rangeStart + products.length - 1;
 
   const summaryText = useMemo(
     () =>
-      t("summary", {
-        total: stats.total,
-        draft: stats.draft,
-        published: stats.published,
-        batches: batches.length,
-      }),
-    [t, stats.total, stats.draft, stats.published, batches.length],
+    t("summary", {
+      total: stats.total,
+      draft: stats.draft,
+      published: stats.published,
+      batches: batchCount
+    }),
+    [t, stats.total, stats.draft, stats.published, batchCount]
   );
 
   useEffect(() => {
@@ -159,285 +306,407 @@ const ProductsClient: React.FC = () => {
     router.push(`/summary/${productId}`);
   };
 
+  const handleViewProductSafe = async (product: ProductRecord) => {
+    if (isValidProductId(product.id)) {
+      handleViewProduct(product.id);
+      return;
+    }
+
+    const searchTerm = product.productCode || product.productName || undefined;
+    if (!searchTerm) {
+      toast.error("Product ID is invalid. Please refresh and try again.");
+      return;
+    }
+
+    try {
+      const refreshed = await fetchProducts({
+        search: searchTerm,
+        page: 1,
+        page_size: 20
+      });
+
+      const exactByCode = refreshed.items.find(
+        (item) =>
+        item.productCode === product.productCode && isValidProductId(item.id)
+      );
+      const exactByName = refreshed.items.find(
+        (item) =>
+        item.productName === product.productName && isValidProductId(item.id)
+      );
+      const fallback = refreshed.items.find((item) => isValidProductId(item.id));
+      const resolvedId = exactByCode?.id || exactByName?.id || fallback?.id;
+
+      if (!resolvedId) {
+        const fallbackSlug = (product.productCode || product.productName || "").trim();
+        if (fallbackSlug.length > 0) {
+          router.push(`/summary/${encodeURIComponent(fallbackSlug)}`);
+          return;
+        }
+        toast.error("Product ID is invalid. Please refresh and try again.");
+        return;
+      }
+
+      handleViewProduct(resolvedId);
+    } catch (error) {
+      const fallbackSlug = (product.productCode || product.productName || "").trim();
+      if (fallbackSlug.length > 0) {
+        router.push(`/summary/${encodeURIComponent(fallbackSlug)}`);
+        return;
+      }
+      toast.error(formatApiErrorMessage(error, "Failed to open product detail"));
+    }
+  };
+
   return (
     <>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
-          <div className="flex flex-col md:flex-row gap-2">
-            <div className="gap-2">
+        
+        <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-end">
+          <div className="flex w-full flex-wrap gap-2 md:w-auto md:justify-end">
+            <div className="flex w-full flex-wrap gap-2 md:w-auto">
               <Button
                 variant="outline"
                 onClick={() => setShowBatchModal(true)}
-                className="gap-2"
-              >
+                className="gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-100 w-full sm:w-auto">
+
                 <Layers className="w-4 h-4" /> {t("manageBatches")}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setShowBulkUpload(true)}
-                className="gap-2"
-              >
+                className="gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-100 w-full sm:w-auto">
+
                 <Upload className="w-4 h-4" /> {t("uploadFile")}
               </Button>
             </div>
             <Button
-              onClick={() => router.push("/assessment")}
-              className="gap-2"
-            >
+              onClick={openCreateAssessment}
+              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700 w-full sm:w-auto">
+
               <PlusCircle className="w-4 h-4" /> {t("addProduct")}
             </Button>
           </div>
         </div>
 
-        {/* Stats Cards */}
+        
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setStatusFilter("all")}
-          >
+            className={statCardClass("all")}
+            onClick={() => setStatusFilter("all")}>
+
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg border border-slate-300 bg-slate-100 flex items-center justify-center">
                   <Package className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("stats.all")}
-                  </p>
+                  <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
+                  <p className="text-xs text-slate-600">{t("stats.all")}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setStatusFilter("draft")}
-          >
+            className={statCardClass("draft")}
+            onClick={() => setStatusFilter("draft")}>
+
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-gray-600" />
+                <div className="w-10 h-10 rounded-lg border border-slate-300 bg-slate-200/80 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-slate-700" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.draft}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("stats.draft")}
-                  </p>
+                  <p className="text-2xl font-bold text-slate-900">{stats.draft}</p>
+                  <p className="text-xs text-slate-600">{t("stats.draft")}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setStatusFilter("published")}
-          >
+            className={statCardClass("published")}
+            onClick={() => setStatusFilter("published")}>
+
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 rounded-lg border border-emerald-300 bg-emerald-100/90 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-emerald-700" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.published}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("stats.published")}
-                  </p>
+                  <p className="text-2xl font-bold text-slate-900">{stats.published}</p>
+                  <p className="text-xs text-slate-600">{t("stats.published")}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        
+        <div className="flex items-center gap-3 rounded-lg border border-slate-300 bg-slate-50 p-3 shadow">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <Input
               placeholder={t("searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+              className="pr-10 pl-10 border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 shadow-sm" />
 
-          <Select
-            value={statusFilter}
-            onValueChange={(v) =>
-              setStatusFilter(v as "draft" | "published" | "all")
+            {searchQuery.trim().length > 0 &&
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Clear search query">
+
+                <X className="h-4 w-4" />
+              </Button>
             }
-          >
-            <SelectTrigger className="w-full md:w-45">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder={t("statusFilter")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("allStatusFilter")}</SelectItem>
-              <SelectItem value="draft">{t("draftStatus")}</SelectItem>
-              <SelectItem value="published">{t("publishedStatus")}</SelectItem>
-            </SelectContent>
-          </Select>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 overflow-x-auto whitespace-nowrap">
+            <div className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-600">
+              <Filter className="h-3.5 w-3.5" />
+              {t("statusFilter")}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className={filterChipClass("all")}
+              onClick={() => setStatusFilter("all")}>
+
+              {t("allStatusFilter")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className={filterChipClass("draft")}
+              onClick={() => setStatusFilter("draft")}>
+
+              {t("draftStatus")}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className={filterChipClass("published")}
+              onClick={() => setStatusFilter("published")}>
+
+              {t("publishedStatus")}
+            </Button>
+          </div>
         </div>
 
-        {/* Products List */}
-        <div className="grid gap-3 sm:grid-cols-2">
-          {filteredProducts.length === 0 ? (
-            <Card className="sm:col-span-2">
+        
+        <div className="grid items-stretch gap-3 sm:grid-cols-2">
+          {loading ?
+          Array.from({ length: 4 }).map((_, index) =>
+          <Card key={index} className="sm:col-span-1 border border-slate-300 bg-white shadow">
+                <CardContent className="p-4">
+                  <div className="mb-2 h-6 w-1/2 rounded bg-slate-200 animate-pulse" />
+                  <div className="mb-3 h-4 w-1/3 rounded bg-slate-200 animate-pulse" />
+                  <div className="h-5 w-full rounded bg-slate-200 animate-pulse" />
+                </CardContent>
+              </Card>
+          ) :
+          products.length === 0 ?
+          <Card className="sm:col-span-2 border border-slate-300 bg-slate-50/60 shadow">
               <CardContent className="p-8 text-center">
-                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-medium mb-2">{t("notFound")}</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {t("tryChangeFilter")}
+                <Package className="mx-auto mb-4 h-12 w-12 text-slate-600" />
+                <h3 className="mb-2 font-medium text-slate-900">{t("notFound")}</h3>
+                <p className="mb-4 text-sm text-slate-600">
+                  {error || t("tryChangeFilter")}
                 </p>
                 <Button
-                  onClick={() => router.push("/assessment")}
-                  variant="outline"
-                >
+                onClick={openCreateAssessment}
+                variant="outline"
+                className="border-slate-300 bg-white text-slate-800 hover:bg-slate-100">
+
                   <PlusCircle className="w-4 h-4 mr-2" /> {t("createNew")}
                 </Button>
               </CardContent>
-            </Card>
-          ) : (
-            paginatedProducts.map((product) => (
-              <Card
-                key={product.id}
-                className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => handleViewProduct(product.id)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                        <Package className="w-6 h-6 text-primary" />
+            </Card> :
+
+          products.map((product) =>
+          <Card
+            key={product.id}
+            className="h-full min-h-[120px] cursor-pointer border border-slate-300 bg-white shadow transition-all hover:border-slate-400 hover:shadow-lg"
+            onClick={() => {
+              void handleViewProductSafe(product);
+            }}>
+
+                <CardContent className="h-full p-4">
+                  <div className="flex h-full flex-col justify-between gap-4 md:flex-row md:items-center">
+                  <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 rounded-lg border border-slate-300 bg-slate-100 flex items-center justify-center shrink-0">
+                        <Package className="w-6 h-6 text-slate-700" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium truncate">
-                            {product.productName}
-                          </h3>
+                          <h3 className="font-medium text-slate-900 truncate">{product.productName}</h3>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {product.productCode}
-                        </p>
+                        <p className="text-sm text-slate-600">{product.productCode}</p>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {product.materials.slice(0, 2).map((m) => (
-                            <Badge
-                              key={m.id}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {m.materialType} {m.percentage}%
+                          {product.materials.slice(0, 2).map((material) =>
+                      <Badge
+                        key={material.id}
+                        variant="outline"
+                        className="text-xs border-slate-300 bg-slate-100 text-slate-700">
+
+                              {material.materialType} {material.percentage}%
                             </Badge>
-                          ))}
+                      )}
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right hidden sm:block">
-                        <p className="text-lg font-bold text-primary">
-                          {product.carbonResults?.perProduct.total.toFixed(2) ||
-                            "—"}{" "}
-                          kg
+                        <p className="text-lg font-bold text-emerald-700">
+                          {typeof product.carbonResults?.perProduct.total === "number" ?
+                      `${product.carbonResults.perProduct.total.toFixed(2)} kg` :
+                      "-"}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t("co2PerUnit")}
-                        </p>
+                        <p className="text-xs text-slate-600">{t("co2PerUnit")}</p>
                       </div>
 
-                      <Badge
-                        className={STATUS_CONFIG[product.status].className}
-                      >
+                      <Badge className={STATUS_CONFIG[product.status].className}>
                         {STATUS_CONFIG[product.status].label}
                       </Badge>
 
-                      {product.status === "published" && (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedProductForQR({
-                              id: product.id,
-                              name: product.productName,
-                              sku: product.productCode,
-                            });
-                          }}
-                          title={t("createQR")}
-                        >
+                      <Button
+                    variant="outline"
+                    size="icon"
+                    className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditAssessment(product);
+                    }}
+                    title="Edit product">
+
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+
+                      {product.status === "published" &&
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="border-slate-300 bg-white text-emerald-700 hover:bg-emerald-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProductForQR({
+                        id: product.id,
+                        name: product.productName,
+                        sku: product.productCode
+                      });
+                    }}
+                    title={t("createQR")}>
+
                           <QrCode className="w-4 h-4 text-green-600" />
                         </Button>
-                      )}
+                  }
 
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" className="text-slate-600 hover:bg-slate-200">
                         <ChevronRight className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ))
-          )}
+          )
+          }
         </div>
 
-        {/* Results count */}
-        {filteredProducts.length > 0 && (
-          totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-              >
-                {t("pagination.prev")}
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                {t("pagination.page", {
-                  current: currentPage,
-                  total: totalPages,
-                })}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                disabled={currentPage === totalPages}
-              >
-                {t("pagination.next")}
-              </Button>
-            </div>
-          )
-        )}
+        
+        {products.length > 0 &&
+        <div className="flex items-center justify-between text-xs text-slate-600">
+            <span>
+              {rangeStart}-{rangeEnd} / {pagination.total}
+            </span>
+            {totalPages > 1 &&
+          <div className="flex items-center justify-center gap-2">
+                <Button
+              variant="outline"
+              size="sm"
+              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}>
+
+                  {t("pagination.prev")}
+                </Button>
+                <span className="text-xs text-slate-600">
+                  {t("pagination.page", {
+                current: currentPage,
+                total: totalPages
+              })}
+                </span>
+                <Button
+              variant="outline"
+              size="sm"
+              className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}>
+
+                  {t("pagination.next")}
+                </Button>
+              </div>
+          }
+          </div>
+        }
       </div>
 
-      {/* Product QR Code Modal */}
-      {selectedProductForQR && (
-        <ProductQRCode
-          productId={selectedProductForQR.id}
-          productName={selectedProductForQR.name}
-          productCode={selectedProductForQR.sku}
-          open={!!selectedProductForQR}
-          onClose={() => setSelectedProductForQR(null)}
-        />
-      )}
+      
+      {selectedProductForQR &&
+      <ProductQRCode
+        productId={selectedProductForQR.id}
+        productName={selectedProductForQR.name}
+        productCode={selectedProductForQR.sku}
+        open={!!selectedProductForQR}
+        onClose={() => setSelectedProductForQR(null)} />
 
-      {/* Bulk Upload Modal */}
+      }
+
+      
       <BulkUploadModal
         open={showBulkUpload}
         onClose={() => setShowBulkUpload(false)}
-      />
+        onCompleted={triggerRefresh} />
 
-      {/* Batch Management Modal */}
+
+      
       <BatchManagementModal
         open={showBatchModal}
         onClose={() => setShowBatchModal(false)}
-      />
-    </>
-  );
+        onCompleted={triggerRefresh} />
+
+
+      
+      <Dialog open={showAssessmentModal} onOpenChange={(open) => !open && closeAssessmentModal()}>
+        <DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] overflow-y-auto p-4 md:p-6">
+          <DialogHeader>
+            <DialogTitle>
+              {assessmentProductId ? "Edit Product Assessment" : "Create Product Assessment"}
+            </DialogTitle>
+            <DialogDescription>
+              {assessmentProductId ?
+              "Update product information and re-calculate emissions." :
+              "Fill in product information to calculate emissions and save your product."}
+            </DialogDescription>
+          </DialogHeader>
+          <AssessmentClient
+            mode="modal"
+            productId={assessmentProductId}
+            initialData={assessmentInitialData}
+            onClose={closeAssessmentModal}
+            onCompleted={() => {
+              triggerRefresh();
+              closeAssessmentModal();
+            }} />
+
+        </DialogContent>
+      </Dialog>
+    </>);
+
 };
 
 export default ProductsClient;

@@ -2,18 +2,19 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim();
 interface ShipmentMiniMapProps {
-  currentLocation: { lat: number; lng: number; name: string };
+  currentLocation: {lat: number;lng: number;name: string;};
   height?: string;
-  status?: "in_transit" | "delivered" | "pending";
+  status?: "in_transit" | "delivered" | "pending" | "cancelled";
 }
 
 const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
   currentLocation,
   height = "150px",
-  status = "in_transit",
+  status = "in_transit"
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -28,6 +29,8 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
           return "#22c55e";
         case "pending":
           return "#eab308";
+        case "cancelled":
+          return "#ef4444";
         default:
           return "#3b82f6";
       }
@@ -58,15 +61,15 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
 
         mapboxgl.accessToken = MAPBOX_TOKEN;
 
-        // Create map with minimal controls
+
         const map = new mapboxgl.Map({
           container: mapContainerRef.current,
           style: 'mapbox://styles/mapbox/satellite-streets-v12',
           center: [currentLocation.lng, currentLocation.lat],
           zoom: 5,
           pitch: 45,
-          interactive: false, // Disable interaction for mini map
-          attributionControl: false,
+          interactive: false,
+          attributionControl: false
         });
 
         mapRef.current = map;
@@ -74,7 +77,7 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
         map.on("load", () => {
           if (!isMounted) return;
 
-          // Create custom marker element
+
           const markerEl = document.createElement("div");
           markerEl.innerHTML = `
             <div style="
@@ -112,7 +115,7 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
             </div>
           `;
 
-          // Add pulse animation
+
           const style = document.createElement("style");
           style.textContent = `
             @keyframes pulse {
@@ -123,9 +126,9 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
           `;
           document.head.appendChild(style);
 
-          const marker = new mapboxgl.Marker({ element: markerEl })
-            .setLngLat([currentLocation.lng, currentLocation.lat])
-            .addTo(map);
+          const marker = new mapboxgl.Marker({ element: markerEl }).
+          setLngLat([currentLocation.lng, currentLocation.lat]).
+          addTo(map);
 
           markerRef.current = marker;
           setIsLoading(false);
@@ -161,29 +164,29 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
     return (
       <div
         className="rounded-lg bg-muted flex items-center justify-center"
-        style={{ height }}
-      >
+        style={{ height }}>
+        
         <p className="text-xs text-muted-foreground">{error}</p>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
     <div className="relative rounded-lg overflow-hidden" style={{ height }}>
-      {isLoading && (
-        <div className="absolute inset-0 bg-muted flex items-center justify-center z-10">
+      {isLoading &&
+      <div className="absolute inset-0 bg-muted flex items-center justify-center z-10">
           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
         </div>
-      )}
+      }
       <div ref={mapContainerRef} className="w-full h-full" />
-      {/* Location label */}
+      
       <div className="absolute bottom-1 left-1 right-1 bg-background/80 backdrop-blur rounded px-2 py-1">
         <p className="text-xs text-center truncate font-medium">
           {currentLocation.name}
         </p>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default ShipmentMiniMap;

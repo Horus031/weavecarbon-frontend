@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface CalculationHistoryItem {
   id: string;
@@ -15,43 +15,79 @@ export interface CalculationHistoryItem {
 }
 
 const STORAGE_KEY = "weavecarbon_calculation_history";
+const LEGACY_STORAGE_KEY = "weavecarbon_history";
+
+const normalizeHistory = (raw: unknown): CalculationHistoryItem[] => {
+  if (!Array.isArray(raw)) return [];
+
+  return raw.
+  filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null).
+  map((item, index) => ({
+    id:
+    typeof item.id === "string" && item.id.length > 0 ?
+    item.id :
+    `calc-${Date.now()}-${index}`,
+    productId: typeof item.productId === "string" ? item.productId : "",
+    productName: typeof item.productName === "string" ? item.productName : "",
+    materialsCO2: Number(item.materialsCO2) || 0,
+    manufacturingCO2: Number(item.manufacturingCO2) || 0,
+    transportCO2: Number(item.transportCO2) || 0,
+    packagingCO2: Number(item.packagingCO2) || 0,
+    totalCO2: Number(item.totalCO2) || 0,
+    carbonVersion: typeof item.carbonVersion === "string" ? item.carbonVersion : "v1",
+    createdAt:
+    typeof item.createdAt === "string" && item.createdAt.length > 0 ?
+    item.createdAt :
+    new Date().toISOString(),
+    createdBy: typeof item.createdBy === "string" ? item.createdBy : "system"
+  }));
+};
+
+const readHistoryFromStorage = () => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const primaryRaw = localStorage.getItem(STORAGE_KEY);
+    const primary = normalizeHistory(primaryRaw ? JSON.parse(primaryRaw) : []);
+    if (primary.length > 0) {
+      return primary;
+    }
+
+    const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    return normalizeHistory(legacyRaw ? JSON.parse(legacyRaw) : []);
+  } catch (error) {
+    console.error("Error loading calculation history:", error);
+    return [];
+  }
+};
 
 export const useCalculationHistory = () => {
-  const [history, setHistory] = useState<CalculationHistoryItem[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [history, setHistory] = useState<CalculationHistoryItem[]>(readHistoryFromStorage);
+  const isHydratedRef = useRef(false);
+  const isLoaded = true;
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setHistory(JSON.parse(stored));
-        }
-      } catch (error) {
-        console.error("Error loading calculation history:", error);
-      }
-      setIsLoaded(true);
-    }
-  }, []);
 
-  // Save to localStorage whenever history changes
   useEffect(() => {
-    if (isLoaded && typeof window !== "undefined") {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-      } catch (error) {
-        console.error("Error saving calculation history:", error);
-      }
+    if (typeof window === "undefined") return;
+
+    if (!isHydratedRef.current) {
+      isHydratedRef.current = true;
+      return;
     }
-  }, [history, isLoaded]);
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    } catch (error) {
+      console.error("Error saving calculation history:", error);
+    }
+  }, [history]);
 
   const addCalculation = useCallback(
     (calculation: Omit<CalculationHistoryItem, "id" | "createdAt">) => {
       const newItem: CalculationHistoryItem = {
         ...calculation,
         id: `calc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString()
       };
       setHistory((prev) => [newItem, ...prev]);
       return newItem;
@@ -75,6 +111,6 @@ export const useCalculationHistory = () => {
     isLoaded,
     addCalculation,
     deleteCalculation,
-    getByProductId,
+    getByProductId
   };
 };
