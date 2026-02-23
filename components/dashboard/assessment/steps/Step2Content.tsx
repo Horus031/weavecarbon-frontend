@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -50,12 +51,13 @@ interface ExtendedMaterialInput extends MaterialInput {
 }
 
 const MATERIAL_SOURCES = [
-  { value: "domestic", label: "Trong nước" },
-  { value: "imported", label: "Nhập khẩu" },
-  { value: "unknown", label: "Không xác định" },
-];
+  { value: "domestic", labelKey: "sourceDomestic" },
+  { value: "imported", labelKey: "sourceImported" },
+  { value: "unknown", labelKey: "sourceUnknown" },
+] as const;
 
 const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
+  const t = useTranslations("assessment.step2");
   const [otherModalOpen, setOtherModalOpen] = useState(false);
   const [editingMaterialIndex, setEditingMaterialIndex] = useState<
     number | null
@@ -198,7 +200,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
         return (
           <Badge variant="secondary" className="text-xs">
             <Sparkles className="w-3 h-3 mr-1" />
-            AI gợi ý
+            {t("aiSuggested")}
           </Badge>
         );
       case "user_other":
@@ -208,7 +210,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
             className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
           >
             <AlertCircle className="w-3 h-3 mr-1" />
-            Proxy
+            {t("proxy")}
           </Badge>
         );
       default:
@@ -249,15 +251,14 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">Vật liệu chính</CardTitle>
+                <CardTitle className="text-lg">{t("mainMaterials")}</CardTitle>
                 <Tooltip>
                   <TooltipTrigger>
                     <HelpCircle className="w-4 h-4 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
                     <p>
-                      Chọn vật liệu từ danh mục chuẩn hoặc thêm vật liệu mới nếu
-                      không tìm thấy.
+                      {t("materialTooltip")}
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -269,7 +270,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
                     className="bg-green-500/10 text-green-600 border-green-500/30"
                   >
                     <CheckCircle2 className="w-3 h-3 mr-1" />
-                    Tổng: {totalPercentage}%
+                    {t("totalValid", { total: totalPercentage })}
                   </Badge>
                 ) : (
                   <Badge
@@ -277,7 +278,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
                     className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
                   >
                     <AlertCircle className="w-3 h-3 mr-1" />
-                    Tổng: {totalPercentage}% (cần = 100%)
+                    {t("totalInvalid", { total: totalPercentage })}
                   </Badge>
                 )}
               </div>
@@ -294,7 +295,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-muted-foreground">
-                        Vật liệu {index + 1}
+                        {t("materialIndex", { index: index + 1 })}
                       </span>
                       {getSourceBadge(extMaterial)}
                     </div>
@@ -312,7 +313,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
 
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="space-y-2 md:col-span-2">
-                      <Label>Tìm vật liệu *</Label>
+                      <Label>{t("findMaterial")}</Label>
                       <MaterialCombobox
                         value={
                           extMaterial.catalogMaterialId ||
@@ -323,18 +324,18 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
                         }
                         onOtherClick={() => handleOtherClick(index)}
                         placeholder={
-                          extMaterial.customName || "Tìm vật liệu..."
+                          extMaterial.customName || t("searchMaterial")
                         }
                       />
                       {extMaterial.customName && (
                         <p className="text-xs text-muted-foreground">
-                          Vật liệu tùy chỉnh: {extMaterial.customName}
+                          {t("customMaterial", { name: extMaterial.customName })}
                         </p>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Tỷ lệ (%) *</Label>
+                      <Label>{t("percentage")}</Label>
                       <Input
                         type="number"
                         min="0"
@@ -352,7 +353,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Nguồn nguyên liệu</Label>
+                      <Label>{t("materialSource")}</Label>
                       <Select
                         value={material.source}
                         onValueChange={(
@@ -365,7 +366,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
                         <SelectContent>
                           {MATERIAL_SOURCES.map((src) => (
                             <SelectItem key={src.value} value={src.value}>
-                              {src.label}
+                              {t(src.labelKey)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -375,7 +376,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
                     {extMaterial.confidenceScore !== undefined &&
                       extMaterial.confidenceScore < 1.0 && (
                         <div className="space-y-2">
-                          <Label>Độ tin cậy dữ liệu</Label>
+                          <Label>{t("dataConfidence")}</Label>
                           <div className="flex items-center gap-2 h-10">
                             <div className="flex-1 bg-muted rounded-full h-2">
                               <div
@@ -404,7 +405,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
 
                   {/* Certifications */}
                   <div className="space-y-2">
-                    <Label className="text-sm">Chứng nhận (nếu có)</Label>
+                    <Label className="text-sm">{t("certifications")}</Label>
                     <div className="flex flex-wrap gap-2">
                       {CERTIFICATIONS.map((cert) => (
                         <Badge
@@ -434,7 +435,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
               className="w-full border-dashed"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Thêm vật liệu
+              {t("addMaterial")}
             </Button>
           </CardContent>
         </Card>
@@ -442,14 +443,14 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
         {/* Accessories Section */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Phụ liệu (tuỳ chọn)</CardTitle>
+            <CardTitle className="text-lg">{t("accessories")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {data.accessories.map((accessory, index) => (
               <div key={accessory.id} className="p-4 rounded-lg border bg-card">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Phụ liệu {index + 1}
+                    {t("accessoryIndex", { index: index + 1 })}
                   </span>
                   <Button
                     variant="ghost"
@@ -463,7 +464,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Loại phụ liệu</Label>
+                    <Label>{t("accessoryType")}</Label>
                     <Select
                       value={accessory.type}
                       onValueChange={(v) =>
@@ -471,7 +472,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Chọn loại" />
+                        <SelectValue placeholder={t("accessoryTypePlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
                         {ACCESSORY_TYPES.map((type) => (
@@ -484,18 +485,18 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Tên/Mô tả</Label>
+                    <Label>{t("accessoryName")}</Label>
                     <Input
                       value={accessory.name}
                       onChange={(e) =>
                         updateAccessory(accessory.id, { name: e.target.value })
                       }
-                      placeholder="VD: Nút nhựa 4 lỗ"
+                      placeholder={t("accessoryNamePlaceholder")}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Trọng lượng (gram)</Label>
+                    <Label>{t("accessoryWeight")}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -519,7 +520,7 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
               className="w-full border-dashed"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Thêm phụ liệu
+              {t("addAccessory")}
             </Button>
           </CardContent>
         </Card>
@@ -531,12 +532,10 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
               <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
               <div className="text-sm">
                 <p className="font-medium text-yellow-700">
-                  Sử dụng hệ số proxy
+                  {t("proxyWarningTitle")}
                 </p>
                 <p className="text-yellow-600 mt-1">
-                  Một số vật liệu có nguồn &quot;Không xác định&quot; hoặc
-                  &quot;Vật liệu khác&quot;. Hệ thống sẽ sử dụng hệ số phát thải
-                  trung bình ngành để tính toán. Độ tin cậy kết quả sẽ giảm.
+                  {t("proxyWarningText")}
                 </p>
               </div>
             </div>

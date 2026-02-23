@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
 import {
   Card,
@@ -32,14 +33,8 @@ interface StoredProduct extends ProductAssessmentData {
   updatedAt: string;
 }
 
-const steps = [
-  { id: 1, title: "Product Info", icon: Package, key: "productInfo" },
-  { id: 2, title: "Materials", icon: Leaf, key: "materials" },
-  { id: 3, title: "Manufacturing", icon: Factory, key: "manufacturing" },
-  { id: 4, title: "Logistics", icon: Truck, key: "logistics" },
-  { id: 5, title: "Assessment", icon: CheckCircle2, key: "assessment" },
-  { id: 6, title: "Save", icon: Save, key: "save" },
-];
+const stepKeys = ["productInfo", "materials", "manufacturing", "logistics", "assessment", "save"] as const;
+const stepIcons = [Package, Leaf, Factory, Truck, CheckCircle2, Save];
 
 const emptyAddress = {
   streetNumber: "",
@@ -75,6 +70,7 @@ const initialProductData: ProductAssessmentData = {
 
 export default function AssessmentClient() {
   const router = useRouter();
+  const t = useTranslations("assessment");
   const { setPageTitle } = useDashboardTitle();
   const [currentStep, setCurrentStep] = useState(1);
   const [productData, setProductData] =
@@ -82,9 +78,16 @@ export default function AssessmentClient() {
   const [draftHistory, setDraftHistory] = useState<DraftVersion[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const steps = stepKeys.map((key, i) => ({
+    id: i + 1,
+    title: t(`steps.${key}`),
+    icon: stepIcons[i],
+    key,
+  }));
+
   useEffect(() => {
-    setPageTitle("Product Assessment", "Create a new product assessment");
-  }, [setPageTitle]);
+    setPageTitle(t("pageTitle"), t("pageDescription"));
+  }, [setPageTitle, t]);
 
   const updateData = (updates: Partial<ProductAssessmentData>) => {
     setProductData((prev) => ({
@@ -185,7 +188,7 @@ export default function AssessmentClient() {
     }));
     
     // Show success message
-    alert("Sản phẩm đã lưu nháp thành công");
+    alert(t("step6.saveDraft") + " ✓");
   };
 
   const handlePublish = () => {
@@ -236,7 +239,7 @@ export default function AssessmentClient() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs md:text-sm text-muted-foreground">
-              Step {currentStep} / {steps.length}
+              {t("stepOf", { current: currentStep, total: steps.length })}
             </span>
           </div>
           <Progress value={progress} className="h-2" />
@@ -256,7 +259,7 @@ export default function AssessmentClient() {
             </CardTitle>
             {currentStep < steps.length && (
               <CardDescription className="text-xs md:text-sm">
-                Fill in the information below to continue
+                {t("fillInfo")}
               </CardDescription>
             )}
           </CardHeader>
@@ -282,7 +285,7 @@ export default function AssessmentClient() {
             className="gap-2 w-full sm:w-auto"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            {t("back")}
           </Button>
 
           {currentStep < steps.length ? (
@@ -291,7 +294,7 @@ export default function AssessmentClient() {
               disabled={!canProceed()}
               className="gap-2 w-full sm:w-auto"
             >
-              Next
+              {t("next")}
               <ArrowRight className="w-4 h-4" />
             </Button>
           ) : (
@@ -300,7 +303,7 @@ export default function AssessmentClient() {
               onClick={() => router.push("/products")}
               className="gap-2 w-full sm:w-auto"
             >
-              Back to Products
+              {t("backToProducts")}
               <CheckCircle2 className="w-4 h-4" />
             </Button>
           )}

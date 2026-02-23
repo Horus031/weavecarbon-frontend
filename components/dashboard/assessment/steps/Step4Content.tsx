@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ import {
   Plus,
   Trash2,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import {
   ProductAssessmentData,
@@ -29,11 +31,51 @@ import {
 } from "./types";
 import dynamic from "next/dynamic";
 
+// Haversine distance calculation (great-circle distance in km)
+function haversineDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const R = 6371; // Earth's radius in km
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c);
+}
+
+// Fetch actual road distance from OSRM (OpenStreetMap Routing Machine)
+async function fetchRoadDistance(
+  originLat: number,
+  originLng: number,
+  destLat: number,
+  destLng: number,
+): Promise<number | null> {
+  try {
+    const response = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${originLng},${originLat};${destLng},${destLat}?overview=false`,
+    );
+    const data = await response.json();
+    if (data.code === "Ok" && data.routes?.[0]) {
+      return Math.round(data.routes[0].distance / 1000); // meters -> km
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 interface LocationPickerProps {
   address: AddressInput;
   onChange: (address: AddressInput) => void;
   label: string;
   defaultCenter?: [number, number];
+  autoDetectLocation?: boolean;
 }
 
 // Dynamically import LocationPicker to avoid SSR issues with Mapbox
@@ -46,7 +88,7 @@ const LocationPicker = dynamic<LocationPickerProps>(
         <CardContent className="p-4 h-87.5 flex items-center justify-center">
           <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="w-4 h-4 animate-pulse" />
-            <span>Đang tải bản đồ...</span>
+            <span>{/* loading map placeholder */}</span>
           </div>
         </CardContent>
       </Card>
@@ -98,8 +140,17 @@ const getDestinationDefaultCenter = (market: string): [number, number] => {
 };
 
 const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
+  const t = useTranslations("assessment.step4");
   const isInternational =
     data.destinationMarket && data.destinationMarket !== "vietnam";
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  // Check if both origin and destination have coordinates
+  const hasOriginCoords = !!(data.originAddress.lat && data.originAddress.lng);
+  const hasDestCoords = !!(
+    data.destinationAddress.lat && data.destinationAddress.lng
+  );
+  const hasBothCoords = hasOriginCoords && hasDestCoords;
 
   // Update origin address
   const updateOriginAddress = (address: AddressInput) => {
@@ -181,7 +232,7 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
       {/* Destination Market Selection */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Thị trường đích</CardTitle>
+          <CardTitle className="text-lg">{t("destinationMarket")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Select
@@ -189,7 +240,7 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
             onValueChange={handleMarketChange}
           >
             <SelectTrigger className="max-w-sm">
-              <SelectValue placeholder="Chọn thị trường tiêu thụ" />
+              <SelectValue placeholder={t("selectMarket")} />
             </SelectTrigger>
             <SelectContent>
               {DESTINATION_MARKETS.map((market) => (
@@ -207,13 +258,14 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
         <>
           <div className="grid lg:grid-cols-2 gap-4">
             <LocationPicker
-              label="A. Địa chỉ nơi giao (Origin)"
+              label={t("originAddress")}
               address={data.originAddress}
               onChange={updateOriginAddress}
               defaultCenter={[106.6297, 10.8231]} // Ho Chi Minh City
+              autoDetectLocation={true}
             />
             <LocationPicker
-              label="B. Địa chỉ nơi nhận (Destination)"
+              label={t("destinationAddress")}
               address={data.destinationAddress}
               onChange={updateDestinationAddress}
               defaultCenter={getDestinationDefaultCenter(
@@ -228,15 +280,15 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg">
-                    Phương thức vận chuyển
+                    {t("transportMethod")}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Thêm các chặng vận chuyển từ nơi giao đến nơi nhận
+                    {t("transportHint")}
                   </p>
                 </div>
                 {totalDistance > 0 && (
                   <Badge variant="outline" className="text-sm">
-                    Tổng: ~{totalDistance.toLocaleString()} km
+                    {t("totalDistance", { distance: totalDistance.toLocaleString() })}
                   </Badge>
                 )}
               </div>
@@ -256,7 +308,7 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
                       >
                         <div className="flex items-center gap-2 min-w-25">
                           <span className="text-sm font-medium text-muted-foreground">
-                            Chặng {index + 1}
+                            {t("legIndex", { index: index + 1 })}
                           </span>
                           {index < data.transportLegs.length - 1 && (
                             <ArrowRight className="w-4 h-4 text-muted-foreground" />
@@ -297,7 +349,7 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
                                 estimatedDistance: Number(e.target.value),
                               })
                             }
-                            placeholder="Km ước tính"
+                            placeholder={t("estimatedKm")}
                             className="w-32"
                           />
                           <span className="text-sm text-muted-foreground">
@@ -328,50 +380,167 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
                 className="w-full border-dashed"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Thêm chặng vận chuyển
+                {t("addTransportLeg")}
               </Button>
 
               {/* Suggested route for international */}
               {isInternational && data.transportLegs.length === 0 && (
                 <div className="p-4 rounded-lg bg-muted/50 border border-dashed">
                   <p className="text-sm font-medium mb-2">
-                    Gợi ý tuyến vận chuyển:
+                    {t("suggestedRoute")}
                   </p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Truck className="w-4 h-4" />
-                    <span>Đường bộ (nội địa)</span>
+                    <span>{t("roadToAirport")}</span>
                     <ArrowRight className="w-4 h-4" />
-                    <Ship className="w-4 h-4" />
-                    <span>Đường biển (quốc tế)</span>
+                    <Plane className="w-4 h-4" />
+                    <span>{t("airInternational")}</span>
                   </div>
+                  {!hasBothCoords && (
+                    <p className="text-xs text-amber-600 mt-2">
+                      ⚠ {t("selectBothLocations")}
+                    </p>
+                  )}
                   <Button
                     variant="link"
                     size="sm"
                     className="mt-2 h-auto p-0"
-                    onClick={() => {
-                      const marketInfo = DESTINATION_MARKETS.find(
-                        (m) => m.value === data.destinationMarket,
-                      );
-                      onChange({
-                        transportLegs: [
-                          {
-                            id: `leg-${Date.now()}-1`,
-                            mode: "road",
-                            estimatedDistance: 50,
-                          },
-                          {
-                            id: `leg-${Date.now()}-2`,
-                            mode: "sea",
-                            estimatedDistance: marketInfo?.distance || 5000,
-                          },
-                        ],
-                      });
+                    disabled={isCalculating || !hasBothCoords}
+                    onClick={async () => {
+                      if (!hasBothCoords) return;
+
+                      setIsCalculating(true);
+                      try {
+                        const originLat = data.originAddress.lat!;
+                        const originLng = data.originAddress.lng!;
+                        const destLat = data.destinationAddress.lat!;
+                        const destLng = data.destinationAddress.lng!;
+
+                        // Estimate road distance to nearest airport (~50km default, or use OSRM for accuracy)
+                        // We use a fixed nearby airport assumption for the domestic road leg
+                        const roadDistance =
+                          (await fetchRoadDistance(
+                            originLat,
+                            originLng,
+                            // Tan Son Nhat Airport (SGN) as default airport
+                            10.8184,
+                            106.6588,
+                          )) || 30;
+
+                        // Air distance: haversine between origin and destination
+                        const airDistance = haversineDistance(
+                          originLat,
+                          originLng,
+                          destLat,
+                          destLng,
+                        );
+
+                        onChange({
+                          transportLegs: [
+                            {
+                              id: `leg-${Date.now()}-1`,
+                              mode: "road",
+                              estimatedDistance: roadDistance,
+                            },
+                            {
+                              id: `leg-${Date.now()}-2`,
+                              mode: "air",
+                              estimatedDistance: airDistance,
+                            },
+                          ],
+                        });
+                      } finally {
+                        setIsCalculating(false);
+                      }
                     }}
                   >
-                    Áp dụng gợi ý này
+                    {isCalculating ? (
+                      <span className="flex items-center gap-1.5">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        {t("calculating")}
+                      </span>
+                    ) : (
+                      t("applySuggestion")
+                    )}
                   </Button>
                 </div>
               )}
+
+              {/* Suggested route for domestic */}
+              {!isInternational &&
+                data.destinationMarket &&
+                data.transportLegs.length === 0 && (
+                  <div className="p-4 rounded-lg bg-muted/50 border border-dashed">
+                    <p className="text-sm font-medium mb-2">
+                      {t("suggestedRoute")}
+                    </p>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Truck className="w-4 h-4" />
+                      <span>{t("roadDomestic")}</span>
+                    </div>
+                    {!hasBothCoords && (
+                      <p className="text-xs text-amber-600 mt-2">
+                        ⚠ {t("selectBothLocations")}
+                      </p>
+                    )}
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="mt-2 h-auto p-0"
+                      disabled={isCalculating || !hasBothCoords}
+                      onClick={async () => {
+                        if (!hasBothCoords) return;
+
+                        setIsCalculating(true);
+                        try {
+                          const originLat = data.originAddress.lat!;
+                          const originLng = data.originAddress.lng!;
+                          const destLat = data.destinationAddress.lat!;
+                          const destLng = data.destinationAddress.lng!;
+
+                          // Fetch actual road distance via OSRM
+                          const roadDistance =
+                            (await fetchRoadDistance(
+                              originLat,
+                              originLng,
+                              destLat,
+                              destLng,
+                            )) ||
+                            // Fallback to haversine * 1.3 (road factor)
+                            Math.round(
+                              haversineDistance(
+                                originLat,
+                                originLng,
+                                destLat,
+                                destLng,
+                              ) * 1.3,
+                            );
+
+                          onChange({
+                            transportLegs: [
+                              {
+                                id: `leg-${Date.now()}-1`,
+                                mode: "road",
+                                estimatedDistance: roadDistance,
+                              },
+                            ],
+                          });
+                        } finally {
+                          setIsCalculating(false);
+                        }
+                      }}
+                    >
+                      {isCalculating ? (
+                        <span className="flex items-center gap-1.5">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          {t("calculating")}
+                        </span>
+                      ) : (
+                        t("applySuggestion")
+                      )}
+                    </Button>
+                  </div>
+                )}
             </CardContent>
           </Card>
         </>

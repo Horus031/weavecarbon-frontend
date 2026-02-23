@@ -116,6 +116,20 @@ const convertProductToShipment = (product: StoredProduct): Shipment | null => {
 
     if (product.transportLegs && product.transportLegs.length > 0) {
       // Use product's transport legs
+      
+      // Calculate total distance for proportional coordinate placement
+      const totalLegDistance = product.transportLegs.reduce(
+        (sum, leg) => sum + (leg.estimatedDistance || 0), 0
+      );
+      
+      // Build cumulative distance breakpoints for coordinate interpolation
+      const cumulativeDistances: number[] = [];
+      let cumDist = 0;
+      for (const leg of product.transportLegs) {
+        cumDist += (leg.estimatedDistance || 0);
+        cumulativeDistances.push(cumDist);
+      }
+      
       legs = product.transportLegs.map((leg, index) => {
         const isLast = index === product.transportLegs.length - 1;
         const isFirst = index === 0;
@@ -127,9 +141,8 @@ const convertProductToShipment = (product: StoredProduct): Shipment | null => {
           "rail": "rail",
         };
 
-        // For multi-leg routes, chain them together:
-        // Leg 0: origin -> port/city
-        // Leg 1+: previous leg's dest -> final destination (or next intermediate)
+        // Use distance-based proportioning for transit point coordinates
+        // so a 13km road leg doesn't get placed at the geographic midpoint
         let legOriginCoords;
         let legOriginName;
         let legOriginType: "address" | "port" | "airport";
@@ -139,9 +152,9 @@ const convertProductToShipment = (product: StoredProduct): Shipment | null => {
           legOriginName = `${originCity}, ${originCountry}`;
           legOriginType = "address";
         } else {
-          // For subsequent legs, we need to create intermediate points
-          // Use a simple approach: divide the remaining distance into intermediate ports
-          const legProgress = index / product.transportLegs.length;
+          // Place transit point proportionally based on cumulative distance
+          const prevCumDist = cumulativeDistances[index - 1] || 0;
+          const legProgress = totalLegDistance > 0 ? prevCumDist / totalLegDistance : index / product.transportLegs.length;
           legOriginCoords = {
             lat: originCoords.lat + (destCoords.lat - originCoords.lat) * legProgress,
             lng: originCoords.lng + (destCoords.lng - originCoords.lng) * legProgress,
@@ -159,8 +172,9 @@ const convertProductToShipment = (product: StoredProduct): Shipment | null => {
           legDestName = `${destCity}, ${destCountry}`;
           legDestType = "address";
         } else {
-          // For non-last legs, create the next intermediate point
-          const legProgress = (index + 1) / product.transportLegs.length;
+          // Place transit point proportionally based on cumulative distance
+          const cumDist = cumulativeDistances[index] || 0;
+          const legProgress = totalLegDistance > 0 ? cumDist / totalLegDistance : (index + 1) / product.transportLegs.length;
           legDestCoords = {
             lat: originCoords.lat + (destCoords.lat - originCoords.lat) * legProgress,
             lng: originCoords.lng + (destCoords.lng - originCoords.lng) * legProgress,

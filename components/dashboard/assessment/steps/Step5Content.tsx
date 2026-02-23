@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -197,6 +198,8 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
   data,
   onChange,
 }) => {
+  const t = useTranslations("assessment.step5");
+
   // Calculate carbon assessment
   const result = useMemo(() => calculateCarbonAssessment(data), [data]);
 
@@ -208,7 +211,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
   // Breakdown items for visualization
   const breakdownItems = [
     {
-      label: "Nguyên vật liệu",
+      label: t("rawMaterials"),
       icon: Leaf,
       value: result.perProduct.materials,
       total: result.totalBatch.materials,
@@ -216,7 +219,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
       percentage: (result.perProduct.materials / result.perProduct.total) * 100,
     },
     {
-      label: "Sản xuất",
+      label: t("production"),
       icon: Factory,
       value: result.perProduct.production,
       total: result.totalBatch.production,
@@ -225,7 +228,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
         (result.perProduct.production / result.perProduct.total) * 100,
     },
     {
-      label: "Năng lượng",
+      label: t("energy"),
       icon: Zap,
       value: result.perProduct.energy,
       total: result.totalBatch.energy,
@@ -233,7 +236,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
       percentage: (result.perProduct.energy / result.perProduct.total) * 100,
     },
     {
-      label: "Vận chuyển",
+      label: t("transport"),
       icon: Truck,
       value: result.perProduct.transport,
       total: result.totalBatch.transport,
@@ -250,9 +253,9 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
   };
 
   const confidenceLabel = {
-    high: "Cao",
-    medium: "Trung bình",
-    low: "Thấp",
+    high: t("confidenceHigh"),
+    medium: t("confidenceMedium"),
+    low: t("confidenceLow"),
   };
 
   return (
@@ -264,7 +267,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Package className="w-5 h-5 text-primary" />
-              <CardTitle className="text-lg">CO₂e / Sản phẩm</CardTitle>
+              <CardTitle className="text-lg">{t("co2PerProduct")}</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -275,7 +278,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
               </span>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              Cho 1 sản phẩm ({data.weightPerUnit || 0}g)
+              {t("forOneProduct", { weight: data.weightPerUnit || 0 })}
             </p>
           </CardContent>
         </Card>
@@ -286,10 +289,10 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingDown className="w-5 h-5 text-primary" />
-                <CardTitle className="text-lg">Tổng lô hàng</CardTitle>
+                <CardTitle className="text-lg">{t("totalBatch")}</CardTitle>
               </div>
               <Badge variant="outline">
-                {data.quantity?.toLocaleString()} sản phẩm
+                {data.quantity?.toLocaleString()} {t("products")}
               </Badge>
             </div>
           </CardHeader>
@@ -301,7 +304,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
               </span>
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              ≈ {(result.totalBatch.total / 1000).toFixed(3)} tấn CO₂e
+              ≈ {(result.totalBatch.total / 1000).toFixed(3)} {t("tonnesCO2e")}
             </p>
           </CardContent>
         </Card>
@@ -310,7 +313,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
       {/* Breakdown */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Phân tích chi tiết</CardTitle>
+          <CardTitle className="text-lg">{t("detailedBreakdown")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {breakdownItems.map((item, index) => (
@@ -331,7 +334,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
               </div>
               <Progress value={item.percentage} className="h-2" />
               <p className="text-xs text-muted-foreground text-right">
-                Tổng lô: {item.total.toFixed(2)} kg CO₂e
+                {t("batchTotal", { total: item.total.toFixed(2) })}
               </p>
             </div>
           ))}
@@ -343,7 +346,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
         <CardHeader className="pb-4">
           <CardTitle className="text-lg flex items-center gap-2">
             <Leaf className="w-5 h-5" />
-            Chi tiết vật liệu
+            {t("materialDetails")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -377,13 +380,13 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
                         {extMat.userSource === "selected_catalog" && (
                           <Badge variant="outline" className="text-xs">
                             <CheckCircle2 className="w-3 h-3 mr-1" />
-                            Từ danh mục
+                            {t("fromCatalog")}
                           </Badge>
                         )}
                         {extMat.userSource === "ai_suggested" && (
                           <Badge variant="secondary" className="text-xs">
                             <Sparkles className="w-3 h-3 mr-1" />
-                            AI gợi ý
+                            {t("aiSuggested")}
                           </Badge>
                         )}
                         {extMat.userSource === "user_other" && (
@@ -392,12 +395,12 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
                             className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
                           >
                             <AlertCircle className="w-3 h-3 mr-1" />
-                            Proxy
+                            {t("proxy")}
                           </Badge>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {mat.percentage}% • Hệ số: {co2Factor} kg CO₂e/kg
+                        {mat.percentage}% • {t("factor", { factor: co2Factor })}
                       </p>
                     </div>
                   </div>
@@ -421,8 +424,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
                 <p className="text-xs text-yellow-700">
-                  Một số vật liệu đang dùng hệ số ước tính (proxy). Kết quả
-                  carbon có độ tin cậy thấp hơn.
+                  {t("proxyMaterialWarning")}
                 </p>
               </div>
             </div>
@@ -434,7 +436,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-lg">
-            Phân tách Scope (GHG Protocol)
+            {t("scopeBreakdown")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -464,7 +466,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Độ tin cậy dữ liệu</CardTitle>
+            <CardTitle className="text-lg">{t("dataConfidence")}</CardTitle>
             <Badge
               variant="outline"
               className={confidenceBadgeStyle[result.confidenceLevel]}
@@ -486,7 +488,7 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
           {result.proxyUsed ? (
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Một số hệ số proxy đã được sử dụng:
+                {t("proxyNotesIntro")}
               </p>
               <ul className="text-sm space-y-1">
                 {result.proxyNotes.map((note, i) => (
@@ -500,14 +502,14 @@ const Step5CarbonResult: React.FC<Step5CarbonResultProps> = ({
                 ))}
               </ul>
               <p className="text-xs text-muted-foreground mt-4">
-                * Bổ sung thông tin chi tiết để tăng độ chính xác của kết quả
+                {t("addDetailForAccuracy")}
               </p>
             </div>
           ) : (
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle2 className="w-5 h-5" />
               <span className="text-sm">
-                Đủ dữ liệu - Kết quả có độ tin cậy cao
+                {t("dataComplete")}
               </span>
             </div>
           )}

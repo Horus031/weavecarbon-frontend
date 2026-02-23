@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,9 +41,10 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
   onSelect,
   onOtherClick,
   materialType,
-  placeholder = "Tìm vật liệu...",
+  placeholder,
   disabled = false,
 }) => {
+  const t = useTranslations("assessment.step2");
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -113,12 +115,12 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
               {selectedMaterial.displayNameVi}
               {selectedMaterial.isRecycled && (
                 <Badge variant="secondary" className="text-xs">
-                  Tái chế
+                  {t("recycled")}
                 </Badge>
               )}
             </span>
           ) : (
-            placeholder
+            placeholder || t("searchMaterial")
           )}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -126,7 +128,7 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
       <PopoverContent className="w-87.5 p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Tìm vật liệu..."
+            placeholder={t("searchMaterial")}
             value={search}
             onValueChange={setSearch}
           />
@@ -134,7 +136,7 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
             <CommandEmpty>
               <div className="py-4 text-center">
                 <p className="text-sm text-muted-foreground mb-2">
-                  Không tìm thấy vật liệu phù hợp
+                  {t("noMaterialFound")}
                 </p>
                 <Button
                   variant="outline"
@@ -145,7 +147,7 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
                   }}
                 >
                   <Plus className="w-4 h-4 mr-1" />
-                  Thêm vật liệu khác
+                  {t("addOtherMaterial")}
                 </Button>
               </div>
             </CommandEmpty>
@@ -211,7 +213,7 @@ const MaterialCombobox: React.FC<MaterialComboboxProps> = ({
                 className="text-primary"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                <span>Không thấy vật liệu phù hợp? Thêm vật liệu khác</span>
+                <span>{t("noMaterialHint")}</span>
               </CommandItem>
             </CommandGroup>
           </CommandList>

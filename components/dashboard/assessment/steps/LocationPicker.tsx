@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import mapboxgl from "mapbox-gl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Search, X, Navigation } from "lucide-react";
+import { MapPin, Search, X, Navigation, Loader2 } from "lucide-react";
 import { AddressInput } from "./types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -15,31 +16,68 @@ interface LocationPickerProps {
   onChange: (address: AddressInput) => void;
   label: string;
   defaultCenter?: [number, number]; // [lng, lat]
+  autoDetectLocation?: boolean; // Auto-detect current location on mount
 }
 
-interface GeocodingResult {
-  place_name: string;
-  center: [number, number];
-  context?: Array<{
-    id: string;
-    text: string;
-  }>;
-  address?: string;
-  text?: string;
+// Nominatim search result type
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address?: {
+    house_number?: string;
+    road?: string;
+    suburb?: string;
+    quarter?: string;
+    neighbourhood?: string;
+    city_district?: string;
+    district?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    state?: string;
+    region?: string;
+    country?: string;
+    postcode?: string;
+  };
+  type?: string;
 }
+
+// Parse Nominatim result into AddressInput components
+const parseNominatimResult = (result: NominatimResult): Partial<AddressInput> => {
+  const addr = result.address;
+  if (!addr) return {};
+
+  return {
+    streetNumber: addr.house_number || "",
+    street: addr.road || "",
+    ward: addr.suburb || addr.quarter || addr.neighbourhood || "",
+    district: addr.city_district || addr.district || "",
+    city: addr.city || addr.town || addr.village || "",
+    stateRegion: addr.state || addr.region || "",
+    country: addr.country || "",
+    postalCode: addr.postcode || "",
+  };
+};
 
 const LocationPicker: React.FC<LocationPickerProps> = ({
   address,
   onChange,
   label,
   defaultCenter = [106.6297, 10.8231], // Default to Ho Chi Minh City
+  autoDetectLocation = false,
 }) => {
+  const t = useTranslations("assessment.step4");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
+  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const autoDetectDone = useRef(false);
 
   // Store refs for callbacks to avoid stale closures
   const initialAddressRef = useRef({ lat: address.lat, lng: address.lng });
@@ -48,57 +86,18 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
   const addressRef = useRef(address);
   addressRef.current = address;
 
-  // Parse geocoding result into address components
-  const parseGeocodingResult = useCallback(
-    (feature: GeocodingResult): Partial<AddressInput> => {
-      const result: Partial<AddressInput> = {};
-
-      if (feature.address) {
-        result.streetNumber = feature.address;
-      }
-      if (feature.text) {
-        result.street = feature.text;
-      }
-
-      if (feature.context) {
-        feature.context.forEach((ctx) => {
-          if (
-            ctx.id.startsWith("locality") ||
-            ctx.id.startsWith("neighborhood")
-          ) {
-            result.ward = ctx.text;
-          } else if (ctx.id.startsWith("district")) {
-            result.district = ctx.text;
-          } else if (ctx.id.startsWith("place")) {
-            result.city = ctx.text;
-          } else if (ctx.id.startsWith("region")) {
-            result.stateRegion = ctx.text;
-          } else if (ctx.id.startsWith("country")) {
-            result.country = ctx.text;
-          } else if (ctx.id.startsWith("postcode")) {
-            result.postalCode = ctx.text;
-          }
-        });
-      }
-
-      return result;
-    },
-    []
-  );
-
-  // Reverse geocode to get address from coordinates
+  // Reverse geocode using Nominatim
   const reverseGeocode = useCallback(
     async (lng: number, lat: number) => {
       try {
         const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&language=vi`
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=vi`,
+          { headers: { "User-Agent": "WeaveCarbon/1.0" } }
         );
-        const data = await response.json();
+        const data: NominatimResult = await response.json();
 
-        if (data.features && data.features.length > 0) {
-          const feature = data.features[0];
-          const addressParts = parseGeocodingResult(feature);
-
+        if (data && data.address) {
+          const addressParts = parseNominatimResult(data);
           onChangeRef.current({
             ...addressRef.current,
             ...addressParts,
@@ -121,7 +120,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         });
       }
     },
-    [parseGeocodingResult]
+    []
   );
 
   // Add or update marker
@@ -213,32 +212,71 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Search for location
+  // Auto-detect current location on mount (for origin)
+  useEffect(() => {
+    if (!autoDetectLocation || autoDetectDone.current) return;
+    // Only auto-detect if no address has been set yet
+    if (address.lat && address.lng) return;
+
+    autoDetectDone.current = true;
+
+    if (!navigator.geolocation) return;
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { longitude, latitude } = position.coords;
+        // Wait a bit for the map to be ready
+        const waitForMap = () => {
+          if (mapRef.current) {
+            addMarker(longitude, latitude);
+            reverseGeocode(longitude, latitude);
+            setIsLocating(false);
+          } else {
+            setTimeout(waitForMap, 200);
+          }
+        };
+        waitForMap();
+      },
+      (error) => {
+        console.error("Auto-detect location error:", error);
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+    );
+  }, [autoDetectLocation, address.lat, address.lng, addMarker, reverseGeocode]);
+
+  // Search for location using Nominatim (OpenStreetMap)
   const searchLocation = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
       return;
     }
 
+    setIsSearching(true);
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=5&language=vi`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=6&accept-language=vi`,
+        { headers: { "User-Agent": "WeaveCarbon/1.0" } }
       );
-      const data = await response.json();
-      setSearchResults(data.features || []);
+      const data: NominatimResult[] = await response.json();
+      setSearchResults(data || []);
       setShowResults(true);
     } catch (error) {
       console.error("Search error:", error);
       setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
   };
 
   // Handle search result selection
-  const selectLocation = async (result: GeocodingResult) => {
-    const [lng, lat] = result.center;
+  const selectLocation = (result: NominatimResult) => {
+    const lng = parseFloat(result.lon);
+    const lat = parseFloat(result.lat);
     addMarker(lng, lat);
 
-    const addressParts = parseGeocodingResult(result);
+    const addressParts = parseNominatimResult(result);
     onChange({
       ...address,
       ...addressParts,
@@ -246,7 +284,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       lng,
     });
 
-    setSearchQuery(result.place_name);
+    setSearchQuery(result.display_name);
     setShowResults(false);
     setSearchResults([]);
   };
@@ -256,31 +294,51 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     const timer = setTimeout(() => {
       if (searchQuery.length >= 3) {
         searchLocation(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowResults(false);
       }
-    }, 300);
+    }, 400);
 
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
-  // Get current location
+  // Get current location (manual button click)
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       alert("Trình duyệt không hỗ trợ định vị");
       return;
     }
 
+    setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { longitude, latitude } = position.coords;
         addMarker(longitude, latitude);
         await reverseGeocode(longitude, latitude);
+        setIsLocating(false);
       },
       (error) => {
         console.error("Geolocation error:", error);
-        alert("Không thể lấy vị trí hiện tại");
-      }
+        alert(t("currentLocation"));
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".location-search-container")) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <Card>
@@ -291,14 +349,18 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         </div>
 
         {/* Search box */}
-        <div className="relative">
+        <div className="relative location-search-container">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              {isSearching ? (
+                <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
+              ) : (
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              )}
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Tìm kiếm địa chỉ..."
+                placeholder={t("searchAddress")}
                 className="pl-9 pr-8"
                 onFocus={() => searchResults.length > 0 && setShowResults(true)}
               />
@@ -320,28 +382,59 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
               variant="outline"
               size="icon"
               onClick={getCurrentLocation}
-              title="Vị trí hiện tại"
+              disabled={isLocating}
+              title={t("currentLocation")}
             >
-              <Navigation className="w-4 h-4" />
+              {isLocating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Navigation className="w-4 h-4" />
+              )}
             </Button>
           </div>
 
           {/* Search results dropdown */}
           {showResults && searchResults.length > 0 && (
             <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
-              {searchResults.map((result, index) => (
+              {searchResults.map((result) => (
                 <button
-                  key={index}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-start gap-2"
+                  key={result.place_id}
+                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-muted flex items-start gap-2 border-b last:border-b-0"
                   onClick={() => selectLocation(result)}
                 >
                   <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
-                  <span className="line-clamp-2">{result.place_name}</span>
+                  <div className="min-w-0">
+                    <span className="line-clamp-2 text-foreground">
+                      {result.display_name}
+                    </span>
+                    {result.address && (
+                      <span className="text-xs text-muted-foreground block mt-0.5">
+                        {[result.address.city || result.address.town, result.address.state, result.address.country]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
           )}
+
+          {/* No results message */}
+          {showResults && searchResults.length === 0 && searchQuery.length >= 3 && !isSearching && (
+            <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg p-3 text-sm text-muted-foreground text-center">
+              Không tìm thấy kết quả cho &ldquo;{searchQuery}&rdquo;
+            </div>
+          )}
         </div>
+
+        {/* Auto-detecting indicator */}
+        {isLocating && autoDetectLocation && (
+          <div className="flex items-center gap-2 text-xs text-primary bg-primary/5 px-3 py-2 rounded border border-primary/20">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>{t("detectingLocation")}</span>
+          </div>
+        )}
 
         {/* Map container */}
         <div
@@ -350,27 +443,31 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           style={{ height: "250px" }}
         />
 
-        {/* Coordinates display */}
+        {/* Parsed address display */}
         {address.lat && address.lng && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded">
-            <MapPin className="w-3 h-3" />
-            <span>
-              {address.lat.toFixed(6)}, {address.lng.toFixed(6)}
-            </span>
-            {address.city && (
-              <>
-                <span className="mx-1">•</span>
-                <span>
-                  {address.city}, {address.country}
-                </span>
-              </>
-            )}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded">
+              <MapPin className="w-3 h-3 shrink-0" />
+              <span>
+                {address.lat.toFixed(6)}, {address.lng.toFixed(6)}
+              </span>
+              {address.city && (
+                <>
+                  <span className="mx-1">•</span>
+                  <span className="truncate">
+                    {[address.street, address.ward, address.district, address.city, address.country]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         )}
 
         {/* Click instruction */}
         <p className="text-xs text-muted-foreground">
-          💡 Nhấp vào bản đồ hoặc kéo thả marker để chọn vị trí chính xác
+          💡 {t("mapInstruction")}
         </p>
       </CardContent>
     </Card>

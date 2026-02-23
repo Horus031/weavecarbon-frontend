@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,8 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
   onPublish,
   isSubmitting = false,
 }) => {
+  const t = useTranslations("assessment.step6");
+
   // Get product type label
   const productTypeLabel =
     PRODUCT_TYPES.find((t) => t.value === data.productType)?.label ||
@@ -67,9 +70,9 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
               <FileText className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Tóm tắt sản phẩm</CardTitle>
+              <CardTitle className="text-lg">{t("productSummary")}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Xác nhận thông tin trước khi lưu
+                {t("confirmBeforeSave")}
               </p>
             </div>
           </div>
@@ -78,21 +81,21 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
           {/* Basic Info */}
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Mã sản phẩm</p>
+              <p className="text-xs text-muted-foreground">{t("productCode")}</p>
               <p className="font-semibold">{data.productCode || "—"}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Tên sản phẩm</p>
+              <p className="text-xs text-muted-foreground">{t("productName")}</p>
               <p className="font-semibold">{data.productName || "—"}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Loại sản phẩm</p>
+              <p className="text-xs text-muted-foreground">{t("productType")}</p>
               <p className="font-medium">{productTypeLabel}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Số lượng sản xuất</p>
+              <p className="text-xs text-muted-foreground">{t("productionQuantity")}</p>
               <p className="font-medium">
-                {data.quantity?.toLocaleString()} sản phẩm
+                {data.quantity?.toLocaleString()} {t("productsUnit")}
               </p>
             </div>
           </div>
@@ -103,24 +106,24 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <Leaf className="w-5 h-5 mx-auto text-green-600 mb-1" />
-              <p className="text-xs text-muted-foreground">Vật liệu</p>
+              <p className="text-xs text-muted-foreground">{t("materials")}</p>
               <p className="font-semibold">{data.materials.length}</p>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <Factory className="w-5 h-5 mx-auto text-blue-600 mb-1" />
-              <p className="text-xs text-muted-foreground">Quy trình</p>
+              <p className="text-xs text-muted-foreground">{t("processes")}</p>
               <p className="font-semibold">
                 {data.productionProcesses?.length || 0}
               </p>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <Truck className="w-5 h-5 mx-auto text-purple-600 mb-1" />
-              <p className="text-xs text-muted-foreground">Chặng VC</p>
+              <p className="text-xs text-muted-foreground">{t("transportLegs")}</p>
               <p className="font-semibold">{data.transportLegs?.length || 0}</p>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <Package className="w-5 h-5 mx-auto text-primary mb-1" />
-              <p className="text-xs text-muted-foreground">Thị trường</p>
+              <p className="text-xs text-muted-foreground">{t("market")}</p>
               <p className="font-semibold text-xs">{marketLabel || "—"}</p>
             </div>
           </div>
@@ -131,7 +134,7 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
           {data.carbonResults && (
             <div className="p-4 rounded-lg border-2 border-primary/30 bg-primary/5">
               <div className="flex items-center justify-between mb-3">
-                <p className="font-semibold">Kết quả đánh giá Carbon</p>
+                <p className="font-semibold">{t("carbonResult")}</p>
                 <Badge
                   variant="outline"
                   className={
@@ -142,25 +145,25 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
                         : "bg-red-500/10 text-red-600 border-red-500/30"
                   }
                 >
-                  Độ tin cậy:{" "}
+                  {t("confidence")}{" "}
                   {data.carbonResults.confidenceLevel === "high"
-                    ? "Cao"
+                    ? t("confidenceHigh")
                     : data.carbonResults.confidenceLevel === "medium"
-                      ? "Trung bình"
-                      : "Thấp"}
+                      ? t("confidenceMedium")
+                      : t("confidenceLow")}
                 </Badge>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground">
-                    CO₂e / Sản phẩm
+                    {t("co2PerProduct")}
                   </p>
                   <p className="text-2xl font-bold text-primary">
                     {data.carbonResults.perProduct.total.toFixed(3)} kg
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Tổng lô hàng</p>
+                  <p className="text-xs text-muted-foreground">{t("totalBatch")}</p>
                   <p className="text-2xl font-bold text-primary">
                     {data.carbonResults.totalBatch.total.toFixed(2)} kg
                   </p>
@@ -174,7 +177,7 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
       {/* Action Buttons */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Hành động</CardTitle>
+          <CardTitle className="text-lg">{t("actions")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Warnings */}
@@ -184,14 +187,14 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
                 <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
                 <div className="text-sm">
                   <p className="font-medium text-yellow-700">
-                    Chưa đủ điều kiện xuất bản
+                    {t("notReadyToPublish")}
                   </p>
                   <ul className="text-yellow-600 mt-1 space-y-1">
-                    {!data.productCode && <li>• Thiếu mã sản phẩm</li>}
-                    {!data.productName && <li>• Thiếu tên sản phẩm</li>}
-                    {!data.quantity && <li>• Thiếu số lượng sản xuất</li>}
+                    {!data.productCode && <li>• {t("missingProductCode")}</li>}
+                    {!data.productName && <li>• {t("missingProductName")}</li>}
+                    {!data.quantity && <li>• {t("missingQuantity")}</li>}
                     {data.materials.length === 0 && (
-                      <li>• Chưa có thông tin vật liệu</li>
+                      <li>• {t("missingMaterials")}</li>
                     )}
                   </ul>
                 </div>
@@ -209,7 +212,7 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
               className="flex-1"
             >
               <Save className="w-5 h-5 mr-2" />
-              Lưu nháp (Draft)
+              {t("saveDraft")}
             </Button>
             <Button
               size="lg"
@@ -220,12 +223,12 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
               {isSubmitting ? (
                 <>
                   <span className="animate-spin mr-2">⏳</span>
-                  Đang xử lý...
+                  {t("processing")}
                 </>
               ) : (
                 <>
                   <Send className="w-5 h-5 mr-2" />
-                  Xuất bản (Publish)
+                  {t("publish")}
                 </>
               )}
             </Button>
@@ -233,8 +236,8 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
 
           <p className="text-xs text-muted-foreground text-center">
             {isHighConfidence
-              ? "✓ Sản phẩm đủ điều kiện báo cáo carbon"
-              : "* Sản phẩm cần bổ sung dữ liệu để đạt điều kiện báo cáo đầy đủ"}
+              ? `✓ ${t("readyForReport")}`
+              : `* ${t("needMoreData")}`}
           </p>
         </CardContent>
       </Card>
@@ -245,7 +248,7 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-muted-foreground" />
-              <CardTitle className="text-lg">Lịch sử phiên bản</CardTitle>
+              <CardTitle className="text-lg">{t("versionHistory")}</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -278,11 +281,11 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
                     {index === 0 && (
                       <Badge className="bg-primary/10 text-primary border-0">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Hiện tại
+                        {t("current")}
                       </Badge>
                     )}
                     <Button variant="ghost" size="sm">
-                      Xem
+                      {t("view")}
                     </Button>
                   </div>
                 </div>

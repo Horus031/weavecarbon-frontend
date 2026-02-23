@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,7 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
   onOpenChange,
   onSelectMaterial,
 }) => {
+  const t = useTranslations("assessment.otherMaterial");
   const [step, setStep] = useState<"input" | "results">("input");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -165,9 +167,9 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
   };
 
   const getScoreLabel = (score: number): string => {
-    if (score >= 0.75) return "Rất phù hợp";
-    if (score >= 0.45) return "Có thể phù hợp";
-    return "Độ tin cậy thấp";
+    if (score >= 0.75) return t("scoreVeryGood");
+    if (score >= 0.45) return t("scoreGood");
+    return t("scoreLow");
   };
 
   return (
@@ -176,32 +178,32 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            Thêm vật liệu khác
+            {t("title")}
           </DialogTitle>
           <DialogDescription>
             {step === "input"
-              ? "Mô tả vật liệu để hệ thống AI gợi ý phân loại phù hợp"
-              : "Chọn vật liệu gợi ý hoặc tạo yêu cầu mới"}
+              ? t("descriptionInput")
+              : t("descriptionResults")}
           </DialogDescription>
         </DialogHeader>
 
         {step === "input" ? (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="material-name">Tên vật liệu *</Label>
+              <Label htmlFor="material-name">{t("materialName")}</Label>
               <Input
                 id="material-name"
-                placeholder="VD: Vải lông cừu nhân tạo, Zipper tape canvas..."
+                placeholder={t("materialNamePlaceholder")}
                 value={materialName}
                 onChange={(e) => setMaterialName(e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="material-description">Mô tả (khuyến nghị)</Label>
+              <Label htmlFor="material-description">{t("descriptionLabel")}</Label>
               <Textarea
                 id="material-description"
-                placeholder="Mô tả thêm về đặc tính, nguồn gốc, hoặc cách sử dụng vật liệu..."
+                placeholder={t("descriptionPlaceholder")}
                 value={materialDescription}
                 onChange={(e) => setMaterialDescription(e.target.value)}
                 rows={3}
@@ -210,7 +212,7 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Loại vật liệu</Label>
+                <Label>{t("materialType")}</Label>
                 <Select
                   value={materialType}
                   onValueChange={(v) => setMaterialType(v as MaterialType)}
@@ -231,23 +233,23 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Mục đích sử dụng</Label>
+                <Label>{t("application")}</Label>
                 <Select value={application} onValueChange={setApplication}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="body_fabric">
-                      Vải chính (body)
+                      {t("appBodyFabric")}
                     </SelectItem>
-                    <SelectItem value="lining">Vải lót</SelectItem>
-                    <SelectItem value="zipper">Khóa kéo</SelectItem>
-                    <SelectItem value="button">Nút</SelectItem>
-                    <SelectItem value="thread">Chỉ may</SelectItem>
-                    <SelectItem value="label">Nhãn mác</SelectItem>
-                    <SelectItem value="elastic">Thun co giãn</SelectItem>
-                    <SelectItem value="padding">Đệm/Mút</SelectItem>
-                    <SelectItem value="trim">Phụ liệu khác</SelectItem>
+                    <SelectItem value="lining">{t("appLining")}</SelectItem>
+                    <SelectItem value="zipper">{t("appZipper")}</SelectItem>
+                    <SelectItem value="button">{t("appButton")}</SelectItem>
+                    <SelectItem value="thread">{t("appThread")}</SelectItem>
+                    <SelectItem value="label">{t("appLabel")}</SelectItem>
+                    <SelectItem value="elastic">{t("appElastic")}</SelectItem>
+                    <SelectItem value="padding">{t("appPadding")}</SelectItem>
+                    <SelectItem value="trim">{t("appTrim")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -258,7 +260,7 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
             {candidates.length > 0 ? (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Hệ thống gợi ý {candidates.length} vật liệu phù hợp:
+                  {t("systemSuggests", { count: candidates.length })}
                 </p>
 
                 <RadioGroup
@@ -335,7 +337,7 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <Label className="font-medium cursor-pointer">
-                              Không có trong danh sách - Tạo yêu cầu mới
+                              {t("notInList")}
                             </Label>
                             <Badge variant="outline">
                               <AlertTriangle className="w-3 h-3 mr-1" />
@@ -343,8 +345,7 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Hệ thống sẽ dùng hệ số ước tính. Yêu cầu sẽ được xem
-                            xét để bổ sung vào danh mục.
+                            {t("proxyEstimate")}
                           </p>
                         </div>
                       </div>
@@ -356,22 +357,19 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
               <div className="text-center py-6">
                 <AlertTriangle className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
                 <h4 className="font-medium mb-2">
-                  Không tìm thấy vật liệu phù hợp
+                  {t("noMatch")}
                 </h4>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Hệ thống không tìm được vật liệu &quot;{materialName}&quot;
-                  trong danh mục. Bạn có thể tạo yêu cầu để bổ sung vào danh
-                  mục.
+                  {t("noMatchDesc", { name: materialName })}
                 </p>
                 <Card className="text-left">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-primary mt-0.5" />
                       <div>
-                        <p className="font-medium">Sử dụng hệ số proxy</p>
+                        <p className="font-medium">{t("useProxyTitle")}</p>
                         <p className="text-sm text-muted-foreground">
-                          Vật liệu sẽ được tính với hệ số ước tính trung bình
-                          ngành. Kết quả carbon sẽ có độ tin cậy thấp hơn.
+                          {t("useProxyDesc")}
                         </p>
                       </div>
                     </div>
@@ -386,7 +384,7 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
           {step === "input" ? (
             <>
               <Button variant="outline" onClick={handleClose}>
-                Hủy
+                {t("cancel")}
               </Button>
               <Button
                 // onClick={handleAnalyze}
@@ -395,12 +393,12 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Đang phân tích...
+                    {t("analyzing")}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Phân tích vật liệu
+                    {t("analyzeMaterial")}
                   </>
                 )}
               </Button>
@@ -408,7 +406,7 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
           ) : (
             <>
               <Button variant="outline" onClick={() => setStep("input")}>
-                Quay lại
+                {t("goBack")}
               </Button>
               <Button
                 onClick={handleConfirmSelection}
@@ -417,7 +415,7 @@ const OtherMaterialModal: React.FC<OtherMaterialModalProps> = ({
                 }
               >
                 <CheckCircle2 className="w-4 h-4 mr-2" />
-                Xác nhận
+                {t("confirm")}
               </Button>
             </>
           )}

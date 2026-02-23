@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/purity */
 import React, { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,6 +44,7 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
   data,
   onChange,
 }) => {
+  const t = useTranslations("assessment.step3");
   // Generate material-based warnings
   const materialWarnings = useMemo(() => {
     const warnings: { type: "info" | "warning"; message: string }[] = [];
@@ -173,7 +175,7 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-yellow-600" />
               <CardTitle className="text-base text-yellow-700">
-                Lưu ý từ vật liệu (Step 2)
+                {t("materialWarningsTitle")}
               </CardTitle>
             </div>
           </CardHeader>
@@ -207,9 +209,9 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
               <Factory className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Quy trình sản xuất</CardTitle>
+              <CardTitle className="text-lg">{t("productionProcesses")}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Chọn tất cả các công đoạn áp dụng
+                {t("selectAllProcesses")}
               </p>
             </div>
           </div>
@@ -235,7 +237,7 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
                 <div>
                   <p className="font-medium">{process.label}</p>
                   <p className="text-xs text-muted-foreground">
-                    Hệ số: {process.co2Factor} kg CO₂e/kg
+                    {t("co2Factor", { factor: process.co2Factor })}
                   </p>
                 </div>
               </label>
@@ -245,7 +247,7 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
           {(!data.productionProcesses ||
             data.productionProcesses.length === 0) && (
             <p className="text-sm text-muted-foreground mt-4">
-              * Vui lòng chọn ít nhất 1 quy trình sản xuất
+              {t("selectAtLeastOneProcess")}
             </p>
           )}
         </CardContent>
@@ -260,9 +262,9 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
                 <Zap className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <CardTitle className="text-lg">Nguồn năng lượng</CardTitle>
+                <CardTitle className="text-lg">{t("energySources")}</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Chọn và phân bổ % cho từng nguồn
+                  {t("selectAndAllocate")}
                 </p>
               </div>
             </div>
@@ -270,7 +272,7 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
               <div
                 className={`text-sm font-medium ${isValidEnergyTotal ? "text-green-600" : "text-yellow-600"}`}
               >
-                Tổng: {totalEnergyPercentage}%
+                {t("energyTotal", { total: totalEnergyPercentage })}
               </div>
             )}
           </div>
@@ -297,7 +299,7 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
                 <div className="flex-1">
                   <p className="font-medium text-sm">{source.label}</p>
                   <p className="text-xs text-muted-foreground">
-                    {source.co2Factor} kg CO₂e/kWh
+                    {t("co2FactorKwh", { factor: source.co2Factor })}
                   </p>
                 </div>
               </label>
@@ -308,7 +310,7 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
           {data.energySources.length > 1 && (
             <div className="mt-6 p-4 rounded-lg border bg-muted/30">
               <p className="text-sm font-medium mb-4">
-                Phân bổ tỷ lệ sử dụng (tổng = 100%)
+                {t("allocatePercentage")}
               </p>
               <div className="space-y-4">
                 {data.energySources.map((energy) => {
@@ -347,7 +349,7 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
               {!isValidEnergyTotal && (
                 <div className="mt-4 flex items-center gap-2 text-yellow-600 text-sm">
                   <AlertCircle className="w-4 h-4" />
-                  <span>Tổng tỷ lệ phải bằng 100%</span>
+                  <span>{t("totalMustBe100")}</span>
                 </div>
               )}
             </div>
@@ -358,34 +360,34 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
       {/* Manufacturing Location */}
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Thông tin bổ sung</CardTitle>
+          <CardTitle className="text-lg">{t("additionalInfo")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Địa điểm sản xuất</Label>
+              <Label>{t("manufacturingLocation")}</Label>
               <Input
                 value={data.manufacturingLocation}
                 onChange={(e) =>
                   onChange({ manufacturingLocation: e.target.value })
                 }
-                placeholder="VD: TP. Hồ Chí Minh, Vietnam"
+                placeholder={t("locationPlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label>Thu hồi chất thải</Label>
+              <Label>{t("wasteRecovery")}</Label>
               <Select
                 value={data.wasteRecovery}
                 onValueChange={(v) => onChange({ wasteRecovery: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn phương thức" />
+                  <SelectValue placeholder={t("wasteRecoveryPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Không có</SelectItem>
-                  <SelectItem value="partial">Một phần</SelectItem>
-                  <SelectItem value="full">Toàn bộ</SelectItem>
-                  <SelectItem value="circular">Tuần hoàn (Circular)</SelectItem>
+                  <SelectItem value="none">{t("wasteNone")}</SelectItem>
+                  <SelectItem value="partial">{t("wastePartial")}</SelectItem>
+                  <SelectItem value="full">{t("wasteFull")}</SelectItem>
+                  <SelectItem value="circular">{t("wasteCircular")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
