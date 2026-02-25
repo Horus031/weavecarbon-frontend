@@ -1,35 +1,37 @@
 import React, { useState, useCallback, useRef } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
-  DialogTitle,
-  DialogDescription } from
-"@/components/ui/dialog";
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
-  Upload,
-  FileSpreadsheet,
-  Download,
-  CheckCircle2,
   AlertCircle,
-  Loader2,
-  ArrowRight,
   ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Download,
   FileCheck,
+  FileSpreadsheet,
   Leaf,
-  Package } from
-"lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+  Loader2,
+  Package,
+  Upload
+} from "lucide-react";
 import {
-  BulkProductRow,
-  ValidationError,
-  ValidationResult,
-  BULK_UPLOAD_STEPS } from
-"./types";
+  BULK_UPLOAD_STEPS,
+  type BulkUploadStep,
+  type BulkProductRow,
+  type ValidationError,
+  type ValidationResult
+} from "./types";
 import { generateTemplate } from "./template";
 import { parseFile, validateAndTransformData } from "./validation";
 import { calculateBulkCarbon } from "./carbonCalculation";
@@ -43,8 +45,8 @@ import {
   importProductsBulkFile,
   importProductsBulkRows,
   validateProductsBulkImport,
-  type BulkImportResult } from
-"@/lib/productsApi";
+  type BulkImportResult
+} from "@/lib/productsApi";
 
 interface BulkUploadModalProps {
   open: boolean;
@@ -52,27 +54,157 @@ interface BulkUploadModalProps {
   onCompleted?: () => void;
 }
 
-const mapBulkRowToApiPayload = (row: BulkProductRow): Record<string, unknown> => ({
-  sku: row.sku,
-  productName: row.productName,
-  productType: row.productType,
-  quantity: row.quantity,
-  weightPerUnit: row.weightPerUnit,
-  primaryMaterial: row.primaryMaterial,
-  primaryMaterialPercentage: row.primaryMaterialPercentage,
-  secondaryMaterial: row.secondaryMaterial,
-  secondaryMaterialPercentage: row.secondaryMaterialPercentage,
-  accessories: row.accessories,
-  materialSource: row.materialSource,
-  processes: row.processes,
-  energySource: row.energySource,
-  marketType: row.marketType,
-  exportCountry: row.exportCountry,
-  transportMode: row.transportMode,
-  calculatedCO2: row.calculatedCO2,
-  scope: row.scope,
-  confidenceLevel: row.confidenceLevel
-});
+const STEP_LABEL_KEYS: Record<BulkUploadStep["id"], string> = {
+  upload: "steps.upload.label",
+  validate: "steps.validate.label",
+  preview: "steps.preview.label",
+  processing: "steps.processing.label",
+  complete: "steps.complete.label"
+};
+
+const DESTINATION_MARKET_BY_EXPORT_COUNTRY: Record<string, string> = {
+  eu: "eu",
+  us: "usa",
+  jp: "japan",
+  kr: "korea",
+  other: "other"
+};
+
+const DISTANCE_BY_DESTINATION_MARKET: Record<string, number> = {
+  vietnam: 500,
+  eu: 10000,
+  usa: 14000,
+  japan: 3500,
+  korea: 3200,
+  other: 5000
+};
+
+const resolveDestinationMarket = (row: BulkProductRow): string => {
+  if (row.marketType === "domestic") return "vietnam";
+  if (!row.exportCountry) return "other";
+  return DESTINATION_MARKET_BY_EXPORT_COUNTRY[row.exportCountry] || "other";
+};
+
+const resolveEstimatedDistance = (destinationMarket: string): number =>
+DISTANCE_BY_DESTINATION_MARKET[destinationMarket] || 5000;
+
+const resolveTransportLegMode = (
+mode: BulkProductRow["transportMode"])
+: "road" | "sea" | "air" | "rail" =>
+mode === "multimodal" ? "sea" : mode;
+
+const buildAccessories = (rawAccessories?: string) => {
+  if (!rawAccessories?.trim()) return [];
+
+  return rawAccessories.
+  split(/[,;|]/).
+  map((item) => item.trim()).
+  filter((item) => item.length > 0).
+  map((item, index) => ({
+    id: `accessory-${index + 1}`,
+    name: item,
+    type: "other"
+  }));
+};
+
+const buildMaterials = (row: BulkProductRow) => {
+  const materials = [
+  {
+    id: "material-1",
+    materialType: row.primaryMaterial,
+    percentage: row.primaryMaterialPercentage,
+    source: row.materialSource,
+    certifications: [] as string[]
+  }];
+
+  if (
+  row.secondaryMaterial &&
+  typeof row.secondaryMaterialPercentage === "number" &&
+  row.secondaryMaterialPercentage > 0)
+  {
+    materials.push({
+      id: "material-2",
+      materialType: row.secondaryMaterial,
+      percentage: row.secondaryMaterialPercentage,
+      source: row.materialSource,
+      certifications: []
+    });
+  }
+
+  return materials;
+};
+
+const mapBulkRowToApiPayload = (row: BulkProductRow): Record<string, unknown> => {
+  const destinationMarket = resolveDestinationMarket(row);
+  const estimatedTotalDistance = resolveEstimatedDistance(destinationMarket);
+  const transportMode = resolveTransportLegMode(row.transportMode);
+  const materials = buildMaterials(row);
+  const accessories = buildAccessories(row.accessories);
+  const productionProcesses = row.processes || [];
+  const energySources = [
+  {
+    id: "energy-1",
+    source: row.energySource,
+    percentage: 100
+  }];
+  const transportLegs = [
+  {
+    id: "leg-1",
+    mode: transportMode,
+    estimatedDistance: estimatedTotalDistance
+  }];
+
+  const payload: Record<string, unknown> = {
+    sku: row.sku,
+    productCode: row.sku,
+    product_code: row.sku,
+    productName: row.productName,
+    product_name: row.productName,
+    productType: row.productType,
+    product_type: row.productType,
+    quantity: row.quantity,
+    weightPerUnit: row.weightPerUnit,
+    weight_per_unit: row.weightPerUnit,
+    primaryMaterial: row.primaryMaterial,
+    primaryMaterialPercentage: row.primaryMaterialPercentage,
+    secondaryMaterial: row.secondaryMaterial,
+    secondaryMaterialPercentage: row.secondaryMaterialPercentage,
+    accessories,
+    accessoriesText: row.accessories,
+    materialSource: row.materialSource,
+    materials,
+    processes: productionProcesses,
+    productionProcesses,
+    production_processes: productionProcesses,
+    energySource: row.energySource,
+    energySources,
+    energy_sources: energySources,
+    marketType: row.marketType,
+    market_type: row.marketType,
+    destinationMarket,
+    destination_market: destinationMarket,
+    exportCountry: row.exportCountry,
+    export_country: row.exportCountry,
+    transportMode: row.transportMode,
+    transport_mode: row.transportMode,
+    transportLegs,
+    transport_legs: transportLegs,
+    estimatedTotalDistance,
+    estimated_total_distance: estimatedTotalDistance
+  };
+
+  if (typeof row.calculatedCO2 === "number") {
+    payload.calculatedCO2 = row.calculatedCO2;
+  }
+  if (row.scope) {
+    payload.scope = row.scope;
+  }
+  if (row.confidenceLevel) {
+    payload.confidenceLevel = row.confidenceLevel;
+  }
+
+  return payload;
+};
 
 const normalizeSku = (value: string) => value.trim().toUpperCase();
 
@@ -103,14 +235,15 @@ extraWarnings: ValidationError[])
 
 const buildExistingSkuWarnings = (
 rows: BulkProductRow[],
-existingSkus: Set<string>)
+existingSkus: Set<string>,
+duplicateMessage: (sku: string) => string)
 : ValidationError[] =>
 rows.
 filter((row) => row.sku && existingSkus.has(normalizeSku(row.sku))).
 map((row) => ({
   row: row.sourceRow || 1,
   field: "sku",
-  message: `SKU "${row.sku}" da ton tai trong he thong`,
+  message: duplicateMessage(row.sku),
   severity: "warning" as const
 }));
 
@@ -119,6 +252,9 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
   onClose,
   onCompleted
 }) => {
+  const t = useTranslations("products.bulkUpload");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
   const navigate = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -165,7 +301,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
       !validTypes.includes(selectedFile.type) &&
       !selectedFile.name.match(/\.(xlsx|xls|csv)$/i))
       {
-        setError("Vui lòng chọn file Excel (.xlsx) hoặc CSV");
+        setError(t("errors.invalidFileType"));
         return;
       }
 
@@ -177,7 +313,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
         const rawData = await parseFile(selectedFile);
 
         if (rawData.length === 0) {
-          setError("File không có dữ liệu. Vui lòng kiểm tra lại.");
+          setError(t("errors.emptyFile"));
           setIsProcessing(false);
           return;
         }
@@ -195,12 +331,13 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
 
             const duplicateSkuWarnings = buildExistingSkuWarnings(
               result.validRows,
-              existingSkus
+              existingSkus,
+              (sku) => t("warnings.skuExists", { sku })
             );
             if (duplicateSkuWarnings.length > 0) {
               result = mergeValidationWarnings(result, duplicateSkuWarnings);
               toast.warning(
-                `Phat hien ${duplicateSkuWarnings.length} dong co SKU trung voi he thong`
+                t("warnings.duplicateSkuDetected", { count: duplicateSkuWarnings.length })
               );
             }
           } catch {
@@ -228,13 +365,16 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
             backendValidation.warningCount > 0)
             {
               toast.warning(
-                `Backend validation: ${backendValidation.errorCount} lỗi, ${backendValidation.warningCount} cảnh báo`
+                t("warnings.backendValidationSummary", {
+                  errors: backendValidation.errorCount,
+                  warnings: backendValidation.warningCount
+                })
               );
             }
           } catch (validationError) {
             const message = formatApiErrorMessage(
               validationError,
-              "Không thể gọi API validate, đang dùng kiểm tra local."
+              t("errors.validateApiFallback")
             );
             toast.warning(message);
           }
@@ -243,12 +383,12 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
         setValidationResult(result);
         setCurrentStep(1);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Lỗi khi đọc file");
+        setError(err instanceof Error ? err.message : t("errors.readFile"));
       } finally {
         setIsProcessing(false);
       }
     },
-    []
+    [t]
   );
 
   const handleDownloadTemplate = useCallback(async (format: "xlsx" | "csv") => {
@@ -260,11 +400,11 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
       toast.warning(
         formatApiErrorMessage(
           downloadError,
-          "Đã dùng template local vì API template chưa sẵn sàng"
+          t("errors.templateApiFallback")
         )
       );
     }
-  }, []);
+  }, [t]);
 
   const handleProceedToPreview = useCallback(() => {
     if (!validationResult) return;
@@ -293,7 +433,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
           result = await importProductsBulkFile(file, "draft");
         } catch (uploadError) {
           const errorCode = getApiErrorCode(uploadError);
-          const message = formatApiErrorMessage(uploadError, "Upload file thất bại");
+          const message = formatApiErrorMessage(uploadError, t("errors.uploadFileFailed"));
           const normalized = message.toLowerCase();
           const canFallbackToRows =
           errorCode === "NOT_IMPLEMENTED" ||
@@ -307,9 +447,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
             throw uploadError;
           }
 
-          toast.warning(
-            "API import file chưa sẵn sàng, chuyển sang import theo dữ liệu đã parse."
-          );
+          toast.warning(t("warnings.fileImportFallback"));
         }
       }
 
@@ -325,20 +463,20 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
       setCurrentStep(4);
 
       if (result.failed > 0) {
-        toast.warning(`Đã import ${result.imported} sản phẩm, ${result.failed} dòng lỗi`);
+        toast.warning(t("warnings.partialImport", { imported: result.imported, failed: result.failed }));
       } else {
-        toast.success(`Đã import thành công ${result.imported} sản phẩm`);
+        toast.success(t("success.importSuccess", { imported: result.imported }));
       }
 
       onCompleted?.();
     } catch (importError) {
       setCurrentStep(2);
-      setError(formatApiErrorMessage(importError, "Import thất bại"));
-      toast.error(formatApiErrorMessage(importError, "Import thất bại"));
+      setError(formatApiErrorMessage(importError, t("errors.importFailed")));
+      toast.error(formatApiErrorMessage(importError, t("errors.importFailed")));
     } finally {
       setIsProcessing(false);
     }
-  }, [file, processedRows, onCompleted]);
+  }, [file, processedRows, onCompleted, t]);
 
   const handleViewProducts = useCallback(() => {
     handleClose();
@@ -354,9 +492,9 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
               <div className="flex items-start gap-3">
                 <FileSpreadsheet className="w-8 h-8 text-primary shrink-0" />
                 <div className="flex-1">
-                  <h4 className="font-medium mb-1">Tải file mẫu</h4>
+                  <h4 className="font-medium mb-1">{t("template.title")}</h4>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Tải file mẫu với cấu trúc chuẩn và hướng dẫn chi tiết
+                    {t("template.description")}
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -366,7 +504,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                         void handleDownloadTemplate("xlsx");
                       }}>
 
-                      <Download className="w-4 h-4 mr-1" /> Excel (.xlsx)
+                      <Download className="w-4 h-4 mr-1" /> {t("template.downloadExcel")}
                     </Button>
                     <Button
                       variant="outline"
@@ -375,7 +513,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                         void handleDownloadTemplate("csv");
                       }}>
 
-                      <Download className="w-4 h-4 mr-1" /> CSV
+                      <Download className="w-4 h-4 mr-1" /> {t("template.downloadCsv")}
                     </Button>
                   </div>
                 </div>
@@ -398,7 +536,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
               {isProcessing ?
               <div className="flex flex-col items-center gap-3">
                   <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                  <p className="text-muted-foreground">Đang đọc file...</p>
+                  <p className="text-muted-foreground">{t("upload.processingFile")}</p>
                 </div> :
               file ?
               <div className="flex flex-col items-center gap-3">
@@ -418,16 +556,16 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                     setError(null);
                   }}>
 
-                    Chọn file khác
+                    {t("upload.selectAnotherFile")}
                   </Button>
                 </div> :
 
               <div className="flex flex-col items-center gap-3">
                   <Upload className="w-10 h-10 text-muted-foreground" />
                   <div>
-                    <p className="font-medium">Kéo thả file vào đây</p>
+                    <p className="font-medium">{t("upload.dropzoneTitle")}</p>
                     <p className="text-sm text-muted-foreground">
-                      hoặc click để chọn file Excel (.xlsx) / CSV
+                      {t("upload.dropzoneDescription")}
                     </p>
                   </div>
                 </div>
@@ -453,7 +591,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                 {validationResult.validCount > 0 &&
               <div className="flex justify-end gap-2 pt-4 border-t">
                     <Button variant="outline" onClick={() => setCurrentStep(0)}>
-                      <ArrowLeft className="w-4 h-4 mr-1" /> Tải file khác
+                      <ArrowLeft className="w-4 h-4 mr-1" /> {t("actions.uploadAnother")}
                     </Button>
                     <Button
                   onClick={handleProceedToPreview}
@@ -464,7 +602,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
 
                   <ArrowRight className="w-4 h-4 mr-1" />
                   }
-                      Tiếp tục ({validationResult.validCount} sản phẩm)
+                      {t("actions.continueWithCount", { count: validationResult.validCount })}
                     </Button>
                   </div>
               }
@@ -472,7 +610,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                 {validationResult.validCount === 0 &&
               <div className="flex justify-center pt-4 border-t">
                     <Button variant="outline" onClick={() => setCurrentStep(0)}>
-                      <ArrowLeft className="w-4 h-4 mr-1" /> Tải file khác
+                      <ArrowLeft className="w-4 h-4 mr-1" /> {t("actions.uploadAnother")}
                     </Button>
                   </div>
               }
@@ -490,15 +628,15 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                   <div className="bg-primary/10 rounded-lg p-3 text-center">
                     <Package className="w-6 h-6 text-primary mx-auto mb-1" />
                     <p className="text-xl font-bold">{processedRows.length}</p>
-                    <p className="text-xs text-muted-foreground">Sản phẩm</p>
+                    <p className="text-xs text-muted-foreground">{t("stats.products")}</p>
                   </div>
                   <div className="bg-primary/10 rounded-lg p-3 text-center">
                     <p className="text-xl font-bold">
                       {processedRows.
                     reduce((sum, r) => sum + r.quantity, 0).
-                    toLocaleString()}
+                    toLocaleString(displayLocale)}
                     </p>
-                    <p className="text-xs text-muted-foreground">Tổng số lượng</p>
+                    <p className="text-xs text-muted-foreground">{t("stats.totalQuantity")}</p>
                   </div>
                   <div className="bg-primary/10 rounded-lg p-3 text-center">
                     <Leaf className="w-6 h-6 text-primary mx-auto mb-1" />
@@ -507,7 +645,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                     reduce((sum, r) => sum + (r.calculatedCO2 || 0), 0).
                     toFixed(2)}
                     </p>
-                    <p className="text-xs text-muted-foreground">CO2e (kg/unit)</p>
+                    <p className="text-xs text-muted-foreground">{t("stats.co2ePerUnit")}</p>
                   </div>
                   <div className="bg-primary/10 rounded-lg p-3 text-center">
                     <p className="text-xl font-bold">
@@ -517,7 +655,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                     ).length
                     }
                     </p>
-                    <p className="text-xs text-muted-foreground">Độ tin cậy cao</p>
+                    <p className="text-xs text-muted-foreground">{t("stats.highConfidence")}</p>
                   </div>
                 </div>
 
@@ -532,10 +670,10 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
 
                 <div className="flex justify-between pt-4 border-t">
                   <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                    <ArrowLeft className="w-4 h-4 mr-1" /> Quay lại
+                    <ArrowLeft className="w-4 h-4 mr-1" /> {t("actions.back")}
                   </Button>
                   <Button onClick={() => void handleImportProducts()}>
-                    <CheckCircle2 className="w-4 h-4 mr-1" /> Nhập {processedRows.length} sản phẩm
+                    <CheckCircle2 className="w-4 h-4 mr-1" /> {t("actions.importCount", { count: processedRows.length })}
                   </Button>
                 </div>
               </>
@@ -549,8 +687,8 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
             <div className="flex flex-col items-center gap-4">
               <Loader2 className="w-12 h-12 text-primary animate-spin" />
               <div className="text-center">
-                <h3 className="font-medium text-lg">Đang nhập sản phẩm...</h3>
-                <p className="text-muted-foreground">Đang xử lý file</p>
+                <h3 className="font-medium text-lg">{t("processing.title")}</h3>
+                <p className="text-muted-foreground">{t("processing.description")}</p>
               </div>
             </div>
             <Progress value={importProgress} className="h-2" />
@@ -565,32 +703,32 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                 <CheckCircle2 className="w-10 h-10 text-green-600" />
               </div>
               <div className="text-center">
-                <h3 className="font-medium text-lg">Hoàn tất!</h3>
+                <h3 className="font-medium text-lg">{t("completed.title")}</h3>
                 <p className="text-muted-foreground">
-                  Đã nhập thành công {importedCount} sản phẩm vào hệ thống
+                  {t("completed.description", { count: importedCount })}
                 </p>
               </div>
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Sản phẩm đã nhập:</span>
+                <span className="text-muted-foreground">{t("completed.importedProducts")}</span>
                 <Badge variant="default" className="bg-green-600">
                   {importResult?.imported ?? importedCount}
                 </Badge>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Dòng lỗi:</span>
+                <span className="text-muted-foreground">{t("completed.failedRows")}</span>
                 <Badge variant="secondary">{importResult?.failed ?? 0}</Badge>
               </div>
             </div>
 
             <div className="flex justify-center gap-3">
               <Button variant="outline" onClick={handleClose}>
-                Đóng
+                {t("actions.close")}
               </Button>
               <Button onClick={handleViewProducts}>
-                <Package className="w-4 h-4 mr-1" /> Xem danh sách sản phẩm
+                <Package className="w-4 h-4 mr-1" /> {t("actions.viewProducts")}
               </Button>
             </div>
           </div>);
@@ -607,10 +745,10 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5 text-primary" />
-            Tải file sản phẩm hàng loạt
+            {t("modal.title")}
           </DialogTitle>
           <DialogDescription>
-            Import danh sách sản phẩm từ file Excel hoặc CSV, hệ thống sẽ tự động tính toán carbon
+            {t("modal.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -637,7 +775,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
                 <span
                 className={`text-xs mt-1 ${index <= currentStep ? "text-foreground" : "text-muted-foreground"}`}>
 
-                  {step.label}
+                  {t(STEP_LABEL_KEYS[step.id])}
                 </span>
               </div>
               {index < BULK_UPLOAD_STEPS.length - 1 &&
@@ -656,3 +794,4 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
 };
 
 export default BulkUploadModal;
+

@@ -1,112 +1,253 @@
-
 import * as XLSX from "xlsx";
 import { BulkProductRow, ValidationError, ValidationResult } from "./types";
 import { TEMPLATE_COLUMNS } from "./template";
 
+const HEADER_ALIASES: Record<string, string> = {
+  sku: "sku",
+  masku: "sku",
+  masanpham: "sku",
+  productcode: "sku",
+  productsku: "sku",
+  productname: "productName",
+  tensanpham: "productName",
+  name: "productName",
+  producttype: "productType",
+  loaisanpham: "productType",
+  category: "productType",
+  soluong: "quantity",
+  quantity: "quantity",
+  qty: "quantity",
+  weightperunit: "weightPerUnit",
+  weightgram: "weightPerUnit",
+  unitweight: "weightPerUnit",
+  trongluonggram: "weightPerUnit",
+  primarymaterial: "primaryMaterial",
+  vaichinh: "primaryMaterial",
+  mainmaterial: "primaryMaterial",
+  primarymaterialpercentage: "primaryMaterialPercentage",
+  primarymaterialpercent: "primaryMaterialPercentage",
+  mainmaterialpercentage: "primaryMaterialPercentage",
+  tylevaichinh: "primaryMaterialPercentage",
+  secondarymaterial: "secondaryMaterial",
+  vaiphu: "secondaryMaterial",
+  secondarymaterialpercentage: "secondaryMaterialPercentage",
+  secondarymaterialpercent: "secondaryMaterialPercentage",
+  tylevaiphu: "secondaryMaterialPercentage",
+  accessories: "accessories",
+  phulieu: "accessories",
+  materialsource: "materialSource",
+  nguonnguyenlieu: "materialSource",
+  processes: "processes",
+  productionprocesses: "processes",
+  congdoansanxuat: "processes",
+  energysource: "energySource",
+  energysources: "energySource",
+  nguonnangluong: "energySource",
+  markettype: "marketType",
+  market: "marketType",
+  thitruong: "marketType",
+  exportcountry: "exportCountry",
+  destinationcountry: "exportCountry",
+  quocgiaxuatkhau: "exportCountry",
+  transportmode: "transportMode",
+  shippingmode: "transportMode",
+  hinhthucvanchuyen: "transportMode"
+};
 
 const MATERIAL_MAP: Record<string, string> = {
   cotton: "cotton",
+  organiccotton: "organic_cotton",
+  cottonhuuco: "organic_cotton",
   polyester: "polyester",
+  recycledpolyester: "recycled_polyester",
+  polyestertaiche: "recycled_polyester",
   nylon: "nylon",
+  wool: "wool",
   len: "wool",
-  lụa: "silk",
+  silk: "silk",
+  lua: "silk",
   linen: "linen",
-  "polyester tái chế": "recycled_polyester",
-  "cotton hữu cơ": "organic_cotton",
+  lanh: "linen",
   bamboo: "bamboo",
   hemp: "hemp",
-  "pha trộn": "blend"
+  blend: "blend",
+  phatron: "blend"
 };
 
 const PRODUCT_TYPE_MAP: Record<string, string> = {
-  "áo thun": "tshirt",
-  quần: "pants",
-  "váy/đầm": "dress",
-  váy: "dress",
-  đầm: "dress",
-  "áo khoác": "jacket",
-  giày: "shoes",
-  túi: "bag",
-  "phụ kiện": "accessories",
-  khác: "other"
+  tshirt: "tshirt",
+  aothun: "tshirt",
+  tee: "tshirt",
+  pants: "pants",
+  quan: "pants",
+  trousers: "pants",
+  dress: "dress",
+  vaydam: "dress",
+  vay: "dress",
+  dam: "dress",
+  jacket: "jacket",
+  aokhoac: "jacket",
+  shoes: "shoes",
+  giay: "shoes",
+  bag: "bag",
+  tui: "bag",
+  accessories: "accessories",
+  accessory: "accessories",
+  phukien: "accessories",
+  other: "other",
+  khac: "other"
 };
 
 const ENERGY_SOURCE_MAP: Record<string, string> = {
-  "điện lưới": "grid",
-  "điện mặt trời": "solar",
-  "than đá": "coal",
-  "hỗn hợp": "mixed"
+  grid: "grid",
+  dienluoi: "grid",
+  solar: "solar",
+  dienmattroi: "solar",
+  wind: "mixed",
+  diengio: "mixed",
+  coal: "coal",
+  thanda: "coal",
+  gas: "mixed",
+  khidot: "mixed",
+  mixed: "mixed",
+  honhop: "mixed"
 };
 
 const TRANSPORT_MODE_MAP: Record<string, string> = {
-  "đường bộ": "road",
-  "đường biển": "sea",
-  "đường hàng không": "air",
-  "đường sắt": "rail",
-  "đa phương thức": "multimodal"
+  road: "road",
+  duongbo: "road",
+  sea: "sea",
+  duongbien: "sea",
+  air: "air",
+  duonghangkhong: "air",
+  rail: "rail",
+  duongsat: "rail",
+  multimodal: "multimodal",
+  daphuongthuc: "multimodal"
 };
 
 const MATERIAL_SOURCE_MAP: Record<string, string> = {
-  "trong nước": "domestic",
-  "nhập khẩu": "imported",
-  "không xác định": "unknown"
+  domestic: "domestic",
+  trongnuoc: "domestic",
+  imported: "imported",
+  nhapkhau: "imported",
+  unknown: "unknown",
+  khongxacdinh: "unknown"
 };
 
 const MARKET_TYPE_MAP: Record<string, string> = {
-  "nội địa": "domestic",
-  "xuất khẩu": "export"
+  domestic: "domestic",
+  noidia: "domestic",
+  vietnam: "domestic",
+  export: "export",
+  xuatkhau: "export"
 };
 
 const EXPORT_COUNTRY_MAP: Record<string, string> = {
-  "eu (châu âu)": "eu",
-  "châu âu": "eu",
   eu: "eu",
-  mỹ: "us",
+  chauau: "eu",
+  europe: "eu",
   us: "us",
   usa: "us",
-  "nhật bản": "jp",
-  nhật: "jp",
+  my: "us",
+  hoaky: "us",
   jp: "jp",
   japan: "jp",
-  "hàn quốc": "kr",
-  hàn: "kr",
+  nhatban: "jp",
   kr: "kr",
   korea: "kr",
-  khác: "other",
-  other: "other"
+  hanquoc: "kr",
+  other: "other",
+  khac: "other"
 };
 
 const PROCESS_MAP: Record<string, string> = {
-  "dệt kim": "knitting",
-  "dệt thoi": "weaving",
-  "cắt may": "cutting",
-  nhuộm: "dyeing",
+  knitting: "knitting",
+  detkim: "knitting",
+  weaving: "weaving",
+  detthoi: "weaving",
+  cuttingsewing: "cutting_sewing",
+  cutsew: "cutting_sewing",
+  cutting: "cutting_sewing",
+  sewing: "cutting_sewing",
+  catmay: "cutting_sewing",
+  dyeing: "dyeing",
+  dye: "dyeing",
+  nhuom: "dyeing",
+  printing: "printing",
+  print: "printing",
   in: "printing",
-  "hoàn tất": "finishing"
+  finishing: "finishing",
+  finish: "finishing",
+  hoantat: "finishing"
 };
 
-function normalizeString(str: string): string {
-  return str?.toString().trim().toLowerCase() || "";
-}
+const normalizeToken = (value: unknown): string =>
+String(value ?? "").
+trim().
+toLowerCase().
+normalize("NFD").
+replace(/[\u0300-\u036f]/g, "").
+replace(/[^a-z0-9]+/g, "");
+
+const normalizeString = (value: unknown): string =>
+String(value ?? "").
+trim();
+
+const normalizeSku = (value: string) => value.trim().toUpperCase();
+
+const isMissingValue = (value: unknown): boolean => {
+  if (value === undefined || value === null) return true;
+  if (typeof value === "string") return value.trim().length === 0;
+  return false;
+};
 
 function mapValue<T extends string>(
-value: string,
+value: unknown,
 map: Record<string, string>,
 defaultValue: T)
 : T {
-  const normalized = normalizeString(value);
-  return map[normalized] as T || defaultValue;
+  const normalized = normalizeToken(value);
+  return (map[normalized] as T | undefined) ?? defaultValue;
 }
 
-function parseProcesses(value: string): string[] {
-  if (!value) return [];
-  return value.
-  split(/[,;]/).
-  map((p) => {
-    const normalized = normalizeString(p);
-    return PROCESS_MAP[normalized] || normalized;
+function parseProcesses(value: unknown): string[] {
+  const raw = normalizeString(value);
+  if (!raw) return [];
+
+  const mapped = raw.
+  split(/[,;|]/).
+  map((item) => {
+    const token = normalizeToken(item);
+    if (!token) return "";
+    return PROCESS_MAP[token] || normalizeString(item).toLowerCase().replace(/\s+/g, "_");
   }).
   filter(Boolean);
+
+  return Array.from(new Set(mapped));
+}
+
+function buildHeaderKeyMap(): Record<string, string> {
+  const map: Record<string, string> = {};
+
+  TEMPLATE_COLUMNS.forEach((col) => {
+    const tokens = [
+    normalizeToken(col.header),
+    normalizeToken(col.header.replace(/\*/g, "")),
+    normalizeToken(col.key)];
+
+    tokens.forEach((token) => {
+      if (token) {
+        map[token] = col.key;
+      }
+    });
+  });
+
+  Object.entries(HEADER_ALIASES).forEach(([alias, key]) => {
+    map[alias] = key;
+  });
+
+  return map;
 }
 
 export function parseFile(file: File): Promise<Record<string, unknown>[]> {
@@ -132,7 +273,7 @@ export function parseFile(file: File): Promise<Record<string, unknown>[]> {
         );
 
         resolve(jsonData);
-      } catch (error) {
+      } catch {
         reject(
           new Error("Không thể đọc file. Vui lòng kiểm tra định dạng file.")
         );
@@ -158,13 +299,7 @@ rawData: Record<string, unknown>[])
   }[] = [];
   const warnings: ValidationError[] = [];
   const skuRowNumbers = new Map<string, number[]>();
-
-
-  const headerKeyMap: Record<string, string> = {};
-  TEMPLATE_COLUMNS.forEach((col) => {
-    const cleanHeader = col.header.replace(" *", "").toLowerCase();
-    headerKeyMap[cleanHeader] = col.key;
-  });
+  const headerKeyMap = buildHeaderKeyMap();
 
   rawData.forEach((row, index) => {
     const rowNumber = index + 2;
@@ -173,8 +308,8 @@ rawData: Record<string, unknown>[])
 
     const mappedRow: Record<string, unknown> = {};
     Object.entries(row).forEach(([key, value]) => {
-      const cleanKey = key.replace(" *", "").toLowerCase();
-      const mappedKey = headerKeyMap[cleanKey] || key;
+      const normalizedKey = normalizeToken(key);
+      const mappedKey = headerKeyMap[normalizedKey] || key;
       mappedRow[mappedKey] = value;
     });
 
@@ -184,7 +319,7 @@ rawData: Record<string, unknown>[])
     );
     requiredFields.forEach((field) => {
       const headerInfo = TEMPLATE_COLUMNS.find((col) => col.key === field);
-      if (!mappedRow[field] || mappedRow[field] === "") {
+      if (isMissingValue(mappedRow[field])) {
         rowErrors.push({
           row: rowNumber,
           field,
@@ -195,20 +330,19 @@ rawData: Record<string, unknown>[])
     });
 
 
-    const sku = String(mappedRow.sku || "").trim();
-    const productName = String(
-      mappedRow.productName || mappedRow["Tên sản phẩm"] || ""
-    ).trim();
+    const sku = normalizeString(mappedRow.sku);
+    const productName = normalizeString(mappedRow.productName);
     const productType = mapValue(
-      String(mappedRow.productType || mappedRow["Loại sản phẩm"] || ""),
+      mappedRow.productType,
       PRODUCT_TYPE_MAP,
       "other"
     );
     const quantity = parseInt(
-      String(mappedRow.quantity || mappedRow["Số lượng"] || "0")
+      String(mappedRow.quantity ?? "0"),
+      10
     );
     const weightPerUnit = parseFloat(
-      String(mappedRow.weightPerUnit || mappedRow["Trọng lượng (gram)"] || "0")
+      String(mappedRow.weightPerUnit ?? "0")
     );
 
 
@@ -232,34 +366,26 @@ rawData: Record<string, unknown>[])
 
 
     const primaryMaterial = mapValue(
-      String(mappedRow.primaryMaterial || mappedRow["Vải chính"] || ""),
+      mappedRow.primaryMaterial,
       MATERIAL_MAP,
       "cotton"
     );
     const primaryMaterialPercentage = parseFloat(
-      String(
-        mappedRow.primaryMaterialPercentage ||
-        mappedRow["Tỷ lệ vải chính (%)"] ||
-        "100"
-      )
+      String(mappedRow.primaryMaterialPercentage ?? "100")
     );
     const secondaryMaterial = mapValue(
-      String(mappedRow.secondaryMaterial || mappedRow["Vải phụ"] || ""),
+      mappedRow.secondaryMaterial,
       MATERIAL_MAP,
       ""
     );
     const secondaryMaterialPercentage = parseFloat(
-      String(
-        mappedRow.secondaryMaterialPercentage ||
-        mappedRow["Tỷ lệ vải phụ (%)"] ||
-        "0"
-      )
+      String(mappedRow.secondaryMaterialPercentage ?? "0")
     );
 
 
     const totalPercentage =
     primaryMaterialPercentage + (secondaryMaterialPercentage || 0);
-    if (totalPercentage !== 100) {
+    if (Number.isFinite(totalPercentage) && Math.abs(totalPercentage - 100) > 0.001) {
       warnings.push({
         row: rowNumber,
         field: "materialPercentage",
@@ -268,40 +394,34 @@ rawData: Record<string, unknown>[])
       });
     }
 
-    const accessories = String(
-      mappedRow.accessories || mappedRow["Phụ liệu"] || ""
-    );
+    const accessories = normalizeString(mappedRow.accessories);
     const materialSource = mapValue(
-      String(mappedRow.materialSource || mappedRow["Nguồn nguyên liệu"] || ""),
+      mappedRow.materialSource,
       MATERIAL_SOURCE_MAP,
       "unknown"
     ) as "domestic" | "imported" | "unknown";
 
 
-    const processes = parseProcesses(
-      String(mappedRow.processes || mappedRow["Công đoạn sản xuất"] || "")
-    );
+    const processes = parseProcesses(mappedRow.processes);
     const energySource = mapValue(
-      String(mappedRow.energySource || mappedRow["Nguồn năng lượng"] || ""),
+      mappedRow.energySource,
       ENERGY_SOURCE_MAP,
       "grid"
     ) as "grid" | "solar" | "coal" | "mixed";
 
 
     const marketType = mapValue(
-      String(mappedRow.marketType || mappedRow["Thị trường"] || ""),
+      mappedRow.marketType,
       MARKET_TYPE_MAP,
       "domestic"
     ) as "domestic" | "export";
     const exportCountry = mapValue(
-      String(mappedRow.exportCountry || mappedRow["Quốc gia xuất khẩu"] || ""),
+      mappedRow.exportCountry,
       EXPORT_COUNTRY_MAP,
       ""
     );
     const transportMode = mapValue(
-      String(
-        mappedRow.transportMode || mappedRow["Hình thức vận chuyển"] || ""
-      ),
+      mappedRow.transportMode,
       TRANSPORT_MODE_MAP,
       "sea"
     ) as "road" | "sea" | "air" | "rail" | "multimodal";
@@ -345,7 +465,7 @@ rawData: Record<string, unknown>[])
     } else {
       validRows.push(transformedRow);
 
-      const normalizedSku = normalizeString(sku).toUpperCase();
+      const normalizedSku = normalizeSku(sku);
       if (normalizedSku) {
         const rows = skuRowNumbers.get(normalizedSku) || [];
         rows.push(rowNumber);

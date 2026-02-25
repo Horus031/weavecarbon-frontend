@@ -1,29 +1,23 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle } from
-"@/components/ui/card";
-import { z } from "zod";
-import { useToast } from "@/hooks/useToast";
+  CardTitle
+} from "@/components/ui/card";
 import SocialLogin from "@/components/auth/SocialLogin";
 import EmailAuthTabs from "@/components/auth/EmailAuthTabs";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useToast } from "@/hooks/useToast";
 
-const emailSchema = z.string().email("Invalid email address");
-const passwordSchema = z.
-string().
-min(8, "Password must be at least 8 characters").
-regex(/[A-Z]/, "Password must include at least one uppercase letter").
-regex(/[a-z]/, "Password must include at least one lowercase letter").
-regex(/[0-9]/, "Password must include at least one number").
-regex(/[^A-Za-z0-9]/, "Password must include at least one special character");
+const REMEMBER_EMAIL_KEY = "weavecarbon_auth_email";
+const REMEMBER_ME_KEY = "weavecarbon_auth_remember_me";
 
 const AuthForm: React.FC = () => {
   const t = useTranslations("auth");
@@ -34,7 +28,6 @@ const AuthForm: React.FC = () => {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
-
   const userType = searchParams.get("type") as "b2b" | "b2c" || "b2b";
   const forceLogin = searchParams.get("forceLogin") === "1";
   const forceSignOutDoneRef = useRef(false);
@@ -44,9 +37,9 @@ const AuthForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
 
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [businessType, setBusinessType] = useState<
@@ -67,15 +60,52 @@ const AuthForm: React.FC = () => {
     []
   );
 
+  const redirectToCheckEmail = useCallback(
+    (params: {email?: string;source?: "email" | "google";intent?: "signin" | "signup";}) => {
+      const nextParams = new URLSearchParams();
+      if (params.email?.trim()) {
+        nextParams.set("email", params.email.trim());
+      }
+      if (params.source) {
+        nextParams.set("source", params.source);
+      }
+      if (params.intent) {
+        nextParams.set("intent", params.intent);
+      }
+      const query = nextParams.toString();
+      router.push(query ? `/auth/check-email?${query}` : "/auth/check-email");
+    },
+    [router]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const storedRememberMe = localStorage.getItem(REMEMBER_ME_KEY);
+    const rememberedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
+
+    if (storedRememberMe === "0" || storedRememberMe === "1") {
+      setRememberMe(storedRememberMe === "1");
+    }
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "1" : "0");
+    if (!rememberMe) {
+      localStorage.removeItem(REMEMBER_EMAIL_KEY);
+    }
+  }, [rememberMe]);
 
   useEffect(() => {
     if (forceLogin) return;
     if (user && !loading) {
-
       if (user.user_type === "b2b" && !user.company_id) {
         router.push("/onboarding");
       } else {
-
         router.push(getDashboardPath(user.user_type));
       }
     }
@@ -85,8 +115,6 @@ const AuthForm: React.FC = () => {
     if (!forceLogin || loading || forceLoginCheckedRef.current) return;
 
     forceLoginCheckedRef.current = true;
-
-
 
     if (user && !forceSignOutDoneRef.current) {
       forceSignOutDoneRef.current = true;
@@ -106,35 +134,31 @@ const AuthForm: React.FC = () => {
     if (handledAuthErrorRef.current === errorFingerprint) return;
     handledAuthErrorRef.current = errorFingerprint;
 
-    let message = errorDescription || errorCode;
+    const oauthErrors: Record<string, string> = {
+      GOOGLE_ACCOUNT_NOT_FOUND: t("oauthErrors.accountNotFound"),
+      GOOGLE_EMAIL_ALREADY_REGISTERED: t("oauthErrors.emailAlreadyRegistered"),
+      INVALID_OAUTH_STATE: t("oauthErrors.invalidState"),
+      GOOGLE_TOKEN_EXCHANGE_FAILED: t("oauthErrors.googleAuthFailed"),
+      GOOGLE_USERINFO_FAILED: t("oauthErrors.googleAuthFailed"),
+      GOOGLE_AUTH_FAILED: t("oauthErrors.googleAuthFailed"),
+      MISSING_CODE: t("oauthErrors.missingCode"),
+      EMAIL_NOT_VERIFIED: t("oauthErrors.emailNotVerified"),
+      missing_tokens: t("oauthErrors.missingCode")
+    };
 
-    switch (errorCode) {
-      case "GOOGLE_ACCOUNT_NOT_FOUND":
-        message =
-        "Tài khoản Google chưa được đăng ký. Vui lòng chuyển qua tab Đăng ký và thử lại.";
-        break;
-      case "GOOGLE_EMAIL_ALREADY_REGISTERED":
-        message =
-        "Email đã tồn tại. Vui lòng chuyển qua tab Đăng nhập và thử lại.";
-        break;
-      case "INVALID_OAUTH_STATE":
-        message = "Phiên Google OAuth đã hết hạn. Vui lòng bấm lại nút Google.";
-        break;
-      case "GOOGLE_TOKEN_EXCHANGE_FAILED":
-      case "GOOGLE_USERINFO_FAILED":
-      case "GOOGLE_AUTH_FAILED":
-        message = "Đăng nhập Google tạm thời lỗi. Vui lòng thử lại thủ công.";
-        break;
-      case "MISSING_CODE":
-      case "missing_tokens":
-        message = "Callback Google không hợp lệ. Vui lòng đăng nhập lại.";
-        break;
-      default:
-        break;
+    if (errorCode === "EMAIL_NOT_VERIFIED") {
+      redirectToCheckEmail({
+        email: errorDescription || email,
+        source: "google",
+        intent: "signin"
+      });
+      return;
     }
 
+    const message = oauthErrors[errorCode] || errorDescription || errorCode;
+
     toast({
-      title: "Google Authentication Error",
+      title: t("oauthErrors.title"),
       description: message,
       variant: "destructive"
     });
@@ -144,9 +168,18 @@ const AuthForm: React.FC = () => {
     params.delete("error_description");
     const nextQuery = params.toString();
     router.replace(nextQuery ? `/auth?${nextQuery}` : "/auth");
-  }, [searchParams, toast, router]);
+  }, [searchParams, toast, router, t, redirectToCheckEmail, email]);
 
   const validateForm = (isSignUp: boolean) => {
+    const emailSchema = z.string().email(t("validation.invalidEmail"));
+    const passwordSchema = z.
+    string().
+    min(8, t("validation.passwordMin")).
+    regex(/[A-Z]/, t("validation.passwordUppercase")).
+    regex(/[a-z]/, t("validation.passwordLowercase")).
+    regex(/[0-9]/, t("validation.passwordNumber")).
+    regex(/[^A-Za-z0-9]/, t("validation.passwordSpecial"));
+
     const newErrors: {
       email?: string;
       password?: string;
@@ -172,15 +205,15 @@ const AuthForm: React.FC = () => {
     }
 
     if (isSignUp && !fullName.trim()) {
-      newErrors.name = "Full name is required";
+      newErrors.name = t("validation.fullNameRequired");
     }
 
     if (isSignUp && userType === "b2b") {
       if (!companyName.trim()) {
-        newErrors.companyName = "Company name is required";
+        newErrors.companyName = t("validation.companyNameRequired");
       }
       if (!businessType) {
-        newErrors.businessType = "Business type is required";
+        newErrors.businessType = t("validation.businessTypeRequired");
       }
     }
 
@@ -194,19 +227,36 @@ const AuthForm: React.FC = () => {
 
     setIsLoading(true);
 
-    const { error } = await signIn(email, password, userType);
+    const { error, needsConfirmation } = await signIn(email, password, userType, {
+      rememberMe
+    });
+
+    if (needsConfirmation) {
+      setIsLoading(false);
+      redirectToCheckEmail({
+        email,
+        source: "email",
+        intent: "signin"
+      });
+      return;
+    }
 
     if (error) {
       setIsLoading(false);
       toast({
-        title: "Error",
+        title: t("error"),
         description:
         error.message === "Invalid login credentials" ?
-        `No ${userType === "b2c" ? "consumer" : "business"} account found with this email and password` :
+        t("messages.invalidLoginByType", {
+          accountType: userType === "b2c" ? t("messages.consumer") : t("messages.business")
+        }) :
         error.message,
         variant: "destructive"
       });
     } else {
+      if (typeof window !== "undefined" && rememberMe) {
+        localStorage.setItem(REMEMBER_EMAIL_KEY, email.trim());
+      }
       setIsLoading(false);
       router.push(userType === "b2c" ? "/b2c" : "/overview");
     }
@@ -226,11 +276,10 @@ const AuthForm: React.FC = () => {
       setIsLoading(false);
       let errorMessage = result.error.message;
       if (result.error.message.includes("already registered")) {
-        errorMessage =
-        "This email is already registered. Please sign in instead.";
+        errorMessage = t("messages.alreadyRegisteredPleaseLogin");
       }
       toast({
-        title: "Error",
+        title: t("error"),
         description: errorMessage,
         variant: "destructive"
       });
@@ -238,19 +287,21 @@ const AuthForm: React.FC = () => {
       setIsLoading(false);
 
       if (result.needsConfirmation) {
-
         toast({
-          title: "Check your email",
-          description:
-          "We've sent you a confirmation link. Please check your email to continue.",
+          title: t("messages.checkEmailTitle"),
+          description: t("messages.checkEmailDescription"),
           duration: 6000
         });
         setActiveTab("login");
+        redirectToCheckEmail({
+          email,
+          source: "email",
+          intent: "signup"
+        });
       } else {
-
         toast({
-          title: "Success! 🎉",
-          description: "Your account has been created successfully!",
+          title: t("messages.signupSuccessTitle"),
+          description: t("messages.signupSuccessDescription"),
           duration: 3000
         });
         if (userType === "b2c") {
@@ -265,19 +316,17 @@ const AuthForm: React.FC = () => {
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     const intent = activeTab === "signup" ? "signup" : "signin";
-    const { error } = await signInWithGoogle(userType, intent);
+    const { error } = await signInWithGoogle(userType, intent, { rememberMe });
 
     if (error) {
       setIsLoading(false);
       toast({
-        title: "Error",
+        title: t("error"),
         description: error.message,
         variant: "destructive"
       });
     }
-
   };
-
 
   if (loading) {
     return (
@@ -286,13 +335,6 @@ const AuthForm: React.FC = () => {
       </div>);
 
   }
-
-
-
-
-
-
-
 
   if (authDisabled) {
     return (
@@ -305,7 +347,7 @@ const AuthForm: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground text-center">
-            Authentication is currently disabled.
+            {t("messages.authDisabled")}
           </p>
         </CardContent>
       </Card>);
@@ -328,7 +370,6 @@ const AuthForm: React.FC = () => {
           onGoogleLogin={handleGoogleLogin}
           isLoading={isLoading} />
 
-
         <EmailAuthTabs
           userType={userType}
           activeTab={activeTab}
@@ -346,8 +387,10 @@ const AuthForm: React.FC = () => {
           errors={errors}
           isLoading={isLoading}
           onLogin={handleEmailLogin}
-          onSignUp={handleEmailSignUp} />
-        
+          onSignUp={handleEmailSignUp}
+          rememberMe={rememberMe}
+          setRememberMe={setRememberMe} />
+
       </CardContent>
     </Card>);
 

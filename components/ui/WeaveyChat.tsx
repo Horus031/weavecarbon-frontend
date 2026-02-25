@@ -1,21 +1,23 @@
-"use client";
+﻿"use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Trash2, Sparkles, Bot } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { usePathname } from "next/navigation";
+import ReactMarkdown from "react-markdown";
+import { Bot, MessageCircle, Send, Sparkles, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import ReactMarkdown from "react-markdown";
-import { ChatMessage, useWeaveyChat } from "@/hooks/useWeaveyChat";
-import { usePathname } from "next/navigation";
+import { useWeaveyChat, type ChatMessage } from "@/hooks/useWeaveyChat";
+import { cn } from "@/lib/utils";
 
 interface WeaveyChatProps {
   variant?: "landing" | "dashboard";
 }
 
 const WeaveyChat: React.FC<WeaveyChatProps> = ({ variant = "landing" }) => {
+  const t = useTranslations("dashboard.weaveyChat");
   const { user } = useAuth();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(variant === "landing");
@@ -27,13 +29,11 @@ const WeaveyChat: React.FC<WeaveyChatProps> = ({ variant = "landing" }) => {
     currentPage: pathname
   });
 
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
-
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -49,31 +49,13 @@ const WeaveyChat: React.FC<WeaveyChatProps> = ({ variant = "landing" }) => {
     }
   };
 
-  const welcomeMessage = user ?
-  `Xin chào! Tôi là Weavey, trợ lý AI của WeaveCarbon. Tôi có thể giúp bạn:
-    
-• **Hướng dẫn Dashboard**: Điều hướng và sử dụng các tính năng
-• **Nhập liệu thông minh**: Mô tả dữ liệu bằng ngôn ngữ tự nhiên
-• **Cảnh báo tuân thủ**: Theo dõi và tối ưu hóa phát thải carbon
-
-Bạn cần hỗ trợ gì?` :
-  `Xin chào! Tôi là **Weavey** 🌱
-
-Tôi là trợ lý AI bền vững của WeaveCarbon, sẵn sàng giúp bạn:
-
-• Tìm hiểu về **carbon footprint** và cách tính toán
-• Giải đáp thắc mắc về **quy định xuất khẩu xanh**
-• Hướng dẫn sử dụng **công cụ tính toán carbon**
-
-Hãy hỏi tôi bất cứ điều gì!`;
-
+  const welcomeMessage = user ? t("welcomeUser") : t("welcomeGuest");
 
   if (variant === "landing") {
     return (
       <div className="fixed md:bottom-6 md:right-6 z-50">
         {isOpen ?
         <div className="bg-card border border-border rounded-2xl shadow-2xl w-95 h-130 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
-            
             <div className="bg-linear-to-r from-primary to-accent p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
@@ -82,7 +64,7 @@ Hãy hỏi tôi bất cứ điều gì!`;
                 <div>
                   <h3 className="font-semibold text-white">Weavey</h3>
                   <p className="text-xs text-white/80">
-                    AI Sustainability Assistant
+                    {t("assistantTitleLanding")}
                   </p>
                 </div>
               </div>
@@ -91,15 +73,13 @@ Hãy hỏi tôi bất cứ điều gì!`;
               size="icon"
               className="text-white hover:bg-white/20"
               onClick={() => setIsOpen(false)}>
-              
+
                 <X className="w-5 h-5" />
               </Button>
             </div>
 
-            
             <ScrollArea className="flex-1 p-4" ref={scrollRef}>
               <div className="space-y-4">
-                
                 {messages.length === 0 &&
               <div className="flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -113,12 +93,10 @@ Hãy hỏi tôi bất cứ điều gì!`;
                   </div>
               }
 
-                
                 {messages.map((message) =>
               <MessageBubble key={message.id} message={message} />
               )}
 
-                
                 {isLoading &&
               <div className="flex gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -129,15 +107,15 @@ Hãy hỏi tôi bất cứ điều gì!`;
                         <span
                       className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"
                       style={{ animationDelay: "0ms" }} />
-                    
+
                         <span
                       className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"
                       style={{ animationDelay: "150ms" }} />
-                    
+
                         <span
                       className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"
                       style={{ animationDelay: "300ms" }} />
-                    
+
                       </div>
                     </div>
                   </div>
@@ -145,22 +123,21 @@ Hãy hỏi tôi bất cứ điều gì!`;
               </div>
             </ScrollArea>
 
-            
             <div className="p-4 border-t border-border">
               <form onSubmit={handleSubmit} className="flex gap-2">
                 <Input
                 ref={inputRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Nhập câu hỏi của bạn..."
+                placeholder={t("inputPlaceholderLanding")}
                 className="flex-1"
                 disabled={isLoading} />
-              
+
                 <Button
                 type="submit"
                 size="icon"
                 disabled={isLoading || !inputValue.trim()}>
-                
+
                   <Send className="w-4 h-4" />
                 </Button>
               </form>
@@ -170,7 +147,7 @@ Hãy hỏi tôi bất cứ điều gì!`;
         <Button
           onClick={() => setIsOpen(true)}
           className="w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-linear-to-r from-primary to-accent hover:scale-110">
-          
+
             <MessageCircle className="w-6 h-6" />
           </Button>
         }
@@ -178,12 +155,10 @@ Hãy hỏi tôi bất cứ điều gì!`;
 
   }
 
-
   return (
     <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
       {isOpen ?
       <div className="bg-card border border-border rounded-2xl shadow-2xl w-90 h-80 md:h-120 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
-          
           <div className="bg-linear-to-r from-primary to-accent p-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
@@ -191,7 +166,7 @@ Hãy hỏi tôi bất cứ điều gì!`;
               </div>
               <div>
                 <h3 className="font-semibold text-white text-sm">Weavey</h3>
-                <p className="text-xs text-white/80">AI Assistant</p>
+                <p className="text-xs text-white/80">{t("assistantTitleDashboard")}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -200,8 +175,8 @@ Hãy hỏi tôi bất cứ điều gì!`;
               size="icon"
               className="text-white hover:bg-white/20 h-8 w-8"
               onClick={clearHistory}
-              title="Xóa lịch sử">
-              
+              title={t("clearHistory")}>
+
                 <Trash2 className="w-4 h-4" />
               </Button>
               <Button
@@ -209,13 +184,12 @@ Hãy hỏi tôi bất cứ điều gì!`;
               size="icon"
               className="text-white hover:bg-white/20 h-8 w-8"
               onClick={() => setIsOpen(false)}>
-              
+
                 <X className="w-4 h-4" />
               </Button>
             </div>
           </div>
 
-          
           <ScrollArea className="flex-1 p-3" ref={scrollRef}>
             <div className="space-y-3">
               {messages.length === 0 &&
@@ -245,15 +219,15 @@ Hãy hỏi tôi bất cứ điều gì!`;
                       <span
                     className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"
                     style={{ animationDelay: "0ms" }} />
-                  
+
                       <span
                     className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"
                     style={{ animationDelay: "150ms" }} />
-                  
+
                       <span
                     className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"
                     style={{ animationDelay: "300ms" }} />
-                  
+
                     </div>
                   </div>
                 </div>
@@ -261,23 +235,22 @@ Hãy hỏi tôi bất cứ điều gì!`;
             </div>
           </ScrollArea>
 
-          
           <div className="p-3 border-t border-border">
             <form onSubmit={handleSubmit} className="flex gap-2">
               <Input
               ref={inputRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Hỏi Weavey..."
+              placeholder={t("inputPlaceholderDashboard")}
               className="flex-1 h-9 text-sm"
               disabled={isLoading} />
-            
+
               <Button
               type="submit"
               size="icon"
               className="h-9 w-9"
               disabled={isLoading || !inputValue.trim()}>
-              
+
                 <Send className="w-4 h-4" />
               </Button>
             </form>
@@ -287,7 +260,7 @@ Hãy hỏi tôi bất cứ điều gì!`;
       <Button
         onClick={() => setIsOpen(true)}
         className="w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-linear-to-r from-primary to-accent hover:scale-105 relative">
-        
+
           <MessageCircle className="w-5 h-5" />
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
         </Button>
@@ -295,7 +268,6 @@ Hãy hỏi tôi bất cứ điều gì!`;
     </div>);
 
 };
-
 
 const MessageBubble: React.FC<{message: ChatMessage;compact?: boolean;}> = ({
   message,
@@ -311,10 +283,10 @@ const MessageBubble: React.FC<{message: ChatMessage;compact?: boolean;}> = ({
           "rounded-full bg-primary/10 flex items-center justify-center shrink-0",
           compact ? "w-7 h-7" : "w-8 h-8"
         )}>
-        
+
           <Bot
           className={cn("text-primary", compact ? "w-3.5 h-3.5" : "w-4 h-4")} />
-        
+
         </div>
       }
       <div
@@ -325,13 +297,13 @@ const MessageBubble: React.FC<{message: ChatMessage;compact?: boolean;}> = ({
           "bg-primary text-primary-foreground rounded-tr-sm" :
           "bg-muted rounded-tl-sm"
         )}>
-        
+
         <div
           className={cn(
             "prose prose-sm dark:prose-invert",
             compact && "text-sm"
           )}>
-          
+
           <ReactMarkdown>{message.content}</ReactMarkdown>
         </div>
       </div>
@@ -340,3 +312,4 @@ const MessageBubble: React.FC<{message: ChatMessage;compact?: boolean;}> = ({
 };
 
 export default WeaveyChat;
+

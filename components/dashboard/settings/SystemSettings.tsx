@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { api, authTokenStore, isApiError } from "@/lib/apiClient";
 import {
   Card,
@@ -96,7 +97,10 @@ const isEndpointUnavailableError = (error: unknown) => {
 
 const SystemSettings: React.FC = () => {
   const t = useTranslations("settings.system");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
   const { user, updateUser, refreshUser } = useAuth();
+  const { canAccessSystemSettings } = usePermissions();
   const [company, setCompany] = useState<CompanyData | null>(null);
   const [accountCreatedAt, setAccountCreatedAt] = useState<string | null>(null);
   const [usageLimits, setUsageLimits] = useState<UsageLimits | null>(null);
@@ -108,7 +112,7 @@ const SystemSettings: React.FC = () => {
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [passwordSaving, setPasswordSaving] = useState(false);
   const createdDateLabel = accountCreatedAt ?
-  new Date(accountCreatedAt).toLocaleDateString("vi-VN") :
+  new Date(accountCreatedAt).toLocaleDateString(displayLocale) :
   t("notUpdated");
 
   const [personalForm, setPersonalForm] = useState({
@@ -234,12 +238,12 @@ const SystemSettings: React.FC = () => {
     const fullName = personalForm.full_name.trim();
 
     if (!fullName) {
-      toast.error("Full name is required.");
+      toast.error(t("validationFullNameRequired"));
       return;
     }
 
     if (!email) {
-      toast.error("Email is required.");
+      toast.error(t("validationEmailRequired"));
       return;
     }
 
@@ -265,7 +269,7 @@ const SystemSettings: React.FC = () => {
       });
       await refreshUser();
       setPersonalEditMode(false);
-      toast.success("Personal information updated.");
+      toast.success(t("personalUpdateSuccess"));
     } catch (error) {
       console.error("Error saving personal profile:", error);
       toast.error(error instanceof Error ? error.message : t("updateError"));
@@ -276,17 +280,17 @@ const SystemSettings: React.FC = () => {
 
   const handleChangePassword = async () => {
     if (!passwordForm.current_password || !passwordForm.new_password) {
-      toast.error("Please enter current and new password.");
+      toast.error(t("validationPasswordRequired"));
       return;
     }
 
     if (passwordForm.new_password.length < 8) {
-      toast.error("New password must be at least 8 characters.");
+      toast.error(t("validationPasswordMinLength"));
       return;
     }
 
     if (passwordForm.new_password !== passwordForm.confirm_password) {
-      toast.error("Password confirmation does not match.");
+      toast.error(t("validationPasswordConfirmMismatch"));
       return;
     }
 
@@ -319,7 +323,11 @@ const SystemSettings: React.FC = () => {
       }
 
       if (!changed) {
-        throw (lastError instanceof Error ? lastError : new Error("Unable to change password."));
+        throw (
+          lastError instanceof Error ?
+          lastError :
+          new Error(t("changePasswordUnavailable"))
+        );
       }
 
       setPasswordDialogOpen(false);
@@ -328,10 +336,10 @@ const SystemSettings: React.FC = () => {
         new_password: "",
         confirm_password: ""
       });
-      toast.success("Password changed successfully.");
+      toast.success(t("passwordChangeSuccess"));
     } catch (error) {
       console.error("Error changing password:", error);
-      toast.error(error instanceof Error ? error.message : "Unable to change password.");
+      toast.error(error instanceof Error ? error.message : t("changePasswordUnavailable"));
     } finally {
       setPasswordSaving(false);
     }
@@ -349,6 +357,10 @@ const SystemSettings: React.FC = () => {
     if (limit <= 0) return 0;
     return Math.min(100, Math.max(0, used / limit * 100));
   };
+
+  if (!canAccessSystemSettings) {
+    return null;
+  }
 
   const handleSave = async () => {
     if (!company) return;
@@ -389,12 +401,12 @@ const SystemSettings: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card className="overflow-hidden border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
-        <CardHeader className="rounded-t-[inherit] border-b border-slate-300 bg-slate-100">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <CardHeader className="rounded-t-[inherit] border-b border-slate-300 bg-slate-100 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-xl">
                 <User className="w-5 h-5" />
                 {t("personalInfo")}
               </CardTitle>
@@ -405,6 +417,7 @@ const SystemSettings: React.FC = () => {
             <div className="flex gap-2">
               {!personalEditMode ?
               <Button
+                size="sm"
                 variant="outline"
                 className="gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
                 type="button"
@@ -415,6 +428,7 @@ const SystemSettings: React.FC = () => {
 
               <>
                   <Button
+                  size="sm"
                   variant="ghost"
                   className="text-slate-700 hover:bg-slate-200"
                   onClick={handleCancelPersonalEdit}>
@@ -422,6 +436,7 @@ const SystemSettings: React.FC = () => {
                     <X className="w-4 h-4 mr-1" /> {t("cancel")}
                   </Button>
                   <Button
+                  size="sm"
                   className="bg-emerald-600 text-white hover:bg-emerald-700"
                   onClick={handlePersonalSave}
                   disabled={personalSaving}>
@@ -431,6 +446,7 @@ const SystemSettings: React.FC = () => {
                 </>
               }
               <Button
+                size="sm"
                 variant="outline"
                 className="gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
                 type="button"
@@ -442,9 +458,9 @@ const SystemSettings: React.FC = () => {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="pt-5">
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="space-y-2">
+        <CardContent className="p-4 pt-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-1.5">
               <Label>{t("fullName")}</Label>
               <Input
                 value={personalEditMode ? personalForm.full_name : user?.full_name?.trim() || t("notUpdated")}
@@ -455,7 +471,7 @@ const SystemSettings: React.FC = () => {
                 } />
 
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>{t("email")}</Label>
               <Input
                 value={personalEditMode ? personalForm.email : user?.email?.trim() || t("noEmail")}
@@ -466,7 +482,7 @@ const SystemSettings: React.FC = () => {
                 } />
 
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>{t("accountCreated")}</Label>
               <Input
                 value={createdDateLabel}
@@ -483,12 +499,12 @@ const SystemSettings: React.FC = () => {
           <DialogHeader>
             <DialogTitle>{t("changePassword")}</DialogTitle>
             <DialogDescription>
-              Update your account password.
+              {t("changePasswordDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Current password</Label>
+              <Label>{t("currentPassword")}</Label>
               <Input
                 type="password"
                 value={passwordForm.current_password}
@@ -501,7 +517,7 @@ const SystemSettings: React.FC = () => {
                 className="border-slate-300 bg-white" />
             </div>
             <div className="space-y-2">
-              <Label>New password</Label>
+              <Label>{t("newPassword")}</Label>
               <Input
                 type="password"
                 value={passwordForm.new_password}
@@ -514,7 +530,7 @@ const SystemSettings: React.FC = () => {
                 className="border-slate-300 bg-white" />
             </div>
             <div className="space-y-2">
-              <Label>Confirm new password</Label>
+              <Label>{t("confirmNewPassword")}</Label>
               <Input
                 type="password"
                 value={passwordForm.confirm_password}
@@ -545,10 +561,10 @@ const SystemSettings: React.FC = () => {
       </Dialog>
 
       <Card className="overflow-hidden border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
-        <CardHeader className="rounded-t-[inherit] border-b border-slate-300 bg-slate-100">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <CardHeader className="rounded-t-[inherit] border-b border-slate-300 bg-slate-100 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-xl">
                 <Building2 className="w-5 h-5" />
                 {t("companyInfo")}
               </CardTitle>
@@ -558,6 +574,7 @@ const SystemSettings: React.FC = () => {
             </div>
             {!editMode ?
             <Button
+              size="sm"
               variant="outline"
               className="border-slate-300 bg-white text-slate-800 hover:bg-slate-100"
               onClick={() => setEditMode(true)}>
@@ -567,6 +584,7 @@ const SystemSettings: React.FC = () => {
 
             <div className="flex gap-2">
                 <Button
+                size="sm"
                 variant="ghost"
                 className="text-slate-700 hover:bg-slate-200"
                 onClick={() => setEditMode(false)}>
@@ -574,6 +592,7 @@ const SystemSettings: React.FC = () => {
                   <X className="w-4 h-4 mr-1" /> {t("cancel")}
                 </Button>
                 <Button
+                size="sm"
                 className="bg-emerald-600 text-white hover:bg-emerald-700"
                 onClick={handleSave}
                 disabled={saving}>
@@ -584,9 +603,9 @@ const SystemSettings: React.FC = () => {
             }
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 pt-5">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+        <CardContent className="space-y-3 p-4 pt-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-1.5">
               <Label>{t("companyName")}</Label>
               {editMode ?
               <Input
@@ -597,13 +616,13 @@ const SystemSettings: React.FC = () => {
                 } /> :
 
 
-              <p className="rounded border border-slate-300 bg-slate-100 p-2 text-sm text-slate-800">
+              <p className="rounded border border-slate-300 bg-slate-100 px-3 py-1.5 text-sm text-slate-800">
                   {company?.name || t("notUpdated")}
                 </p>
               }
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>{t("businessType")}</Label>
               {editMode ?
               <Select
@@ -626,15 +645,15 @@ const SystemSettings: React.FC = () => {
                   </SelectContent>
                 </Select> :
 
-              <p className="rounded border border-slate-300 bg-slate-100 p-2 text-sm text-slate-800">
+              <p className="rounded border border-slate-300 bg-slate-100 px-3 py-1.5 text-sm text-slate-800">
                   {businessTypeLabel}
                 </p>
               }
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-1.5 md:col-span-2">
               <Label>{t("servicePlan")}</Label>
-              <p className="rounded border border-slate-300 bg-slate-100 p-2 text-sm text-slate-800">
+              <p className="rounded border border-slate-300 bg-slate-100 px-3 py-1.5 text-sm text-slate-800">
                 {company?.current_plan?.toUpperCase() || "STARTER"}
               </p>
             </div>
@@ -643,8 +662,8 @@ const SystemSettings: React.FC = () => {
       </Card>
 
       <Card className="overflow-hidden border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.08)]">
-        <CardHeader className="rounded-t-[inherit] border-b border-slate-300 bg-slate-100">
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="rounded-t-[inherit] border-b border-slate-300 bg-slate-100 p-4 sm:p-5">
+          <CardTitle className="flex items-center gap-2 text-xl">
             <Zap className="w-5 h-5" />
             {t("usageLimits")}
           </CardTitle>
@@ -652,10 +671,10 @@ const SystemSettings: React.FC = () => {
             {t("usageLimitsDesc")}
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-5">
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="rounded-lg border border-slate-300 bg-slate-50 p-4">
-              <div className="flex items-center justify-between mb-2">
+        <CardContent className="p-4 pt-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-lg border border-slate-300 bg-slate-50 p-3">
+              <div className="mb-1.5 flex items-center justify-between">
                 <Label className="text-slate-700">{t("products")}</Label>
                 <span className="text-sm font-medium">
                   {usageLimits ?
@@ -676,8 +695,8 @@ const SystemSettings: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-300 bg-slate-50 p-4">
-              <div className="flex items-center justify-between mb-2">
+            <div className="rounded-lg border border-slate-300 bg-slate-50 p-3">
+              <div className="mb-1.5 flex items-center justify-between">
                 <Label className="text-slate-700">{t("members")}</Label>
                 <span className="text-sm font-medium">
                   {usageLimits ?
@@ -698,12 +717,12 @@ const SystemSettings: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-300 bg-slate-50 p-4">
-              <div className="flex items-center justify-between mb-2">
+            <div className="rounded-lg border border-slate-300 bg-slate-50 p-3">
+              <div className="mb-1.5 flex items-center justify-between">
                 <Label className="text-slate-700">{t("apiCalls")}</Label>
                 <span className="text-sm font-medium">
                   {usageLimits ?
-                  `${usageLimits.apiCallsUsed.toLocaleString()} / ${usageLimits.apiCallsLimit.toLocaleString()}` :
+                  `${usageLimits.apiCallsUsed.toLocaleString(displayLocale)} / ${usageLimits.apiCallsLimit.toLocaleString(displayLocale)}` :
                   t("notUpdated")}
                 </span>
               </div>
@@ -721,12 +740,12 @@ const SystemSettings: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-4 flex flex-col gap-4 rounded-lg border border-emerald-300 bg-emerald-100/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-3 flex flex-col gap-3 rounded-lg border border-emerald-300 bg-emerald-100/70 p-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-medium text-slate-900">{t("upgradeTitle")}</p>
               <p className="text-sm text-slate-700">{t("upgradeDesc")}</p>
             </div>
-            <Button className="w-full sm:w-auto bg-emerald-600 text-white hover:bg-emerald-700">
+            <Button size="sm" className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto">
               {t("upgradeNow")}
             </Button>
           </div>

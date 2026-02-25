@@ -209,7 +209,44 @@
     "invalidCredentials": "Email hoặc mật khẩu không đúng",
     "alreadyRegistered": "Email này đã được đăng ký",
     "accountCreated": "Tạo tài khoản thành công!",
-    "termsNotice": "Bằng việc đăng nhập, bạn đồng ý với Điều khoản và Chính sách Bảo mật"
+    "termsNotice": "Bằng việc đăng nhập, bạn đồng ý với Điều khoản và Chính sách Bảo mật",
+    "oauthErrors": {
+      "title": "Lỗi xác thực Google",
+      "accountNotFound": "Tài khoản Google này chưa được đăng ký. Vui lòng chuyển sang Đăng ký và thử lại.",
+      "emailAlreadyRegistered": "Email này đã tồn tại. Vui lòng chuyển sang Đăng nhập và thử lại.",
+      "emailNotVerified": "Email của bạn chưa được xác minh. Vui lòng kiểm tra hộp thư để tiếp tục.",
+      "invalidState": "Phiên Google OAuth đã hết hạn. Vui lòng bấm nút Google lại.",
+      "googleAuthFailed": "Đăng nhập Google tạm thời không khả dụng. Vui lòng thử lại.",
+      "missingCode": "Callback Google không hợp lệ. Vui lòng đăng nhập lại."
+    },
+    "messages": {
+      "invalidLoginByType": "Không tìm thấy tài khoản {accountType} với email và mật khẩu này",
+      "consumer": "cá nhân",
+      "business": "doanh nghiệp",
+      "alreadyRegisteredPleaseLogin": "Email này đã được đăng ký. Vui lòng đăng nhập.",
+      "checkEmailTitle": "Kiểm tra email",
+      "checkEmailDescription": "Chúng tôi đã gửi liên kết xác minh. Vui lòng kiểm tra email để tiếp tục.",
+      "signupSuccessTitle": "Thành công",
+      "signupSuccessDescription": "Tạo tài khoản thành công!",
+      "authDisabled": "Chức năng xác thực hiện đang tắt."
+    },
+    "checkEmailPage": {
+      "title": "Kiểm tra email",
+      "subtitle": "Chúng tôi đã gửi liên kết xác minh tới email của bạn. Vui lòng xác minh trước khi tiếp tục.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "ban@congty.com",
+      "resendButton": "Gửi lại email xác minh",
+      "resending": "Đang gửi...",
+      "resendSuccess": "Nếu email tồn tại, chúng tôi đã gửi lại email xác minh.",
+      "resendError": "Không thể gửi lại email xác minh. Vui lòng thử lại.",
+      "emailRequired": "Vui lòng nhập email để gửi lại liên kết xác minh.",
+      "verifyButton": "Tôi đã xác minh email",
+      "verifying": "Đang kiểm tra...",
+      "notVerifiedYet": "Email vẫn chưa được xác minh. Vui lòng kiểm tra hộp thư và thử lại.",
+      "continueSignin": "Quay lại đăng nhập",
+      "googleHint": "Dùng đúng tài khoản Google sau khi xác minh.",
+      "emailHint": "Sau khi xác minh, vui lòng đăng nhập lại để tiếp tục."
+    }
   },
   "onboarding": {
     "title": "Thiết lập Doanh nghiệp",
@@ -366,21 +403,291 @@
     },
     "statusLabel": {
       "draft": "Nháp",
-      "published": "Đã xuất bản"
+      "published": "Đã xuất bản",
+      "archived": "Lưu trữ"
+    },
+    "errors": {
+      "invalidProductId": "Mã sản phẩm không hợp lệ. Vui lòng tải lại và thử lại.",
+      "failedLoadProducts": "Không thể tải danh sách sản phẩm",
+      "failedOpenProductDetail": "Không thể mở chi tiết sản phẩm"
+    },
+    "actions": {
+      "editProduct": "Chỉnh sửa sản phẩm"
+    },
+    "clearSearchAria": "Xóa nội dung tìm kiếm",
+    "assessmentDialog": {
+      "createTitle": "Tạo đánh giá sản phẩm",
+      "editTitle": "Chỉnh sửa đánh giá sản phẩm",
+      "createDescription": "Điền thông tin sản phẩm để tính phát thải và lưu sản phẩm.",
+      "editDescription": "Cập nhật thông tin sản phẩm và tính lại phát thải."
+    },
+    "previewTable": {
+      "headers": {
+        "sku": "SKU",
+        "productName": "Tên sản phẩm",
+        "quantity": "SL",
+        "primaryMaterial": "Vật liệu chính",
+        "market": "Thị trường",
+        "co2eKg": "CO2e (kg)",
+        "scope": "Phạm vi",
+        "confidence": "Độ tin cậy"
+      },
+      "confidence": {
+        "high": "Cao",
+        "medium": "Trung bình",
+        "low": "Thấp"
+      },
+      "market": {
+        "export": "Xuất khẩu",
+        "domestic": "Nội địa"
+      },
+      "summary": {
+        "totalProducts": "Tổng: {count} sản phẩm",
+        "totalQuantity": "Tổng số lượng: {count}",
+        "totalCo2e": "Tổng CO2e: {value} kg"
+      }
+    },
+    "validationResults": {
+      "validRows": "Dòng hợp lệ",
+      "errorRows": "Dòng lỗi",
+      "warnings": "Cảnh báo",
+      "errorDetails": "Chi tiết lỗi ({count} dòng)",
+      "row": "Dòng {row}",
+      "invalidData": "Dữ liệu không hợp lệ",
+      "errorCount": "{count} lỗi",
+      "warningsTitle": "Cảnh báo ({count})",
+      "allValid": "Tất cả {count} dòng dữ liệu đều hợp lệ và sẵn sàng xử lý!"
+    },
+    "bulkUpload": {
+      "steps": {
+        "upload": {
+          "label": "Tải lên"
+        },
+        "validate": {
+          "label": "Xác thực"
+        },
+        "preview": {
+          "label": "Xem trước"
+        },
+        "processing": {
+          "label": "Xử lý"
+        },
+        "complete": {
+          "label": "Hoàn tất"
+        }
+      },
+      "errors": {
+        "invalidFileType": "Vui lòng chọn file Excel (.xlsx) hoặc CSV",
+        "emptyFile": "File không có dữ liệu. Vui lòng kiểm tra lại.",
+        "readFile": "Có lỗi khi đọc file",
+        "validateApiFallback": "Không thể gọi API xác thực, chuyển sang xác thực cục bộ.",
+        "templateApiFallback": "Đang dùng template cục bộ vì API template chưa khả dụng.",
+        "uploadFileFailed": "Tải file lên thất bại",
+        "importFailed": "Nhập dữ liệu thất bại"
+      },
+      "warnings": {
+        "skuExists": "SKU \"{sku}\" đã tồn tại trong hệ thống",
+        "duplicateSkuDetected": "Phát hiện {count} dòng có SKU bị trùng trong hệ thống.",
+        "backendValidationSummary": "Xác thực backend: {errors} lỗi, {warnings} cảnh báo",
+        "fileImportFallback": "API import file chưa khả dụng, chuyển sang import theo từng dòng đã parse.",
+        "partialImport": "Đã nhập {imported} sản phẩm, {failed} dòng thất bại."
+      },
+      "success": {
+        "importSuccess": "Đã nhập thành công {imported} sản phẩm."
+      },
+      "modal": {
+        "title": "Nhập sản phẩm hàng loạt",
+        "description": "Nhập danh sách sản phẩm từ Excel hoặc CSV. Hệ thống sẽ tự động tính toán carbon."
+      },
+      "template": {
+        "title": "Tải file mẫu",
+        "description": "Tải file mẫu với cấu trúc chuẩn và hướng dẫn chi tiết.",
+        "downloadExcel": "Excel (.xlsx)",
+        "downloadCsv": "CSV"
+      },
+      "upload": {
+        "processingFile": "Đang đọc file...",
+        "selectAnotherFile": "Chọn file khác",
+        "dropzoneTitle": "Thả file vào đây",
+        "dropzoneDescription": "hoặc nhấn để chọn file Excel (.xlsx) / CSV"
+      },
+      "actions": {
+        "uploadAnother": "Tải file khác",
+        "continueWithCount": "Tiếp tục ({count} sản phẩm)",
+        "back": "Quay lại",
+        "importCount": "Nhập {count} sản phẩm",
+        "close": "Đóng",
+        "viewProducts": "Xem danh sách sản phẩm"
+      },
+      "stats": {
+        "products": "Sản phẩm",
+        "totalQuantity": "Tổng số lượng",
+        "co2ePerUnit": "CO2e (kg/đơn vị)",
+        "highConfidence": "Độ tin cậy cao"
+      },
+      "processing": {
+        "title": "Đang nhập sản phẩm...",
+        "description": "Đang xử lý file"
+      },
+      "completed": {
+        "title": "Hoàn tất!",
+        "description": "Đã nhập thành công {count} sản phẩm vào hệ thống.",
+        "importedProducts": "Sản phẩm đã nhập:",
+        "failedRows": "Dòng lỗi:"
+      }
+    },
+    "batchManagement": {
+      "modal": {
+        "title": "Quản lý lô hàng",
+        "description": "Nhóm nhiều sản phẩm vào một lô để xuất khẩu và tạo một chuyến hàng chung."
+      },
+      "tabs": {
+        "list": "Danh sách ({count})",
+        "create": "Tạo mới",
+        "detail": "Chi tiết ({count})"
+      },
+      "list": {
+        "noBatches": "Chưa có lô hàng nào",
+        "createBatch": "Tạo lô hàng",
+        "productsAndUnits": "{products} sản phẩm | {units} đơn vị",
+        "totalCo2": "Tổng CO2e"
+      },
+      "form": {
+        "batchName": "Tên lô hàng *",
+        "batchNamePlaceholder": "VD: Lô xuất EU Q1-2026",
+        "description": "Mô tả",
+        "descriptionPlaceholder": "Mô tả lô hàng...",
+        "selectProducts": "Chọn sản phẩm ({count} đã chọn)",
+        "searchProducts": "Tìm sản phẩm...",
+        "createButton": "Tạo lô hàng"
+      },
+      "summary": {
+        "products": "Sản phẩm",
+        "quantity": "Số lượng",
+        "totalCo2": "kg CO2e",
+        "totalWeight": "Tổng kg"
+      },
+      "detail": {
+        "itemsTitle": "Sản phẩm trong lô ({count})",
+        "add": "Thêm",
+        "loading": "Đang tải chi tiết lô hàng...",
+        "unit": "sp",
+        "addProductsTitle": "Thêm sản phẩm",
+        "searchProducts": "Tìm sản phẩm...",
+        "noAddableProducts": "Không còn sản phẩm phù hợp để thêm vào lô này.",
+        "publishInProgress": "Đang xuất bản...",
+        "publishButton": "Xuất bản & Tạo chuyến hàng",
+        "publishHint": "Khi xuất bản sẽ tạo một chuyến hàng chung cho toàn bộ lô.",
+        "published": "Đã xuất bản",
+        "shipment": "Chuyến hàng: {shipmentId}"
+      },
+      "status": {
+        "published": "Đã xuất bản",
+        "archived": "Lưu trữ",
+        "draft": "Nháp"
+      },
+      "errors": {
+        "missingBatchId": "Thiếu mã lô hàng.",
+        "invalidBatchId": "Mã lô hàng không hợp lệ.",
+        "loadBatchDetailFailed": "Không thể tải chi tiết lô hàng",
+        "loadBatchDataFailed": "Không thể tải dữ liệu lô hàng",
+        "enterBatchName": "Vui lòng nhập tên lô hàng",
+        "createBatchFailed": "Tạo lô hàng thất bại",
+        "addProductFailed": "Thêm sản phẩm vào lô thất bại",
+        "removeProductFailed": "Xóa sản phẩm khỏi lô thất bại",
+        "atLeastOneProduct": "Lô hàng phải có ít nhất 1 sản phẩm",
+        "publishBatchFailed": "Xuất bản lô hàng thất bại",
+        "invalidBatchIdForUpdate": "Mã lô hàng không hợp lệ. Không thể cập nhật.",
+        "invalidBatchIdForPublish": "Mã lô hàng không hợp lệ. Không thể xuất bản.",
+        "invalidBatchIdOverview": "Mã lô hàng không đúng định dạng, chỉ hiển thị dữ liệu tổng quan.",
+        "failedLoadDetailList": "Không thể tải danh sách sản phẩm chi tiết của lô này.",
+        "noDetailData": "Chưa có dữ liệu chi tiết sản phẩm."
+      },
+      "toasts": {
+        "createdBatchButSomeFailed": "Đã tạo lô hàng, nhưng {failed}/{total} sản phẩm không thể thêm vào lô.",
+        "addedProductsCount": "Đã thêm {count} sản phẩm vào lô.",
+        "createdBatch": "Đã tạo lô hàng \"{name}\"",
+        "addedProductToBatch": "Đã thêm \"{name}\" vào lô",
+        "removedProduct": "Đã xóa sản phẩm khỏi lô",
+        "publishedSuccessWithShipment": "Xuất bản lô hàng thành công. Chuyến hàng: {shipmentId}",
+        "publishedSuccess": "Xuất bản lô hàng thành công"
+      }
+    },
+    "qrCode": {
+      "toasts": {
+        "copiedTitle": "Đã sao chép",
+        "copiedDescription": "Đã sao chép liên kết Hộ chiếu xanh",
+        "copyErrorTitle": "Lỗi",
+        "copyErrorDescription": "Không thể sao chép liên kết",
+        "downloadedTitle": "Đã tải xuống",
+        "downloadedDescription": "Đã lưu mã QR thành công"
+      },
+      "canvas": {
+        "greenPassport": "Hộ chiếu xanh",
+        "sku": "SKU",
+        "scanToView": "Quét để xem thông tin sản phẩm"
+      },
+      "print": {
+        "documentTitle": "Hộ chiếu xanh - {code}",
+        "greenPassport": "Hộ chiếu xanh",
+        "footer": "Quét để xem thông tin sản phẩm • WeaveCarbon"
+      },
+      "share": {
+        "title": "Hộ chiếu xanh - {productName}",
+        "text": "Xem thông tin dấu chân carbon của {productName}"
+      },
+      "dialog": {
+        "title": "Mã QR Hộ chiếu xanh",
+        "description": "Mã QR này đóng vai trò như hộ chiếu sản phẩm. Quét để xem nguồn gốc, dấu chân carbon và mức tuân thủ xuất khẩu."
+      },
+      "badge": {
+        "verifiedProduct": "Sản phẩm đã xác minh"
+      },
+      "actions": {
+        "download": "Tải xuống",
+        "print": "In",
+        "copyLink": "Sao chép liên kết",
+        "copied": "Đã sao chép",
+        "share": "Chia sẻ"
+      },
+      "help": {
+        "customerTitle": "Dành cho khách hàng:",
+        "customerDesc": "Quét để xem sản phẩm đang ở đâu trong chuỗi vận chuyển.",
+        "customsTitle": "Dành cho hải quan:",
+        "customsDesc": "Xác minh nguồn gốc, chứng nhận và tuân thủ thị trường Mỹ/EU."
+      }
     }
   },
   "summary": {
     "backButton": "Quay lại",
+    "pageTitleFallback": "Chi tiết sản phẩm",
     "draftNotice": "Sản phẩm đang ở trạng thái Nháp - Kết quả carbon chỉ mang tính ước tính",
     "notFoundTitle": "Không tìm thấy sản phẩm",
     "notFoundDesc": "Vui lòng chọn sản phẩm từ danh sách hoặc tạo sản phẩm mới.",
     "notFoundWithId": "Sản phẩm với ID \"{productId}\" không tồn tại trong hệ thống.",
-    "backToProducts": "Quay lại Products",
+    "skuPrefix": "SKU: {code}",
+    "backToProducts": "Quay lại Sản phẩm",
     "productionInfo": {
       "title": "Thông tin sản xuất",
       "location": "Địa điểm sản xuất",
       "process": "Quy trình",
-      "energySource": "Nguồn năng lượng"
+      "energySource": "Nguồn năng lượng",
+      "processes": {
+        "knitting": "Dệt kim",
+        "weaving": "Dệt thoi",
+        "cutting_sewing": "Cắt may",
+        "dyeing": "Nhuộm",
+        "printing": "In",
+        "finishing": "Hoàn tất"
+      },
+      "energySources": {
+        "grid": "Điện lưới",
+        "solar": "Điện mặt trời",
+        "wind": "Điện gió",
+        "coal": "Than đá",
+        "gas": "Khí đốt",
+        "mixed": "Hỗn hợp"
+      }
     },
     "logisticsInfo": {
       "title": "Thông tin vận chuyển",
@@ -409,32 +716,94 @@
       "transport": "Vận chuyển",
       "materialTypes": "{count} loại vật liệu",
       "transportLegs": "{count} chặng vận chuyển",
+      "batchCo2": "{value} kg/lô",
       "unknown": "Không xác định"
     },
     "statusLabel": {
       "draft": "Nháp",
-      "published": "Đã xuất bản"
+      "published": "Đã xuất bản",
+      "archived": "Lưu trữ"
+    },
+    "errors": {
+      "invalidProductIdFormat": "Định dạng mã sản phẩm không hợp lệ.",
+      "unableToLoadProduct": "Không thể tải sản phẩm."
     },
     "calculationNote": "Tính toán từ dữ liệu đánh giá",
+    "materialFactorSource": "IPCC 2021 / Trung bình ngành",
     "endOfLifeStrategy": "Chưa có chương trình thu hồi",
     "complianceNote": {
       "passed": "Đạt chuẩn",
       "pending": "Đang chờ hoàn thiện"
-    }
+    },
+    "complianceCriteria": {
+      "iso14067": "ISO 14067"
+    },
+    "loadingProduct": "Đang tải sản phẩm...",
+    "units": {
+      "km": "km"
+    },
+    "na": "N/A"
   },
   "productDetail": {
     "draftWarning": "Dữ liệu chưa đầy đủ – kết quả carbon chỉ mang tính ước tính. Vui lòng bổ sung dữ liệu để có kết quả chính xác hơn.",
+    "header": {
+      "skuLabel": "SKU",
+      "productStatus": {
+        "in_review": "Đang duyệt"
+      },
+      "carbonStatus": {
+        "carbon_ready": "Sẵn sàng carbon",
+        "data_partial": "Dữ liệu một phần",
+        "missing_critical": "Thiếu dữ liệu quan trọng"
+      },
+      "productType": {
+        "tshirt": "Áo thun",
+        "polo": "Áo polo",
+        "shirt": "Áo sơ mi",
+        "pants": "Quần dài",
+        "shorts": "Quần short",
+        "dress": "Váy/Đầm",
+        "jacket": "Áo khoác",
+        "sweater": "Áo len",
+        "shoes": "Giày",
+        "sandals": "Dép/Sandal",
+        "bag": "Túi xách",
+        "accessories": "Phụ kiện",
+        "other": "Khác"
+      },
+      "market": {
+        "eu": "Châu Âu (EU)",
+        "us": "Hoa Kỳ",
+        "usa": "Hoa Kỳ",
+        "jp": "Nhật Bản",
+        "japan": "Nhật Bản",
+        "kr": "Hàn Quốc",
+        "korea": "Hàn Quốc",
+        "cn": "Trung Quốc",
+        "china": "Trung Quốc",
+        "domestic": "Nội địa Việt Nam",
+        "vn": "Nội địa Việt Nam",
+        "vietnam": "Nội địa Việt Nam",
+        "other": "Khác"
+      }
+    },
     "carbonFootprint": {
-      "title": "Total Carbon Footprint",
-      "preliminary": "Preliminary",
+      "title": "Tổng dấu chân carbon",
+      "preliminary": "Ước tính",
       "preliminaryNotice": "Đây là kết quả ước tính sơ bộ. Cập nhật dữ liệu để có kết quả chính xác hơn.",
       "preliminaryEstimate": "Ước tính sơ bộ",
       "totalEmissions": "Tổng phát thải",
       "perProduct": "kg CO₂e / sản phẩm",
       "estimatedRange": "Khoảng ước tính: ",
       "confidenceLabel": "Độ tin cậy dữ liệu",
+      "confidenceLevel": {
+        "high": "Cao",
+        "medium": "Trung bình",
+        "low": "Thấp"
+      },
+      "unitKgCo2e": "kg CO₂e",
       "highConfidence": "Dữ liệu từ nguồn chính thức, đã xác minh",
-      "mediumConfidence": "Một số dữ liệu sử dụng proxy factors",
+      "mediumConfidence": "Một số dữ liệu sử dụng hệ số proxy",
       "lowConfidence": "Phần lớn dữ liệu là ước tính, cần bổ sung thêm",
       "methodologyNote": "Tính toán theo phương pháp LCA (Life Cycle Assessment), tuân thủ ISO 14067 và GHG Protocol."
     },
@@ -452,20 +821,22 @@
       "material": "Vật liệu",
       "ratio": "Tỷ lệ",
       "emissionFactor": "EF",
-      "emissionFactorTooltip": "Emission Factor (kg CO₂e/kg)",
+      "co2Column": "CO₂e (kg)",
+      "emissionFactorTooltip": "Hệ số phát thải (kg CO₂e/kg)",
       "source": "Nguồn",
       "sourceLabel": "Nguồn: ",
       "verified": "Xác minh",
       "proxy": "Proxy",
       "total": "Tổng cộng",
-      "factorNote": "Emission factors được lấy từ các nguồn uy tín: ecoinvent, ADEME Base Carbone, DEFRA UK."
+      "factorNote": "Hệ số phát thải được lấy từ các nguồn uy tín: ecoinvent, ADEME Base Carbone, DEFRA UK."
     },
     "carbonBreakdown": {
       "title": "Phân tích phát thải theo giai đoạn",
+      "batchUnit": "kg/lô",
       "awaitingData": "Đang chờ dữ liệu",
       "waitingForData": "Đang chờ dữ liệu...",
       "note": "Ghi chú:",
-      "awaitingDataBadge": "Awaiting data",
+      "awaitingDataBadge": "Đang chờ dữ liệu",
       "proxyBadge": "Proxy"
     }
   },
@@ -725,11 +1096,10 @@
   },
   "settings": {
     "title": "Cài đặt",
-    "subtitle": "Quản lý hệ thống, người dùng và thông báo",
+    "subtitle": "Quản lý hệ thống và người dùng",
     "tabs": {
       "system": "Hệ thống",
-      "users": "Người dùng",
-      "notifications": "Thông báo"
+      "users": "Người dùng"
     },
     "system": {
       "personalInfo": "Thông tin cá nhân",
@@ -818,31 +1188,13 @@
       "toggleEnabled": "kích hoạt",
       "removeSuccess": "Đã xóa {email} khỏi hệ thống",
       "emailRequired": "Vui lòng nhập email",
+      "searchPlaceholder": "Tìm theo tên hoặc email",
+      "searchResults": "{matched}/{total} người dùng",
+      "noSearchResults": "Không tìm thấy người dùng phù hợp.",
+      "paginationPrev": "Trước",
+      "paginationNext": "Sau",
+      "paginationPage": "Trang {current}/{total}",
       "cancel": "Hủy"
-    },
-    "notifications": {
-      "emailNotifications": "Thông báo Email",
-      "emailNotificationsDesc": "Cấu hình thông báo gửi qua email",
-      "enableAll": "Bật tất cả",
-      "disableAll": "Tắt tất cả",
-      "saveSettings": "Lưu cài đặt thông báo",
-      "saveSuccess": "Đã lưu cài đặt thông báo",
-      "enableAllSuccess": "Đã bật tất cả thông báo email",
-      "disableAllSuccess": "Đã tắt tất cả thông báo email",
-      "productCreated": "Sản phẩm mới",
-      "productCreatedDesc": "Thông báo khi có sản phẩm mới được tạo",
-      "productUpdated": "Cập nhật sản phẩm",
-      "productUpdatedDesc": "Thông báo khi sản phẩm được cập nhật",
-      "shipmentStatus": "Trạng thái vận chuyển",
-      "shipmentStatusDesc": "Thông báo khi shipment thay đổi trạng thái",
-      "reportReady": "Báo cáo sẵn sàng",
-      "reportReadyDesc": "Thông báo khi báo cáo được tạo xong",
-      "exportCompleted": "Export hoàn tất",
-      "exportCompletedDesc": "Thông báo khi file export đã sẵn sàng",
-      "userInvited": "Tài khoản mới",
-      "userInvitedDesc": "Thông báo khi có tài khoản mới được tạo",
-      "complianceDeadline": "Deadline compliance",
-      "complianceDeadlineDesc": "Nhắc nhở về các deadline compliance sắp đến"
     }
   },
   "logistics": {
@@ -861,12 +1213,110 @@
       "pending": "Chờ xử lý",
       "cancelled": "Đã hủy",
       "totalCO2": "kg CO₂e tổng",
-      "totalShipments": "Tổng shipments"
+      "totalShipments": "Tổng lô hàng"
     },
     "pagination": {
       "prev": "Trước",
       "next": "Sau",
       "page": "Trang {current}/{total}"
+    },
+    "fallbacks": {
+      "shipment": "Lô hàng",
+      "unknownCarrier": "Chưa rõ hãng vận chuyển",
+      "international": "Quốc tế"
+    },
+    "empty": {
+      "noShipments": "Chưa có lô hàng nào",
+      "noFilteredShipments": "Không có lô hàng phù hợp với bộ lọc hiện tại",
+      "createAndPublishHint": "Hãy tạo và xuất bản một lô để hiển thị dữ liệu ở đây.",
+      "changeFilterHint": "Thử đổi từ khóa tìm kiếm hoặc bộ lọc trạng thái."
+    },
+    "supplyChainMap": {
+      "loading": "Đang tải bản đồ...",
+      "modes": {
+        "twoD": "2D",
+        "twoDAria": "Bản đồ 2D",
+        "threeD": "Vệ tinh 3D",
+        "threeDAria": "Bản đồ vệ tinh 3D"
+      }
+    },
+    "supplyChainMapContent": {
+      "errors": {
+        "missingToken": "Không tìm thấy MAPBOX_TOKEN trong biến môi trường",
+        "loadFailed": "Không thể tải bản đồ",
+        "unknown": "Lỗi không xác định"
+      },
+      "errorTitle": "Lỗi",
+      "addTokenHint": "Thêm NEXT_PUBLIC_MAPBOX_TOKEN vào .env.local",
+      "loading": "Đang tải bản đồ...",
+      "legend": {
+        "title": "Chú thích",
+        "seaRoute": "Tuyến đường biển",
+        "airRoute": "Tuyến hàng không",
+        "roadRoute": "Tuyến đường bộ"
+      },
+      "popup": {
+        "type": "Loại",
+        "country": "Quốc gia",
+        "co2": "CO2",
+        "nodeTypes": {
+          "factory": "Nhà máy",
+          "warehouse": "Kho",
+          "port": "Cảng",
+          "airport": "Sân bay",
+          "destination": "Điểm đến"
+        }
+      }
+    },
+    "supplyChainMap3D": {
+      "errors": {
+        "loadFailed": "Không thể tải bản đồ"
+      },
+      "loading": "Đang tải bản đồ 3D...",
+      "replaceTokenHint": "Cấu hình lại token trong mã",
+      "titleBadge": "Chế độ vệ tinh 3D",
+      "legend": {
+        "title": "Chú thích",
+        "seaRoute": "Tuyến đường biển",
+        "roadRoute": "Tuyến đường bộ"
+      },
+      "controlsHint": "Kéo để xoay • Cuộn để thu phóng",
+      "popup": {
+        "type": "Loại",
+        "country": "Quốc gia",
+        "co2": "CO2",
+        "nodeTypes": {
+          "factory": "Nhà máy",
+          "warehouse": "Kho",
+          "port": "Cảng",
+          "airport": "Sân bay",
+          "destination": "Điểm đến"
+        }
+      }
+    },
+    "shipmentMiniMap": {
+      "errors": {
+        "invalidToken": "Thiếu hoặc sai Mapbox token.",
+        "mapFailed": "Tải bản đồ thất bại",
+        "loadFailed": "Không thể tải bản đồ"
+      }
+    },
+    "shipmentContext": {
+      "defaults": {
+        "origin": "Điểm đi",
+        "destination": "Điểm đến",
+        "vietnam": "Việt Nam",
+        "batchName": "Lô {batchId} ({skuCount} SKU)"
+      },
+      "statusNotes": {
+        "slaEstimateOverdue": "Quá hạn theo ước tính SLA",
+        "slaEstimatedOnly": "Trạng thái ước tính theo SLA, không phải trạng thái thực từ hãng vận chuyển.",
+        "autoCreatedAfterPublish": "Chuyến hàng được tự tạo sau khi xuất bản sản phẩm",
+        "manualDeliveryConfirmed": "Đã xác nhận giao hàng thủ công"
+      },
+      "errors": {
+        "noProductsInBatch": "Không có sản phẩm trong lô"
+      }
     }
   },
   "trackShipment": {
@@ -898,6 +1348,52 @@
       "pending": "Chờ xuất phát",
       "cancelled": "Đã hủy",
       "unknown": "Không xác định"
+    },
+    "map": {
+      "routeType": {
+        "sea": "Đường biển",
+        "air": "Đường hàng không",
+        "road": "Đường bộ"
+      },
+      "point": {
+        "origin": "Điểm đi",
+        "destination": "Điểm đến",
+        "transit": "Trung chuyển"
+      },
+      "title": {
+        "withSubject": "Bản đồ vận chuyển {subject}",
+        "default": "Bản đồ tuyến vận chuyển"
+      },
+      "animating": "Đang mô phỏng...",
+      "loading": "Đang tải bản đồ...",
+      "stats": {
+        "totalDistance": "km tổng quãng đường",
+        "totalEmissions": "kg CO2e phát thải",
+        "totalLegs": "số chặng vận chuyển",
+        "estimatedDays": "ngày vận chuyển"
+      },
+      "routeDetails": "Chi tiết tuyến đường",
+      "clickHint": "(Bấm để mô phỏng)"
+    },
+    "skuLabel": "SKU",
+    "containerLabel": "Container",
+    "fallbacks": {
+      "unknownCarrier": "Chưa rõ hãng vận chuyển",
+      "shipment": "Lô hàng"
+    },
+    "transportModes": {
+      "truck_light": "Xe tải nhẹ",
+      "truck_heavy": "Xe tải nặng",
+      "truck": "Xe tải",
+      "ship": "Tàu biển",
+      "air": "Máy bay",
+      "rail": "Đường sắt"
+    },
+    "units": {
+      "km": "km",
+      "kg": "kg",
+      "kgCo2": "kg CO2",
+      "kgCo2e": "kg CO2e"
     }
   },
   "transport": {
@@ -1015,5 +1511,552 @@
     "marketLabel": "Thị trường",
     "updatedLabel": "Cập nhật:",
     "poweredBy": "Powered by"
+  },
+  "assessment": {
+    "client": {
+      "pageTitle": "Đánh giá sản phẩm",
+      "pageSubtitle": "Tạo mới và tính toán phát thải carbon cho sản phẩm",
+      "steps": {
+        "productInfo": "Thông tin sản phẩm",
+        "materials": "Vật liệu",
+        "manufacturing": "Sản xuất",
+        "logistics": "Vận chuyển",
+        "assessment": "Đánh giá",
+        "save": "Lưu"
+      },
+      "stepCounter": "Bước {current} / {total}",
+      "fillInfoToContinue": "Điền thông tin bên dưới để tiếp tục",
+      "buttons": {
+        "close": "Đóng",
+        "back": "Quay lại",
+        "next": "Tiếp theo",
+        "backToProducts": "Quay lại Sản phẩm"
+      },
+      "toast": {
+        "draftSaved": "Lưu nháp sản phẩm thành công",
+        "draftUpdated": "Cập nhật bản nháp thành công",
+        "draftSaveFailed": "Không thể lưu bản nháp",
+        "publishSuccess": "Xuất bản sản phẩm thành công",
+        "publishUpdated": "Cập nhật và xuất bản sản phẩm thành công",
+        "publishFailed": "Không thể xuất bản sản phẩm",
+        "invalidProductId": "Mã sản phẩm không hợp lệ. Vui lòng kiểm tra phản hồi từ hệ thống."
+      }
+    },
+    "step1": {
+      "quantityNotice": {
+        "title": "Lưu ý về số lượng sản xuất",
+        "item1": "Hệ thống tính carbon cho từng sản phẩm và toàn bộ lô",
+        "item2": "SKU instance dùng để nhóm sản phẩm theo lô xuất khẩu",
+        "item3": "Bạn không cần nhập từng SKU thủ công, hệ thống sẽ tự đánh số"
+      },
+      "productCodeLabel": "Mã sản phẩm *",
+      "productCodePlaceholder": "VD: SKU-2024-001",
+      "productCodeHelp": "Mã định danh duy nhất cho sản phẩm",
+      "productNameLabel": "Tên sản phẩm *",
+      "productNamePlaceholder": "VD: Áo thun cotton hữu cơ",
+      "productTypeLabel": "Loại sản phẩm *",
+      "productTypePlaceholder": "Chọn loại sản phẩm",
+      "productTypes": {
+        "tshirt": "Áo thun",
+        "polo": "Áo polo",
+        "shirt": "Áo sơ mi",
+        "pants": "Quần dài",
+        "shorts": "Quần short",
+        "dress": "Váy/Đầm",
+        "jacket": "Áo khoác",
+        "sweater": "Áo len",
+        "shoes": "Giày",
+        "sandals": "Dép/Sandal",
+        "bag": "Túi xách",
+        "accessories": "Phụ kiện",
+        "other": "Khác"
+      },
+      "weightPerUnitLabel": "Khối lượng trung bình / sản phẩm (gram) *",
+      "weightPerUnitPlaceholder": "VD: 250",
+      "weightPerUnitHelp": "Khối lượng trung bình của một thành phẩm",
+      "quantityLabel": "Số lượng sản xuất *",
+      "quantityHelp": "Hệ thống sẽ tự tạo các SKU instance để theo dõi theo lô",
+      "quantityPlaceholder": "VD: 30",
+      "skuPreviewTitle": "SKU instance sẽ được tạo:",
+      "skuPreviewMore": "... và thêm {count} SKU"
+    },
+    "step2": {
+      "sourceBadges": {
+        "aiSuggested": "AI gợi ý",
+        "proxy": "Ước tính"
+      },
+      "mainMaterialsTitle": "Nguyên liệu chính",
+      "mainMaterialsTooltip": "Chọn vật liệu từ danh mục chuẩn hoặc thêm vật liệu mới nếu chưa có.",
+      "totalValid": "Tổng: {value}%",
+      "totalInvalid": "Tổng: {value}% (phải = 100%)",
+      "materialItem": "Vật liệu {index}",
+      "materialSearchLabel": "Tìm vật liệu *",
+      "materialSearchPlaceholder": "Tìm vật liệu...",
+      "customMaterial": "Vật liệu tùy chỉnh: {name}",
+      "percentageLabel": "Tỷ lệ (%) *",
+      "sourceLabel": "Nguồn nguyên liệu",
+      "materialSources": {
+        "domestic": "Trong nước",
+        "imported": "Nhập khẩu",
+        "unknown": "Không xác định"
+      },
+      "confidenceLabel": "Độ tin cậy dữ liệu",
+      "certificationsLabel": "Chứng nhận (tuỳ chọn)",
+      "addMaterial": "Thêm vật liệu",
+      "accessoriesTitle": "Phụ liệu (tuỳ chọn)",
+      "accessoryItem": "Phụ liệu {index}",
+      "accessoryTypeLabel": "Loại phụ liệu",
+      "accessoryTypePlaceholder": "Chọn loại",
+      "accessoryTypes": {
+        "button": "Nút",
+        "zipper": "Khóa kéo",
+        "thread": "Chỉ may",
+        "label": "Nhãn",
+        "elastic": "Thun",
+        "lining": "Lót",
+        "padding": "Đệm",
+        "other": "Khác"
+      },
+      "accessoryNameLabel": "Tên/Mô tả",
+      "accessoryNamePlaceholder": "VD: Nút nhựa 4 lỗ",
+      "accessoryWeightLabel": "Khối lượng (gram)",
+      "addAccessory": "Thêm phụ liệu",
+      "proxy": {
+        "title": "Đang dùng hệ số ước tính",
+        "description": "Một số vật liệu có nguồn \"Không xác định\" hoặc là vật liệu tùy chỉnh. Hệ thống sẽ dùng hệ số trung bình ngành nên độ tin cậy sẽ thấp hơn."
+      }
+    },
+    "step3": {
+      "common": {
+        "other": "Khác"
+      },
+      "warnings": {
+        "title": "Lưu ý nguyên liệu (Bước 2)",
+        "animalWelfare": "Vật liệu \"{material}\" có thể cần chứng nhận phúc lợi động vật ở một số thị trường.",
+        "metalHighImpact": "Phụ liệu kim loại chiếm {percentage}% - hệ số phát thải cao, nên cân nhắc giảm tỷ lệ hoặc dùng vật liệu tái chế.",
+        "customProxy": "Vật liệu tùy chỉnh \"{material}\" đang dùng hệ số ước tính - độ chính xác carbon sẽ giảm.",
+        "unknownOrigin": "Nguồn gốc vật liệu chưa xác định - hệ thống sẽ dùng hệ số trung bình ngành.",
+        "accessoryNoWeight": "Có {count} phụ liệu chưa nhập khối lượng - có thể làm giảm độ chính xác."
+      },
+      "process": {
+        "title": "Quy trình sản xuất",
+        "subtitle": "Chọn tất cả các công đoạn áp dụng",
+        "factor": "Hệ số: {value} kg CO₂e/kg",
+        "required": "* Vui lòng chọn ít nhất 1 quy trình sản xuất"
+      },
+      "processes": {
+        "knitting": "Dệt kim",
+        "weaving": "Dệt thoi",
+        "cutting_sewing": "Cắt may",
+        "dyeing": "Nhuộm",
+        "printing": "In",
+        "finishing": "Hoàn tất"
+      },
+      "energy": {
+        "title": "Nguồn năng lượng",
+        "subtitle": "Chọn và phân bổ % cho từng nguồn",
+        "total": "Tổng: {value}%",
+        "factor": "{value} kg CO₂e/kWh",
+        "distributionTitle": "Phân bổ tỷ lệ sử dụng (tổng = 100%)",
+        "invalidTotal": "Tổng tỷ lệ phải bằng 100%"
+      },
+      "energySources": {
+        "grid": "Điện lưới",
+        "solar": "Điện mặt trời",
+        "wind": "Điện gió",
+        "coal": "Than đá",
+        "gas": "Khí đốt",
+        "mixed": "Hỗn hợp"
+      },
+      "additionalInfo": {
+        "title": "Thông tin bổ sung",
+        "manufacturingLocation": "Địa điểm sản xuất",
+        "manufacturingLocationPlaceholder": "VD: TP. Hồ Chí Minh, Việt Nam",
+        "wasteRecovery": "Thu hồi chất thải",
+        "wasteRecoveryPlaceholder": "Chọn phương thức"
+      },
+      "wasteRecovery": {
+        "none": "Không",
+        "partial": "Một phần",
+        "full": "Toàn bộ",
+        "circular": "Tuần hoàn"
+      }
+    },
+    "step4": {
+      "loadingMap": "Đang tải bản đồ...",
+      "destinationMarket": {
+        "title": "Thị trường đích",
+        "placeholder": "Chọn thị trường đích"
+      },
+      "markets": {
+        "vietnam": "Việt Nam",
+        "usa": "Hoa Kỳ",
+        "korea": "Hàn Quốc",
+        "japan": "Nhật Bản",
+        "eu": "Châu Âu",
+        "china": "Trung Quốc",
+        "other": "Khác"
+      },
+      "address": {
+        "origin": "A. Địa chỉ điểm xuất phát",
+        "destination": "B. Địa chỉ điểm đến"
+      },
+      "transport": {
+        "title": "Phương thức vận chuyển",
+        "subtitle": "Thêm các chặng vận chuyển từ điểm đi đến điểm đến",
+        "totalDistance": "Tổng: ~{value} km",
+        "leg": "Chặng {index}",
+        "distancePlaceholder": "Km ước tính",
+        "distanceUnit": "km",
+        "co2Factor": "({value} kg CO₂e/tấn.km)",
+        "addLeg": "Thêm chặng vận chuyển"
+      },
+      "transportModes": {
+        "road": "Đường bộ",
+        "sea": "Đường biển",
+        "air": "Đường hàng không",
+        "rail": "Đường sắt"
+      },
+      "suggestedRoute": {
+        "title": "Tuyến gợi ý:",
+        "road": "Đường bộ (nội địa)",
+        "sea": "Đường biển (quốc tế)",
+        "apply": "Áp dụng gợi ý này"
+      }
+    },
+    "locationPicker": {
+      "browserNotSupported": "Trình duyệt của bạn không hỗ trợ định vị",
+      "cannotGetLocation": "Không thể lấy vị trí hiện tại",
+      "searchPlaceholder": "Tìm địa chỉ...",
+      "currentLocation": "Vị trí hiện tại",
+      "mapHint": "Nhấn vào bản đồ hoặc kéo điểm đánh dấu để chọn vị trí chính xác"
+    },
+    "materialCombobox": {
+      "searchPlaceholder": "Tìm vật liệu...",
+      "recycledBadge": "Tái chế",
+      "notFound": "Không tìm thấy vật liệu phù hợp",
+      "addOther": "Thêm vật liệu tùy chỉnh",
+      "addOtherHint": "Không thấy vật liệu phù hợp? Thêm vật liệu tùy chỉnh",
+      "co2Unit": "kg CO₂/kg",
+      "materialTypes": {
+        "fabric": "Vải chính",
+        "trim": "Phụ liệu",
+        "accessory": "Phụ kiện",
+        "packaging": "Đóng gói"
+      },
+      "materialFamilies": {
+        "cotton": "Bông",
+        "polyester": "Polyester",
+        "wool": "Len",
+        "leather": "Da",
+        "silk": "Lụa",
+        "linen": "Lanh",
+        "nylon": "Nylon",
+        "viscose": "Viscose",
+        "acrylic": "Acrylic",
+        "elastane": "Elastane",
+        "down": "Lông vũ",
+        "fur": "Lông thú",
+        "canvas": "Canvas",
+        "bamboo": "Tre",
+        "hemp": "Gai dầu",
+        "tencel": "Tencel",
+        "metal": "Kim loại",
+        "plastic": "Nhựa",
+        "paper": "Giấy",
+        "mixed": "Hỗn hợp",
+        "other": "Khác"
+      }
+    },
+    "otherMaterialModal": {
+      "title": "Thêm vật liệu tùy chỉnh",
+      "subtitle": {
+        "input": "Mô tả vật liệu để AI gợi ý phân loại phù hợp",
+        "results": "Chọn vật liệu gợi ý hoặc tạo yêu cầu mới"
+      },
+      "fields": {
+        "name": "Tên vật liệu *",
+        "namePlaceholder": "VD: Vải lông cừu nhân tạo, băng khóa kéo canvas...",
+        "description": "Mô tả (khuyến nghị)",
+        "descriptionPlaceholder": "Thêm thông tin về đặc tính, nguồn gốc hoặc mục đích sử dụng...",
+        "materialType": "Loại vật liệu",
+        "application": "Mục đích sử dụng"
+      },
+      "materialTypes": {
+        "fabric": "Vải chính",
+        "trim": "Phụ liệu",
+        "accessory": "Phụ kiện",
+        "packaging": "Đóng gói"
+      },
+      "materialFamilies": {
+        "cotton": "Bông",
+        "polyester": "Polyester",
+        "wool": "Len",
+        "leather": "Da",
+        "silk": "Lụa",
+        "linen": "Lanh",
+        "nylon": "Nylon",
+        "viscose": "Viscose",
+        "acrylic": "Acrylic",
+        "elastane": "Elastane",
+        "down": "Lông vũ",
+        "fur": "Lông thú",
+        "canvas": "Canvas",
+        "bamboo": "Tre",
+        "hemp": "Gai dầu",
+        "tencel": "Tencel",
+        "metal": "Kim loại",
+        "plastic": "Nhựa",
+        "paper": "Giấy",
+        "mixed": "Hỗn hợp",
+        "other": "Khác"
+      },
+      "applications": {
+        "body_fabric": "Vải chính (thân áo)",
+        "lining": "Vải lót",
+        "zipper": "Khóa kéo",
+        "button": "Nút",
+        "thread": "Chỉ may",
+        "label": "Nhãn",
+        "elastic": "Thun",
+        "padding": "Đệm",
+        "trim": "Phụ liệu khác"
+      },
+      "candidate": {
+        "reason": "Nhóm vật liệu: {family}",
+        "co2Line": "{name} • CO₂: {factor} kg/kg"
+      },
+      "score": {
+        "high": "Khớp tốt nhất",
+        "medium": "Có thể phù hợp",
+        "low": "Độ tin cậy thấp"
+      },
+      "results": {
+        "found": "Tìm thấy {count} vật liệu gợi ý:",
+        "proxy": {
+          "title": "Không có trong danh mục - tạo yêu cầu mới",
+          "badge": "Ước tính",
+          "description": "Hệ thống sẽ dùng hệ số ước tính. Yêu cầu của bạn có thể được xét duyệt và thêm vào danh mục."
+        },
+        "empty": {
+          "title": "Không tìm thấy vật liệu phù hợp",
+          "description": "Không tìm thấy vật liệu tên \"{name}\" trong danh mục. Bạn có thể gửi yêu cầu thêm mới.",
+          "proxyTitle": "Sử dụng hệ số ước tính",
+          "proxyDescription": "Vật liệu sẽ dùng hệ số trung bình ngành. Độ tin cậy kết quả carbon sẽ thấp hơn."
+        }
+      },
+      "buttons": {
+        "cancel": "Hủy",
+        "analyze": "Phân tích vật liệu",
+        "analyzing": "Đang phân tích...",
+        "back": "Quay lại",
+        "confirm": "Xác nhận"
+      }
+    },
+    "step5": {
+      "common": {
+        "other": "Khác",
+        "material": "Vật liệu"
+      },
+      "proxy": {
+        "materialUsesProxy": "Vật liệu \"{material}\" đang dùng hệ số ước tính",
+        "materialNotFound": "Vật liệu \"{material}\" không có trong danh mục - dùng hệ số ước tính",
+        "customMaterialLowConfidence": "Vật liệu tùy chỉnh \"{material}\" - độ tin cậy thấp",
+        "unknownOrigin": "Nguồn gốc vật liệu chưa xác định - dùng hệ số theo khu vực",
+        "noProcessInfo": "Thiếu thông tin quy trình - dùng hệ số trung bình ngành",
+        "noEnergyInfo": "Thiếu thông tin năng lượng - dùng hệ số điện lưới",
+        "transportEstimatedBySea": "Vận chuyển được ước tính theo đường biển",
+        "warning": "Một số vật liệu dùng ước tính proxy. Độ tin cậy kết quả carbon sẽ thấp hơn.",
+        "usedTitle": "Các hệ số ước tính đã dùng:",
+        "addMoreInfo": "* Bổ sung thêm dữ liệu để tăng độ chính xác kết quả",
+        "fullData": "Dữ liệu đầy đủ - độ tin cậy kết quả cao"
+      },
+      "breakdown": {
+        "materials": "Vật liệu",
+        "production": "Sản xuất",
+        "energy": "Năng lượng",
+        "transport": "Vận chuyển"
+      },
+      "cards": {
+        "perProductTitle": "CO₂e / Sản phẩm",
+        "perProductSubtitle": "Cho 1 sản phẩm ({value}g)",
+        "totalBatchTitle": "Tổng theo lô",
+        "totalBatchProducts": "{value} sản phẩm",
+        "totalBatchTon": "≈ {value} tấn CO₂e"
+      },
+      "units": {
+        "kgCo2e": "kg CO₂e",
+        "kg": "kg"
+      },
+      "detailedAnalysisTitle": "Phân tích chi tiết",
+      "totalBatchLine": "Tổng theo lô: {value} kg CO₂e",
+      "materialDetailsTitle": "Chi tiết vật liệu",
+      "source": {
+        "fromCatalog": "Từ danh mục",
+        "aiSuggested": "AI gợi ý",
+        "proxy": "Ước tính"
+      },
+      "materialLine": "{percentage}% • Hệ số: {factor} kg CO₂e/kg",
+      "scope": {
+        "title": "Phân tích Scope (GHG Protocol)",
+        "scope1": "Scope 1",
+        "scope2": "Scope 2",
+        "scope3": "Scope 3"
+      },
+      "confidence": {
+        "title": "Độ tin cậy dữ liệu",
+        "high": "Cao",
+        "medium": "Trung bình",
+        "low": "Thấp"
+      }
+    },
+    "step6": {
+      "summary": {
+        "title": "Tóm tắt sản phẩm",
+        "subtitle": "Xác nhận thông tin trước khi lưu",
+        "productCode": "Mã sản phẩm",
+        "productName": "Tên sản phẩm",
+        "productType": "Loại sản phẩm",
+        "quantity": "Số lượng sản xuất",
+        "quantityValue": "{value} sản phẩm"
+      },
+      "productTypes": {
+        "tshirt": "Áo thun",
+        "polo": "Áo polo",
+        "shirt": "Áo sơ mi",
+        "pants": "Quần dài",
+        "shorts": "Quần short",
+        "dress": "Váy/Đầm",
+        "jacket": "Áo khoác",
+        "sweater": "Áo len",
+        "shoes": "Giày",
+        "sandals": "Dép/Sandal",
+        "bag": "Túi xách",
+        "accessories": "Phụ kiện",
+        "other": "Khác"
+      },
+      "markets": {
+        "vietnam": "Việt Nam",
+        "usa": "Hoa Kỳ",
+        "korea": "Hàn Quốc",
+        "japan": "Nhật Bản",
+        "eu": "Châu Âu",
+        "china": "Trung Quốc",
+        "other": "Khác"
+      },
+      "stats": {
+        "materials": "Vật liệu",
+        "processes": "Quy trình",
+        "transportLegs": "Chặng vận chuyển",
+        "market": "Thị trường"
+      },
+      "result": {
+        "title": "Kết quả đánh giá carbon",
+        "confidenceLabel": "Độ tin cậy",
+        "confidence": {
+          "high": "Cao",
+          "medium": "Trung bình",
+          "low": "Thấp"
+        },
+        "co2PerProduct": "CO₂e / Sản phẩm",
+        "totalBatch": "Tổng theo lô",
+        "unitKg": "kg"
+      },
+      "actions": {
+        "title": "Hành động",
+        "notReady": "Chưa đủ điều kiện để xuất bản",
+        "missing": {
+          "productCode": "Thiếu mã sản phẩm",
+          "productName": "Thiếu tên sản phẩm",
+          "quantity": "Thiếu số lượng sản xuất",
+          "materials": "Thiếu thông tin vật liệu"
+        },
+        "saveDraft": "Lưu nháp",
+        "publish": "Xuất bản",
+        "processing": "Đang xử lý...",
+        "readyNote": "✓ Sản phẩm đã sẵn sàng cho báo cáo carbon",
+        "needMoreDataNote": "* Cần bổ sung thêm dữ liệu để hoàn thiện chất lượng báo cáo"
+      },
+      "history": {
+        "title": "Lịch sử phiên bản",
+        "current": "Hiện tại",
+        "view": "Xem"
+      }
+    },
+    "productOverview": {
+      "successTitle": "Tạo sản phẩm thành công!",
+      "successDescription": "Sản phẩm đã được thêm vào danh sách. Dưới đây là ước tính dấu chân carbon ban đầu.",
+      "newProduct": "Sản phẩm mới",
+      "skuLabel": "SKU",
+      "unitKg": "kg",
+      "draftBadge": "Nháp",
+      "weight": "Khối lượng: {value} {unit}",
+      "carbonEstimateTitle": "Ước tính dấu chân carbon (Scope 1)",
+      "preliminary": "Ước tính",
+      "co2PerUnit": "kg CO₂e / đơn vị",
+      "breakdown": {
+        "materials": "Vật liệu",
+        "manufacturing": "Sản xuất",
+        "transport": "Vận chuyển",
+        "packaging": "Đóng gói"
+      },
+      "formula": {
+        "title": "Công thức:",
+        "equation": "CO₂e = Khối lượng × Hệ số xử lý (vật liệu & vùng) × Hệ số năng lượng",
+        "note": "⚠ Đây là ước tính ban đầu. Bổ sung thêm dữ liệu để tăng độ chính xác."
+      },
+      "buttons": {
+        "viewProducts": "Xem danh sách sản phẩm"
+      },
+      "materials": {
+        "cotton": "Cotton",
+        "polyester": "Polyester",
+        "wool": "Len",
+        "silk": "Lụa",
+        "linen": "Lanh",
+        "nylon": "Nylon",
+        "recycled_polyester": "Polyester tái chế",
+        "organic_cotton": "Cotton hữu cơ",
+        "bamboo": "Tre",
+        "hemp": "Gai dầu"
+      },
+      "transportModes": {
+        "sea": "Đường biển",
+        "air": "Đường hàng không",
+        "road": "Đường bộ",
+        "rail": "Đường sắt",
+        "multimodal": "Đa phương thức"
+      },
+      "markets": {
+        "eu": "Châu Âu (EU)",
+        "us": "Hoa Kỳ",
+        "jp": "Nhật Bản",
+        "kr": "Hàn Quốc",
+        "domestic": "Nội địa Việt Nam"
+      },
+      "categories": {
+        "apparel": "Thời trang",
+        "footwear": "Giày dép",
+        "accessories": "Phụ kiện",
+        "textiles": "Dệt may",
+        "homegoods": "Hàng gia dụng"
+      }
+    }
+  },
+  "authCallback": {
+    "processingTitle": "Dang xu ly xac thuc Google...",
+    "pleaseWait": "Vui long doi trong giay lat.",
+    "errorPrefix": "Loi: {message}",
+    "errors": {
+      "accountNotFound": "Khong tim thay tai khoan Google. Vui long thu dang ky Google.",
+      "emailExists": "Email da ton tai. Vui long dung Google dang nhap.",
+      "emailNotVerified": "Email cua ban chua duoc xac minh. Vui long kiem tra hop thu.",
+      "invalidState": "Trang thai OAuth khong hop le hoac da het han. Vui long thu lai.",
+      "authUnavailable": "Xac thuc Google tam thoi khong kha dung. Vui long thu lai sau.",
+      "missingCode": "Callback Google khong hop le. Vui long dang nhap lai."
+    }
+  },
+  "loading": {
+    "systemLoading": "Đang tải hệ thống..."
   }
 }

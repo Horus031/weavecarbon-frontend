@@ -1,342 +1,434 @@
-# WeaveCarbon API Documentation
+﻿# WeaveCarbon API Documentation
 
-## Tổng Quan
+Last updated: 2026-02-25
+Source of truth: implementation in `src/server.js`, `src/routes/*`, `src/validators/*`, `src/services/*`.
 
-WeaveCarbon Backend API cung cấp các endpoints để quản lý carbon footprint cho doanh nghiệp thời trang và người dùng cá nhân.
+## 1. Overview
 
-**Base URL**: `http://localhost:4000/api`
+WeaveCarbon API is an Express + PostgreSQL backend for:
+- authentication (email/password + Google OAuth)
+- account/company management
+- product carbon footprint management
+- product batches and shipment logistics
+- export market compliance workflows
+- report/export generation
+- subscription management
 
-**Authentication**: Bearer Token (JWT)
+## 2. Conventions
 
----
+### 2.1 Base URLs
 
-## Mục Lục
+- API base: `http://localhost:4000/api`
+- Health check: `http://localhost:4000/health`
 
-1. [Authentication APIs](#1-authentication-apis)
-2. [Account APIs](#2-account-apis)
-3. [Dashboard APIs](#3-dashboard-apis)
-4. [Products APIs](#4-products-apis)
-5. [Product Batches APIs](#5-product-batches-apis)
-6. [Logistics APIs](#6-logistics-apis)
-7. [Company Members APIs](#7-company-members-apis)
-8. [Reports & Export Compliance APIs](#8-reports--export-compliance-apis)
-9. [Subscription APIs](#9-subscription-apis)
-10. [Error Codes](#10-error-codes)
+### 2.2 Authentication
 
----
+Most protected endpoints require:
 
-## 1. Authentication APIs
+`Authorization: Bearer <access_token>`
 
-Base path: `/api/auth`
+Access token payload contains:
+- `sub` (user id)
+- `email`
+- `roles` (array)
+- `is_demo`
+- `company_id`
 
-### 1.1. Đăng Ký (Signup)
+### 2.3 Standard Response Format
 
-**Endpoint**: `POST /api/auth/signup`
+Success:
 
-**Mô tả**: Đăng ký tài khoản mới (B2B hoặc B2C)
-
-**Request Body**:
 ```json
 {
-  "email": "user@example.com",
-  "password": "Password123!",
-  "full_name": "Nguyễn Văn A",
-  "role": "b2b",
-  "company_name": "Green Fashion Co.",
-  "business_type": "brand",
-  "target_markets": ["VN", "US", "EU"],
-  "phone": "0901234567"
+  "success": true,
+  "data": {},
+  "message": "optional",
+  "meta": {}
 }
 ```
 
-**Response** (201 Created):
+Error:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human readable message",
+    "details": []
+  }
+}
+```
+
+Validation errors (`422`) use:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "details": [
+      { "field": "field_name", "message": "...", "value": "..." }
+    ]
+  }
+}
+```
+
+### 2.4 Role / Permission Middleware
+
+- `authenticate`: valid bearer token
+- `requireRole('b2b')`: user must have b2b role
+- `requireCompanyMember`: user must be active member of company
+- `requireCompanyAdmin`: user must be active admin of company
+
+### 2.5 Rate Limits
+
+`NODE_ENV !== 'production'` uses higher limits (dev-friendly).
+
+| Scope | Prod limit | Dev limit | Window |
+|---|---:|---:|---|
+| Global `/api/*` | 100 | 1000 | 15 min |
+| `POST /api/auth/signup` | 5 | 50 | 1 hour |
+| `POST /api/auth/signin` | 10 (failed req only) | 50 | 15 min |
+| `POST /api/auth/refresh` | 30 | 100 | 1 min |
+| Google OAuth endpoints | 30 | 120 | 5 min |
+| `POST /api/auth/verify-email/resend` | 3 | 20 | 5 min |
+
+### 2.6 Common HTTP Statuses
+
+- `200` OK
+- `201` Created
+- `202` Accepted (background job)
+- `400` Bad request / business rule violation
+- `401` Unauthorized / invalid token
+- `403` Forbidden
+- `404` Not found
+- `409` Conflict
+- `422` Validation error
+- `500` Internal server error
+- `501` Not implemented (placeholder endpoints)
+
+## 3. Endpoint Index
+
+### 3.1 System
+- `GET /health`
+
+### 3.2 Auth (`/api/auth`)
+- `POST /signup`
+- `POST /signin`
+- `POST /signout`
+- `POST /refresh`
+- `POST /demo`
+- `GET /verify-email`
+- `POST /verify-email`
+- `POST /verify-email/resend`
+- `GET /google`
+- `GET /google/callback`
+- `GET /check-company`
+
+### 3.3 Account (`/api/account`)
+- `GET /`
+- `PUT /profile`
+- `POST /company`
+- `PUT /company`
+- `POST /change-password`
+
+### 3.4 Dashboard (`/api/dashboard`)
+- `GET /overview`
+
+### 3.5 Products (`/api/products`)
+- `GET /`
+- `GET /bulk-template`
+- `POST /bulk-import/validate`
+- `POST /bulk-import/file`
+- `GET /:id`
+- `POST /`
+- `PUT /:id`
+- `PATCH /:id/status`
+- `DELETE /:id`
+- `POST /bulk-import`
+
+### 3.6 Product Batches (`/api/product-batches`)
+- `GET /`
+- `GET /:id`
+- `POST /`
+- `PATCH /:id`
+- `DELETE /:id`
+- `POST /:id/items`
+- `PATCH /:id/items/:product_id`
+- `DELETE /:id/items/:product_id`
+- `PATCH /:id/publish`
+
+### 3.7 Logistics (`/api/logistics`)
+- `GET /shipments`
+- `GET /overview`
+- `GET /shipments/:id`
+- `POST /shipments`
+- `PATCH /shipments/:id`
+- `PATCH /shipments/:id/status`
+- `PUT /shipments/:id/legs`
+- `PUT /shipments/:id/products`
+
+### 3.8 Company Members (`/api/company/members`)
+- `GET /`
+- `POST /`
+- `PUT /:id`
+- `DELETE /:id`
+
+### 3.9 Reports (`/api/reports`)
+- `GET /`
+- `POST /exports`
+- `POST /export-jobs` (alias)
+- `GET /export-sources`
+- `GET /export-sources/:type`
+- `GET /export-data/:type`
+- `GET /:id`
+- `GET /:id/status`
+- `GET /:id/download`
+- `POST /`
+- `DELETE /:id`
+- `PATCH /:id/status`
+
+### 3.10 Export Markets (`/api/export/markets`)
+- `GET /`
+- `POST /:market_code/recommendations/:recommendation_id/actions`
+- `POST /:market_code/products`
+- `PATCH /:market_code/products/:product_id`
+- `DELETE /:market_code/products/:product_id`
+- `PATCH /:market_code/carbon-data/:scope`
+- `POST /:market_code/documents/:document_id/upload`
+- `GET /:market_code/documents/:document_id/download`
+- `DELETE /:market_code/documents/:document_id`
+- `POST /:market_code/reports`
+
+### 3.11 Subscription (`/api/subscription`)
+- `GET /`
+- `POST /upgrade`
+
+---
+
+## 4. Detailed API Docs
+
+## 4.1 System
+
+### GET `/health`
+
+- Auth: none
+- Response `200`:
+
 ```json
 {
   "success": true,
   "data": {
-    "user": {
-      "id": "uuid",
-      "email": "user@example.com",
-      "full_name": "Nguyễn Văn A",
-      "email_verified": false
-    },
-    "profile": {
-      "id": "uuid",
-      "user_id": "uuid",
-      "company_id": "uuid"
-    },
+    "status": "healthy",
+    "timestamp": "2026-02-24T13:00:00.000Z",
+    "uptime": 12345.67
+  }
+}
+```
+
+---
+
+## 4.2 Authentication APIs
+
+Base path: `/api/auth`
+
+### POST `/signup`
+
+- Auth: none
+- Rate limit: signup limiter
+- Body:
+
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `email` | string | yes | valid email |
+| `password` | string | yes | min 8, must include upper/lower/number/special |
+| `full_name` | string | yes | 2..100 chars |
+| `role` | enum | yes | `b2b` or `b2c` |
+| `company_name` | string | conditional | required when `role=b2b` |
+| `business_type` | enum | conditional | `shop_online`/`brand`/`factory` when `role=b2b` |
+| `target_markets` | array | no | array |
+| `phone` | string | no | E.164 style regex |
+
+- Success `201`:
+
+```json
+{
+  "success": true,
+  "data": {
+    "user": { "id": "uuid", "email": "user@example.com", "full_name": "User", "email_verified": false },
+    "profile": { "id": "uuid", "user_id": "uuid", "company_id": "uuid" },
     "role": "b2b",
-    "company": {
-      "id": "uuid",
-      "name": "Green Fashion Co.",
-      "business_type": "brand"
-    },
+    "company": { "id": "uuid", "name": "My Company", "business_type": "brand", "current_plan": "starter" },
     "requires_email_verification": true
   }
 }
 ```
 
-**Validation Rules**:
-- `email`: Required, valid email format
-- `password`: Min 8 characters, must include uppercase, lowercase, number, special char
-- `full_name`: Required, 2-100 characters
-- `role`: Required, enum ['b2b', 'b2c']
-- `company_name`: Required for B2B
-- `business_type`: Required for B2B, enum ['shop_online', 'brand', 'factory']
-- `target_markets`: Optional array of country codes
+- Errors:
+  - `409 EMAIL_EXISTS` (already registered and verified)
+  - `422 VALIDATION_ERROR`
 
-**Rate Limit**: 10 requests per 15 minutes per IP
+- Notes:
+  - if email exists but not verified, old account is deleted and recreated.
+  - verification email is sent as styled HTML with CTA button (`Verify Email`).
+  - verification link base URL resolution: `API_BASE_URL` -> `BACKEND_URL` -> `FRONTEND_URL`.
 
----
+### POST `/signin`
 
-### 1.2. Đăng Nhập (Signin)
+- Auth: none
+- Rate limit: signin limiter
+- Body:
 
-**Endpoint**: `POST /api/auth/signin`
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `email` | string | yes | valid email |
+| `password` | string | yes | non-empty |
+| `remember_me` | boolean | no | boolean |
 
-**Mô tả**: Đăng nhập và nhận access token
+- Success `200`: returns `user`, `profile`, `roles`, `company`, `company_membership`, `tokens`.
+- Token section fields: `access_token`, `refresh_token`, `token_type`, `expires_in` (900), `expires_at`.
 
-**Request Body**:
-```json
-{
-  "email": "user@example.com",
-  "password": "Password123!",
-  "remember_me": false
-}
-```
+- Main errors:
+  - `401 INVALID_CREDENTIALS`
+  - `403 EMAIL_NOT_VERIFIED`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": "uuid",
-      "email": "user@example.com",
-      "full_name": "Nguyễn Văn A",
-      "email_verified": true
-    },
-    "profile": {
-      "id": "uuid",
-      "company_id": "uuid",
-      "is_demo_user": false
-    },
-    "roles": ["b2b"],
-    "company": {
-      "id": "uuid",
-      "name": "Green Fashion Co.",
-      "business_type": "brand",
-      "current_plan": "starter",
-      "target_markets": ["VN", "US"]
-    },
-    "company_membership": {
-      "company_id": "uuid",
-      "role": "admin",
-      "status": "active",
-      "is_root": true
-    },
-    "tokens": {
-      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      "token_type": "Bearer",
-      "expires_in": 900,
-      "expires_at": "2026-02-20T10:00:00.000Z"
-    }
-  }
-}
-```
+### POST `/signout`
 
-**Error Responses**:
-- `401`: Invalid credentials
-- `403`: Email not verified
+- Auth: required
+- Body:
 
-**Rate Limit**: 5 requests per 15 minutes per IP
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `all_devices` | boolean | no | default false |
 
----
+- Success `200`:
 
-### 1.3. Làm Mới Token (Refresh Token)
-
-**Endpoint**: `POST /api/auth/refresh`
-
-**Request Body**:
-```json
-{
-  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-**Response** (200 OK):
 ```json
 {
   "success": true,
-  "data": {
-    "tokens": {
-      "access_token": "new_access_token",
-      "refresh_token": "new_refresh_token",
-      "token_type": "Bearer",
-      "expires_in": 900,
-      "expires_at": "2026-02-20T10:15:00.000Z"
-    }
-  }
+  "data": { "sessions_revoked": 1, "all_devices": false }
 }
 ```
 
----
+- Note: current implementation is stateless acknowledgment (no token blacklist persistence).
 
-### 1.4. Đăng Xuất (Signout)
+### POST `/refresh`
 
-**Endpoint**: `POST /api/auth/signout`
+- Auth: none
+- Rate limit: refresh limiter
+- Body: `refresh_token` (required)
+- Success `200`: returns fresh token pair in `data.tokens`.
+- Errors:
+  - `401 INVALID_REFRESH_TOKEN`
+  - `401 USER_NOT_FOUND`
 
-**Authentication**: Required
+### POST `/demo`
 
-**Request Body**:
-```json
-{
-  "all_devices": false
-}
-```
+- Auth: none
+- Body:
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "sessions_revoked": 1,
-    "all_devices": false
-  }
-}
-```
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `role` | enum | yes | `b2b`/`b2c` |
+| `demo_scenario` | enum | no | `empty`/`sample_data`/`full` |
 
----
+- Success `200`: demo user + tokens + limitations.
 
-### 1.5. Tài Khoản Demo
+### GET `/verify-email`
 
-**Endpoint**: `POST /api/auth/demo`
+- Auth: none
+- Query params:
 
-**Mô tả**: Tạo tài khoản demo để dùng thử
+| Field | Required |
+|---|---|
+| `token` | yes |
+| `email` | yes |
+| `view` | no (`html` / `page` to force HTML page) |
 
-**Request Body**:
-```json
-{
-  "role": "b2b",
-  "demo_scenario": "sample_data"
-}
-```
+- Response mode:
+  - Browser mode (`Accept: text/html` or `view=html/page`): returns HTML result page.
+  - API mode (default JSON): returns JSON result.
+- Success behavior:
+  - If email is not verified: verifies email and issues access/refresh tokens.
+  - If email is already verified: returns success message/page (no re-verification).
+- HTML success flow (new verification):
+  - page includes `Continue to WeaveCarbon` button.
+  - button opens frontend callback URL: `/auth/callback#access_token=...&refresh_token=...`.
+- Errors:
+  - `400 MISSING_PARAMETERS`
+  - `400 INVALID_VERIFICATION_TOKEN`
+  - `404 USER_NOT_FOUND`
+  - `500` HTML error page (browser mode only)
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": "uuid",
-      "email": "demo_*@weavecarbon.com",
-      "is_demo": true,
-      "demo_expires_at": "2026-02-21T10:00:00.000Z"
-    },
-    "company": {
-      "id": "uuid",
-      "name": "Demo Company"
-    },
-    "tokens": {
-      "access_token": "...",
-      "refresh_token": "..."
-    },
-    "limitations": {
-      "max_products": 10,
-      "max_calculations": 50,
-      "export_disabled": true,
-      "session_duration_hours": 24
-    }
-  }
-}
-```
+### POST `/verify-email`
 
----
+- Auth: none
+- Body: `token` + `email`
+- Success `200`: `data.message` + `data.tokens`
+- Errors:
+  - `400 INVALID_VERIFICATION_TOKEN`
+  - `400 ALREADY_VERIFIED`
+  - `404 USER_NOT_FOUND`
 
-### 1.6. Xác Thực Email
+### POST `/verify-email/resend`
 
-**Endpoint GET**: `GET /api/auth/verify-email?token={token}&email={email}`
+- Auth: none
+- Rate limit: verify-email limiter
+- Body: `email` required
+- Success `200`:
+  - generic success when email not found (to avoid account enumeration)
+  - or `Verification email sent`
+- Errors:
+  - `400 ALREADY_VERIFIED`
+  - `400 VALIDATION_ERROR` when email missing
 
-**Endpoint POST**: `POST /api/auth/verify-email`
+### GET `/google`
 
-**Request Body** (POST):
-```json
-{
-  "token": "verification_token",
-  "email": "user@example.com"
-}
-```
+- Auth: none
+- Rate limit: google limiter
+- Query (all optional):
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Email verified successfully",
-    "tokens": {
-      "access_token": "...",
-      "refresh_token": "..."
-    }
-  }
-}
-```
+| Field | Notes |
+|---|---|
+| `intent` | `signin` or `signup` |
+| `flow` | alias of intent |
+| `mode` | alias of intent |
+| `role` | normalized to `b2b`/`b2c`; signup flow forces b2b |
 
----
+- Behavior: returns HTTP redirect to Google OAuth URL.
 
-### 1.7. Gửi Lại Email Xác Thực
+### GET `/google/callback`
 
-**Endpoint**: `POST /api/auth/verify-email/resend`
+- Auth: none
+- Rate limit: google limiter
+- Query:
 
-**Request Body**:
-```json
-{
-  "email": "user@example.com"
-}
-```
+| Field | Required |
+|---|---|
+| `code` | yes |
+| `state` | yes (validated with HMAC + TTL) |
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Verification email sent"
-  }
-}
-```
+- Behavior:
+  - exchanges code to Google tokens
+  - fetches Google profile
+  - create/update user according to `intent`
+  - redirects to frontend callback URL with URL hash fields
 
----
+Success redirect hash fields include:
+- `access_token`, `refresh_token`, `token_type`, `expires_in`,
+- `provider=google`, `auth_intent`, `is_new_user`,
+- `requires_company_setup`, `next_step`
 
-### 1.8. Đăng Nhập Google (OAuth)
+Error redirect hash fields include:
+- `error`, `error_description`
 
-**Endpoint**: `GET /api/auth/google?intent=signin&role=b2b`
+### GET `/check-company`
 
-**Mô tả**: Khởi tạo Google OAuth flow
+- Auth: required
+- Success `200`:
 
-**Query Parameters**:
-- `intent`: 'signin' hoặc 'signup' (default: 'signin')
-- `role`: 'b2b' hoặc 'b2c' (default: 'b2b' for signup)
-
-**Response**: Redirect to Google OAuth
-
----
-
-### 1.9. Google Callback
-
-**Endpoint**: `GET /api/auth/google/callback`
-
-**Mô tả**: Xử lý callback từ Google OAuth
-
-**Response**: Redirect to frontend với token trong URL hash
-
----
-
-### 1.10. Kiểm Tra Company
-
-**Endpoint**: `GET /api/auth/check-company`
-
-**Authentication**: Required
-
-**Response** (200 OK):
 ```json
 {
   "success": true,
@@ -350,2127 +442,813 @@ Base path: `/api/auth`
 
 ---
 
-## 2. Account APIs
+## 4.3 Account APIs
 
 Base path: `/api/account`
 
-**Authentication**: Required for all endpoints
+### GET `/`
+
+- Auth: required
+- Success: `data.profile` + `data.company`.
+
+### PUT `/profile`
+
+- Auth: required
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `full_name` | yes | 2..100 chars |
+| `email` | no | valid email |
+
+- Success `200`: updated profile row + message.
+
+### POST `/company`
+
+- Auth: required
+- Purpose: create company for user without company.
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `name` | yes | 2..200 chars |
+| `business_type` | yes | `shop_online`/`brand`/`factory` |
+| `target_markets` | no | array |
+
+- Success `201`: created company.
+- Errors:
+  - `400 ALREADY_HAS_COMPANY`
+
+### PUT `/company`
+
+- Auth: required + `b2b` + company admin
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `name` | yes | 2..200 chars |
+| `business_type` | yes | enum |
+
+- Success `200`: updated company.
+- Errors:
+  - `400 NO_COMPANY`
+  - `403 FORBIDDEN` (not admin)
+
+### POST `/change-password`
+
+- Auth: required
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `new_password` | yes | min 8, strong password pattern |
+| `confirm_password` | yes | must equal `new_password` |
+
+- Success `200`: message only.
 
 ---
 
-### 2.1. Lấy Thông Tin Tài Khoản
-
-**Endpoint**: `GET /api/account`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "user": {
-      "id": "uuid",
-      "email": "user@example.com",
-      "full_name": "Nguyễn Văn A",
-      "avatar_url": null,
-      "email_verified": true
-    },
-    "profile": {
-      "id": "uuid",
-      "user_id": "uuid",
-      "company_id": "uuid"
-    },
-    "roles": ["b2b"],
-    "company": {
-      "id": "uuid",
-      "name": "Green Fashion Co.",
-      "business_type": "brand",
-      "current_plan": "starter",
-      "target_markets": ["VN", "US"]
-    },
-    "company_membership": {
-      "company_id": "uuid",
-      "role": "admin",
-      "status": "active",
-      "is_root": true
-    }
-  }
-}
-```
-
----
-
-### 2.2. Cập Nhật Profile
-
-**Endpoint**: `PUT /api/account/profile`
-
-**Request Body**:
-```json
-{
-  "full_name": "Nguyễn Văn B",
-  "email": "newmail@example.com"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "user_id": "uuid",
-    "email": "newmail@example.com",
-    "full_name": "Nguyễn Văn B",
-    "updated_at": "2026-02-20T10:00:00.000Z"
-  },
-  "message": "Profile updated successfully"
-}
-```
-
----
-
-### 2.3. Tạo Company (cho user chưa có company)
-
-**Endpoint**: `POST /api/account/company`
-
-**Request Body**:
-```json
-{
-  "name": "My New Company",
-  "business_type": "brand",
-  "target_markets": ["VN", "TH"]
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "name": "My New Company",
-    "business_type": "brand",
-    "current_plan": "starter",
-    "target_markets": ["VN", "TH"]
-  },
-  "message": "Company created successfully"
-}
-```
-
----
-
-### 2.4. Cập Nhật Company
-
-**Endpoint**: `PUT /api/account/company`
-
-**Authorization**: Company Admin only
-
-**Request Body**:
-```json
-{
-  "name": "Updated Company Name",
-  "business_type": "factory"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "name": "Updated Company Name",
-    "business_type": "factory",
-    "updated_at": "2026-02-20T10:00:00.000Z"
-  },
-  "message": "Company updated successfully"
-}
-```
-
----
-
-### 2.5. Đổi Mật Khẩu
-
-**Endpoint**: `POST /api/account/change-password`
-
-**Request Body**:
-```json
-{
-  "current_password": "OldPassword123!",
-  "new_password": "NewPassword456!"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "message": "Password changed successfully"
-  }
-}
-```
-
----
-
-## 3. Dashboard APIs
+## 4.4 Dashboard APIs
 
 Base path: `/api/dashboard`
 
-**Authentication**: Required (B2B role only)
+### GET `/overview`
+
+- Auth: required + `b2b`
+- Query:
+
+| Field | Required | Rules | Default |
+|---|---|---|---|
+| `trend_months` | no | int 1..12 | 6 |
+
+- Success `200` returns:
+- `data.stats`
+- `data.carbon_trend`
+- `data.emission_breakdown`
+- `data.market_readiness`
+- `data.recommendations`
+- `meta.company_id`, `meta.generated_at`, `meta.trend_period_months`
+
+- Errors:
+  - `400 INVALID_PARAMETER` (`trend_months` out of range)
+  - `404 COMPANY_NOT_FOUND`
 
 ---
 
-### 3.1. Dashboard Tổng Quan
-
-**Endpoint**: `GET /api/dashboard/overview`
-
-**Query Parameters**:
-- `trend_months`: Number (1-12, default: 6) - Số tháng hiển thị xu hướng carbon
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "stats": {
-      "total_co2e": 12540.50,
-      "total_skus": 156,
-      "avg_export_readiness": 82.75,
-      "data_confidence": 88.5
-    },
-    "carbon_trend": [
-      {
-        "month": "2025-08",
-        "label": "T8",
-        "actual_emissions": 1620.00,
-        "target_emissions": 1500.00
-      },
-      {
-        "month": "2025-09",
-        "label": "T9",
-        "actual_emissions": 1480.00,
-        "target_emissions": 1450.00
-      }
-    ],
-    "emission_breakdown": [
-      {
-        "category": "materials",
-        "label": "Vật liệu",
-        "percentage": 45,
-        "co2e": 5643.23,
-        "color": "hsl(var(--primary))"
-      },
-      {
-        "category": "production",
-        "label": "Sản xuất",
-        "percentage": 30,
-        "co2e": 3762.15,
-        "color": "hsl(var(--accent))"
-      },
-      {
-        "category": "transport",
-        "label": "Vận chuyển",
-        "percentage": 20,
-        "co2e": 2508.10,
-        "color": "hsl(150, 40%, 50%)"
-      },
-      {
-        "category": "packaging",
-        "label": "Đóng gói",
-        "percentage": 5,
-        "co2e": 627.02,
-        "color": "hsl(35, 50%, 60%)"
-      }
-    ],
-    "market_readiness": [
-      {
-        "market_code": "EU",
-        "market_name": "European Union",
-        "score": 85.50,
-        "status": "good",
-        "requirements_met": [
-          "Product carbon footprint calculated",
-          "GOTS certified materials"
-        ],
-        "requirements_missing": [
-          "Digital Product Passport ready"
-        ]
-      }
-    ],
-    "recommendations": [
-      {
-        "id": "uuid",
-        "title": "Tối ưu nguyên liệu",
-        "description": "Switch to recycled polyester blend (20%)",
-        "impact_level": "high",
-        "reduction_percentage": 15.20,
-        "estimated_cost_savings": 2400.00,
-        "category": "materials",
-        "product_id": "uuid"
-      }
-    ]
-  },
-  "meta": {
-    "company_id": "uuid",
-    "generated_at": "2026-02-20T10:00:00.000Z",
-    "trend_period_months": 6
-  }
-}
-```
-
----
-
-## 4. Products APIs
+## 4.5 Products APIs
 
 Base path: `/api/products`
+All endpoints: auth required + role `b2b`.
 
-**Authentication**: Required (B2B role only)
+### GET `/`
 
----
+- Query:
 
-### 4.1. Danh Sách Sản Phẩm
+| Field | Required | Rules | Default |
+|---|---|---|---|
+| `search` | no | string | - |
+| `status` | no | `draft`/`active`/`archived`/`all` | all |
+| `category` | no | string | - |
+| `page` | no | int >=1 | 1 |
+| `page_size` | no | int 1..100 | 20 |
+| `sort_by` | no | `created_at`/`updated_at`/`name`/`sku`/`total_co2e` | `updated_at` |
+| `sort_order` | no | `asc`/`desc` | `desc` |
+| `include` | no | string | - |
 
-**Endpoint**: `GET /api/products`
+- Success: `data.items[]` + `data.pagination`.
+- Note: service maps DB status `active` to FE status `published` in responses.
 
-**Query Parameters**:
-- `search`: String - Tìm theo tên hoặc SKU
-- `status`: Enum ['draft', 'active', 'archived']
-- `category`: String - Lọc theo category
-- `page`: Number (default: 1)
-- `page_size`: Number (default: 20, max: 100)
-- `sort_by`: String (default: 'updated_at')
-- `sort_order`: Enum ['asc', 'desc'] (default: 'desc')
-- `include`: Comma-separated fields to include (e.g., 'materials,suppliers')
+### GET `/bulk-template`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": "uuid",
-        "company_id": "uuid",
-        "sku": "GF-TSHIRT-001",
-        "name": "Organic Cotton T-Shirt - White",
-        "category": "apparel",
-        "weight_kg": 0.18,
-        "status": "active",
-        "total_co2e": 0.95,
-        "materials_co2e": 0.52,
-        "production_co2e": 0.30,
-        "transport_co2e": 0.08,
-        "packaging_co2e": 0.05,
-        "data_confidence_score": 92.5,
-        "created_at": "2026-01-01T00:00:00.000Z",
-        "updated_at": "2026-02-15T10:00:00.000Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "page_size": 20,
-      "total_items": 156,
-      "total_pages": 8
-    }
-  }
-}
-```
+- Query: `format` = `xlsx` or `csv`
+- Current status: placeholder
+- Response: `501 NOT_IMPLEMENTED`
 
----
+### POST `/bulk-import/validate`
 
-### 4.2. Chi Tiết Sản Phẩm
+- Body: optional `rows` array
+- Current status: placeholder validation response (`isValid`, `validRows`, etc.)
 
-**Endpoint**: `GET /api/products/:id`
+### POST `/bulk-import/file`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "company_id": "uuid",
-    "sku": "GF-TSHIRT-001",
-    "name": "Organic Cotton T-Shirt - White",
-    "category": "apparel",
-    "description": "100% organic cotton t-shirt",
-    "weight_kg": 0.18,
-    "status": "active",
-    "total_co2e": 0.95,
-    "materials_co2e": 0.52,
-    "production_co2e": 0.30,
-    "transport_co2e": 0.08,
-    "packaging_co2e": 0.05,
-    "data_confidence_score": 92.5,
-    "materials": [
-      {
-        "material_id": "uuid",
-        "material_name": "Organic Cotton",
-        "supplier_id": "uuid",
-        "supplier_name": "Green Textile Mills",
-        "percentage": 100.00,
-        "weight_kg": 0.18,
-        "co2e_contribution": 0.52
-      }
-    ],
-    "production_steps": [],
-    "transport_details": {},
-    "packaging_details": {},
-    "created_at": "2026-01-01T00:00:00.000Z",
-    "updated_at": "2026-02-15T10:00:00.000Z"
-  }
-}
-```
+- Current status: placeholder
+- Response: `501 NOT_IMPLEMENTED`
 
----
+### GET `/:id`
 
-### 4.3. Tạo Sản Phẩm Mới
+- Path param: `id` required
+- Success: full product payload merged from DB + snapshot.
+- Error: `404 PRODUCT_NOT_FOUND`.
 
-**Endpoint**: `POST /api/products`
+### POST `/`
 
-**Request Body**:
-```json
-{
-  "sku": "GF-TSHIRT-002",
-  "name": "Organic Cotton T-Shirt - Black",
-  "category": "apparel",
-  "description": "Black organic cotton t-shirt",
-  "weight_kg": 0.18,
-  "status": "draft",
-  "materials": [
-    {
-      "material_id": "uuid",
-      "supplier_id": "uuid",
-      "percentage": 100,
-      "weight_kg": 0.18
-    }
-  ]
-}
-```
+- Body:
 
-**Response** (201 Created):
+| Field | Required | Rules |
+|---|---|---|
+| `productCode` | yes | 1..100 chars |
+| `productName` | yes | 1..200 chars |
+| `productType` | no | max 100 |
+| `weightPerUnit` | no | float >=0 (grams) |
+| `quantity` | no | int >=0 |
+| `materials` | no | array |
+| `accessories` | no | array |
+| `productionProcesses` | no | array |
+| `energySources` | no | array |
+| `carbonResults` | no | object |
+| `save_mode` | no | `draft` or `publish` |
+
+- Success `201`:
+
 ```json
 {
   "success": true,
   "data": {
     "id": "uuid",
-    "sku": "GF-TSHIRT-002",
-    "name": "Organic Cotton T-Shirt - Black",
     "status": "draft",
-    "total_co2e": 0.95,
-    "created_at": "2026-02-20T10:00:00.000Z"
+    "version": 1,
+    "shipmentId": null,
+    "shipmentCreationSkipped": false,
+    "skipReason": null
   }
 }
 ```
 
----
+- Errors:
+  - `400 DUPLICATE_SKU`
+  - `404 NO_COMPANY`
 
-### 4.4. Cập Nhật Sản Phẩm
+### PUT `/:id`
 
-**Endpoint**: `PUT /api/products/:id`
+- Path: `id` required
+- Body: same required core fields as create (except `save_mode`)
+- Success: updated `id/status/version/updatedAt`
+- Error: `404 PRODUCT_NOT_FOUND`
 
-**Request Body**:
-```json
-{
-  "name": "Updated Product Name",
-  "description": "Updated description",
-  "weight_kg": 0.20,
-  "materials": [
-    {
-      "material_id": "uuid",
-      "supplier_id": "uuid",
-      "percentage": 80,
-      "weight_kg": 0.16
-    },
-    {
-      "material_id": "uuid2",
-      "supplier_id": "uuid2",
-      "percentage": 20,
-      "weight_kg": 0.04
-    }
-  ]
-}
-```
+### PATCH `/:id/status`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "name": "Updated Product Name",
-    "total_co2e": 1.05,
-    "updated_at": "2026-02-20T10:00:00.000Z"
-  }
-}
-```
+- Body: `status` required, one of `draft`/`active`/`archived` (validator)
+- Business transition rules in service (FE status semantic):
+  - `draft -> published`
+  - `published -> archived`
+  - `archived -> draft`
 
----
+- Error:
+  - `400 INVALID_STATUS_TRANSITION`
+  - `404 PRODUCT_NOT_FOUND`
 
-### 4.5. Cập Nhật Trạng Thái Sản Phẩm
+### DELETE `/:id`
 
-**Endpoint**: `PATCH /api/products/:id/status`
+- Soft delete to archived.
+- Success `200`: message.
+- Error: `404 PRODUCT_NOT_FOUND`.
 
-**Request Body**:
-```json
-{
-  "status": "active"
-}
-```
+### POST `/bulk-import`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "status": "active",
-    "updated_at": "2026-02-20T10:00:00.000Z"
-  }
-}
-```
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `rows` | yes | non-empty array |
+| `rows.*.sku` | yes | non-empty |
+| `rows.*.productName` | yes | non-empty |
+| `save_mode` | no | `draft`/`publish` |
+
+- Success includes:
+- `imported`
+- `failed`
+- `errors[]`
+- `ids[]`
 
 ---
 
-### 4.6. Xóa Sản Phẩm (Soft Delete)
-
-**Endpoint**: `DELETE /api/products/:id`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Product archived successfully"
-}
-```
-
----
-
-### 4.7. Import Hàng Loạt (Bulk Import)
-
-**Endpoint**: `POST /api/products/bulk-import`
-
-**Request Body**:
-```json
-{
-  "save_mode": "draft",
-  "rows": [
-    {
-      "sku": "PRODUCT-001",
-      "name": "Product Name",
-      "category": "apparel",
-      "weight_kg": 0.5,
-      "materials": []
-    }
-  ]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "total": 10,
-    "imported": 8,
-    "failed": 2,
-    "errors": [
-      {
-        "row": 3,
-        "error": "Duplicate SKU"
-      }
-    ]
-  }
-}
-```
-
----
-
-### 4.8. Tải Template Import
-
-**Endpoint**: `GET /api/products/bulk-template?format=xlsx`
-
-**Query Parameters**:
-- `format`: 'xlsx' hoặc 'csv' (default: 'xlsx')
-
-**Response**: File download (Excel/CSV)
-
----
-
-### 4.9. Validate Import Data
-
-**Endpoint**: `POST /api/products/bulk-import/validate`
-
-**Request Body**:
-```json
-{
-  "rows": [
-    {
-      "sku": "PRODUCT-001",
-      "name": "Product Name",
-      "category": "apparel",
-      "weight_kg": 0.5
-    }
-  ]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "isValid": true,
-    "totalRows": 10,
-    "validCount": 8,
-    "errorCount": 2,
-    "warningCount": 0,
-    "validRows": [],
-    "invalidRows": [
-      {
-        "row": 3,
-        "errors": ["SKU already exists"]
-      }
-    ],
-    "warnings": []
-  }
-}
-```
-
----
-
-## 5. Product Batches APIs
+## 4.6 Product Batches APIs
 
 Base path: `/api/product-batches`
+All endpoints: auth required + role `b2b`.
 
-**Authentication**: Required (B2B role only)
+### GET `/`
 
----
+- Query: `search`, `status`, `page`, `page_size`
+- Success: `items[]` + pagination
 
-### 5.1. Danh Sách Batches
+### GET `/:id`
 
-**Endpoint**: `GET /api/product-batches`
+- Success: batch header + `items[]`
+- Error: `404 BATCH_NOT_FOUND`
 
-**Query Parameters**:
-- `search`: String - Tìm theo tên batch
-- `status`: Enum ['draft', 'published', 'archived']
-- `page`: Number (default: 1)
-- `page_size`: Number (default: 20)
+### POST `/`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": "uuid",
-        "batch_name": "Spring 2026 Collection - US",
-        "description": "T-shirts and hoodies for US market",
-        "status": "published",
-        "destination_market": "US",
-        "transport_modes": ["road", "sea"],
-        "total_products": 2,
-        "total_quantity": 1900,
-        "total_weight_kg": 478.00,
-        "total_co2e": 143.40,
-        "published_at": "2026-02-15T00:00:00.000Z",
-        "created_at": "2026-02-10T00:00:00.000Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "page_size": 20,
-      "total_items": 15,
-      "total_pages": 1
-    }
-  }
-}
-```
+- Body:
 
----
+| Field | Required | Rules |
+|---|---|---|
+| `name` | yes | string, max 255 |
+| `description` | no | max 1000 |
+| `originAddress` | no | object |
+| `destinationAddress` | no | object |
+| `destinationMarket` | no | string, max 50 |
+| `transportModes` | no | array of `sea`/`air`/`road`/`rail` |
 
-### 5.2. Chi Tiết Batch
+- Success `201`: id, status, timestamps
 
-**Endpoint**: `GET /api/product-batches/:id`
+### PATCH `/:id`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "batch_name": "Spring 2026 Collection - US",
-    "description": "T-shirts and hoodies for US market",
-    "status": "published",
-    "destination_market": "US",
-    "transport_modes": ["road", "sea"],
-    "shipment_id": "uuid",
-    "total_products": 2,
-    "total_quantity": 1900,
-    "total_weight_kg": 478.00,
-    "total_co2e": 143.40,
-    "items": [
-      {
-        "product_id": "uuid",
-        "sku": "GF-TSHIRT-001",
-        "product_name": "Organic Cotton T-Shirt - White",
-        "quantity": 1500,
-        "weight_kg": 270.00,
-        "co2_per_unit": 0.95
-      }
-    ],
-    "published_at": "2026-02-15T00:00:00.000Z",
-    "created_by": "uuid",
-    "created_at": "2026-02-10T00:00:00.000Z"
-  }
-}
-```
+- Body: same fields as create, optional
+- Error: `404 BATCH_NOT_FOUND`
+
+### DELETE `/:id`
+
+- Soft delete to archived
+- Error: `404 BATCH_NOT_FOUND`
+
+### POST `/:id/items`
+
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `product_id` | yes | non-empty |
+| `quantity` | yes | float > 0 |
+| `weight_kg` | no | float >= 0 |
+| `co2_per_unit` | no | float >= 0 |
+
+- Errors:
+  - `404 BATCH_NOT_FOUND`
+  - `404 PRODUCT_NOT_FOUND`
+  - `400 INVALID_BATCH_STATUS_TRANSITION` (published batch)
+  - `400 DUPLICATE_BATCH_ITEM`
+
+### PATCH `/:id/items/:product_id`
+
+- Body optional: `quantity`, `weight_kg`, `co2_per_unit`
+- Errors:
+  - `404 BATCH_NOT_FOUND`
+  - `404 BATCH_ITEM_NOT_FOUND`
+
+### DELETE `/:id/items/:product_id`
+
+- Errors:
+  - `404 BATCH_NOT_FOUND`
+  - `404 BATCH_ITEM_NOT_FOUND`
+
+### PATCH `/:id/publish`
+
+- Business rules:
+  - batch must exist
+  - not already published
+  - not empty
+- Success: batch status + optional shipment info
+- Errors:
+  - `404 BATCH_NOT_FOUND`
+  - `400 INVALID_BATCH_STATUS_TRANSITION`
+  - `400 BATCH_EMPTY`
 
 ---
 
-### 5.3. Tạo Batch Mới
-
-**Endpoint**: `POST /api/product-batches`
-
-**Request Body**:
-```json
-{
-  "batch_name": "Summer 2026 Collection",
-  "description": "Summer collection for EU market",
-  "destination_market": "EU",
-  "transport_modes": ["sea", "road"]
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "batch_name": "Summer 2026 Collection",
-    "status": "draft",
-    "created_at": "2026-02-20T10:00:00.000Z"
-  }
-}
-```
-
----
-
-### 5.4. Cập Nhật Batch
-
-**Endpoint**: `PATCH /api/product-batches/:id`
-
-**Request Body**:
-```json
-{
-  "batch_name": "Updated Batch Name",
-  "description": "Updated description",
-  "destination_market": "JP"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "batch_name": "Updated Batch Name",
-    "updated_at": "2026-02-20T10:00:00.000Z"
-  }
-}
-```
-
----
-
-### 5.5. Xóa Batch
-
-**Endpoint**: `DELETE /api/product-batches/:id`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Batch archived successfully"
-}
-```
-
----
-
-### 5.6. Thêm Sản Phẩm Vào Batch
-
-**Endpoint**: `POST /api/product-batches/:id/items`
-
-**Request Body**:
-```json
-{
-  "product_id": "uuid",
-  "quantity": 500
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "data": {
-    "batch_id": "uuid",
-    "product_id": "uuid",
-    "quantity": 500,
-    "weight_kg": 90.00,
-    "co2_per_unit": 0.95
-  }
-}
-```
-
----
-
-### 5.7. Cập Nhật Item Trong Batch
-
-**Endpoint**: `PATCH /api/product-batches/:id/items/:product_id`
-
-**Request Body**:
-```json
-{
-  "quantity": 600
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "batch_id": "uuid",
-    "product_id": "uuid",
-    "quantity": 600,
-    "weight_kg": 108.00
-  }
-}
-```
-
----
-
-### 5.8. Xóa Item Khỏi Batch
-
-**Endpoint**: `DELETE /api/product-batches/:id/items/:product_id`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Item removed from batch successfully"
-}
-```
-
----
-
-### 5.9. Publish Batch
-
-**Endpoint**: `PATCH /api/product-batches/:id/publish`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "status": "published",
-    "published_at": "2026-02-20T10:00:00.000Z"
-  }
-}
-```
-
----
-
-## 6. Logistics APIs
+## 4.7 Logistics APIs
 
 Base path: `/api/logistics`
+All endpoints: auth required + role `b2b`.
 
-**Authentication**: Required (B2B role only)
+### GET `/shipments`
 
----
+- Query:
 
-### 6.1. Danh Sách Shipments
+| Field | Rules |
+|---|---|
+| `search` | string |
+| `status` | `pending`/`in_transit`/`delivered`/`cancelled`/`all` |
+| `transport_mode` | `road`/`sea`/`air`/`rail` |
+| `date_from` | `YYYY-MM-DD` |
+| `date_to` | `YYYY-MM-DD` |
+| `page` | int >=1 |
+| `page_size` | int 1..100 |
+| `sort_by` | `created_at`/`updated_at`/`estimated_arrival`/`total_co2e` |
+| `sort_order` | `asc`/`desc` |
 
-**Endpoint**: `GET /api/logistics/shipments`
+- Success: `items[]` + `pagination`
 
-**Query Parameters**:
-- `search`: String - Tìm theo reference number
-- `status`: Enum ['pending', 'in_transit', 'delivered', 'cancelled']
-- `transport_mode`: Enum ['road', 'sea', 'air', 'rail']
-- `date_from`: Date (YYYY-MM-DD)
-- `date_to`: Date (YYYY-MM-DD)
-- `page`: Number (default: 1)
-- `page_size`: Number (default: 20)
-- `sort_by`: String (default: 'updated_at')
-- `sort_order`: Enum ['asc', 'desc'] (default: 'desc')
+### GET `/overview`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": "uuid",
-        "reference_number": "SHIP-2026-001",
-        "origin_country": "VN",
-        "origin_city": "Ho Chi Minh",
-        "destination_country": "US",
-        "destination_city": "Los Angeles",
-        "status": "in_transit",
-        "total_weight_kg": 500.00,
-        "total_distance_km": 12500.00,
-        "total_co2e": 150.00,
-        "estimated_arrival": "2026-03-15",
-        "created_at": "2026-02-01T00:00:00.000Z"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "page_size": 20,
-      "total_items": 25,
-      "total_pages": 2
-    }
-  }
-}
-```
+- Success returns aggregate counts:
+- `total_shipments`, `pending`, `in_transit`, `delivered`, `cancelled`, `total_co2e`
 
----
+### GET `/shipments/:id`
 
-### 6.2. Logistics Overview
+- Success: shipment detail + `origin`, `destination`, `legs[]`, `products[]`
+- Error: `404 SHIPMENT_NOT_FOUND`
 
-**Endpoint**: `GET /api/logistics/overview`
+### POST `/shipments`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "total_shipments": 45,
-    "active_shipments": 12,
-    "total_co2e": 5420.50,
-    "total_distance": 125000,
-    "by_status": {
-      "pending": 5,
-      "in_transit": 12,
-      "delivered": 28,
-      "cancelled": 0
-    },
-    "by_transport_mode": {
-      "sea": 35,
-      "road": 8,
-      "air": 2,
-      "rail": 0
-    }
-  }
-}
-```
+- Body requirements:
 
----
+| Field | Required | Notes |
+|---|---|---|
+| `reference_number` | no | auto-generated if omitted |
+| `origin.country` | yes | string |
+| `origin.city` | yes | string |
+| `destination.country` | yes | string |
+| `destination.city` | yes | string |
+| `estimated_arrival` | no | YYYY-MM-DD |
+| `legs` | yes | non-empty array |
+| `products` | yes | non-empty array |
 
-### 6.3. Chi Tiết Shipment
+Leg item required fields:
+- `leg_order`, `transport_mode`, `origin_location`, `destination_location`, `distance_km`, `co2e`
 
-**Endpoint**: `GET /api/logistics/shipments/:id`
+Product item required fields:
+- `product_id`, `quantity`, `weight_kg`, `allocated_co2e`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "reference_number": "SHIP-2026-001",
-    "origin_country": "VN",
-    "origin_city": "Ho Chi Minh",
-    "origin_address": "123 Factory St",
-    "destination_country": "US",
-    "destination_city": "Los Angeles",
-    "destination_address": "456 Harbor Blvd",
-    "status": "in_transit",
-    "total_weight_kg": 500.00,
-    "total_distance_km": 12500.00,
-    "total_co2e": 150.00,
-    "estimated_arrival": "2026-03-15",
-    "legs": [
-      {
-        "leg_order": 1,
-        "transport_mode": "road",
-        "origin_location": "Ho Chi Minh Factory",
-        "destination_location": "Saigon Port",
-        "distance_km": 25.00,
-        "co2e": 2.45,
-        "carrier_name": "VN Logistics"
-      },
-      {
-        "leg_order": 2,
-        "transport_mode": "sea",
-        "origin_location": "Saigon Port",
-        "destination_location": "Los Angeles Port",
-        "distance_km": 12450.00,
-        "co2e": 149.40,
-        "carrier_name": "Pacific Shipping"
-      }
-    ],
-    "products": [
-      {
-        "product_id": "uuid",
-        "sku": "GF-TSHIRT-001",
-        "product_name": "Organic Cotton T-Shirt",
-        "quantity": 1500,
-        "weight_kg": 270.00,
-        "allocated_co2e": 81.00
-      }
-    ],
-    "created_at": "2026-02-01T00:00:00.000Z"
-  }
-}
-```
+- Errors:
+  - `400 EMPTY_SHIPMENT_PRODUCTS`
+  - `400 PRODUCT_NOT_IN_COMPANY`
+
+### PATCH `/shipments/:id`
+
+- Partial update fields:
+- `reference_number`, `origin.*`, `destination.*`, `estimated_arrival`
+- Error: `404 SHIPMENT_NOT_FOUND`
+
+### PATCH `/shipments/:id/status`
+
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `status` | yes | `pending`/`in_transit`/`delivered`/`cancelled` |
+| `actual_arrival` | no | YYYY-MM-DD |
+
+- Transition rules:
+  - `pending -> in_transit/cancelled`
+  - `in_transit -> delivered/cancelled`
+  - delivered/cancelled are terminal
+
+- Errors:
+  - `400 INVALID_SHIPMENT_STATUS_TRANSITION`
+  - `404 SHIPMENT_NOT_FOUND`
+
+### PUT `/shipments/:id/legs`
+
+- Replaces all legs.
+- `leg_order` must be unique and sequential from 1.
+- Errors:
+  - `404 SHIPMENT_NOT_FOUND`
+  - `400 INVALID_SHIPMENT_PAYLOAD`
+
+### PUT `/shipments/:id/products`
+
+- Replaces all products.
+- Errors:
+  - `404 SHIPMENT_NOT_FOUND`
+  - `400 PRODUCT_NOT_IN_COMPANY`
 
 ---
 
-### 6.4. Tạo Shipment Mới
-
-**Endpoint**: `POST /api/logistics/shipments`
-
-**Request Body**:
-```json
-{
-  "reference_number": "SHIP-2026-003",
-  "origin_country": "VN",
-  "origin_city": "Hanoi",
-  "origin_address": "789 Factory Road",
-  "destination_country": "EU",
-  "destination_city": "Hamburg",
-  "destination_address": "123 Port St",
-  "estimated_arrival": "2026-04-01",
-  "legs": [
-    {
-      "leg_order": 1,
-      "transport_mode": "road",
-      "origin_location": "Hanoi Factory",
-      "destination_location": "Hai Phong Port",
-      "distance_km": 120,
-      "carrier_name": "VN Transport"
-    },
-    {
-      "leg_order": 2,
-      "transport_mode": "sea",
-      "origin_location": "Hai Phong Port",
-      "destination_location": "Hamburg Port",
-      "distance_km": 10500,
-      "carrier_name": "Euro Shipping"
-    }
-  ],
-  "products": [
-    {
-      "product_id": "uuid",
-      "quantity": 500
-    }
-  ]
-}
-```
-
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "reference_number": "SHIP-2026-003",
-    "status": "pending",
-    "total_co2e": 125.50,
-    "created_at": "2026-02-20T10:00:00.000Z"
-  }
-}
-```
-
----
-
-### 6.5. Cập Nhật Shipment
-
-**Endpoint**: `PATCH /api/logistics/shipments/:id`
-
-**Request Body**:
-```json
-{
-  "reference_number": "SHIP-2026-003-UPDATED",
-  "estimated_arrival": "2026-04-05",
-  "destination_address": "Updated address"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "reference_number": "SHIP-2026-003-UPDATED",
-    "updated_at": "2026-02-20T10:00:00.000Z"
-  }
-}
-```
-
----
-
-### 6.6. Cập Nhật Trạng Thái Shipment
-
-**Endpoint**: `PATCH /api/logistics/shipments/:id/status`
-
-**Request Body**:
-```json
-{
-  "status": "delivered",
-  "actual_arrival": "2026-03-14"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "status": "delivered",
-    "actual_arrival": "2026-03-14",
-    "updated_at": "2026-02-20T10:00:00.000Z"
-  }
-}
-```
-
----
-
-### 6.7. Cập Nhật Legs (Transport Routes)
-
-**Endpoint**: `PUT /api/logistics/shipments/:id/legs`
-
-**Request Body**:
-```json
-{
-  "legs": [
-    {
-      "leg_order": 1,
-      "transport_mode": "road",
-      "origin_location": "Factory A",
-      "destination_location": "Port B",
-      "distance_km": 50,
-      "carrier_name": "Carrier X"
-    },
-    {
-      "leg_order": 2,
-      "transport_mode": "sea",
-      "origin_location": "Port B",
-      "destination_location": "Port C",
-      "distance_km": 8000,
-      "carrier_name": "Carrier Y"
-    }
-  ]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "shipment_id": "uuid",
-    "total_legs": 2,
-    "total_distance_km": 8050,
-    "total_co2e": 98.50
-  }
-}
-```
-
----
-
-### 6.8. Cập Nhật Products Trong Shipment
-
-**Endpoint**: `PUT /api/logistics/shipments/:id/products`
-
-**Request Body**:
-```json
-{
-  "products": [
-    {
-      "product_id": "uuid",
-      "quantity": 600
-    },
-    {
-      "product_id": "uuid2",
-      "quantity": 400
-    }
-  ]
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "shipment_id": "uuid",
-    "total_products": 2,
-    "total_quantity": 1000,
-    "total_weight_kg": 180.00
-  }
-}
-```
-
----
-
-## 7. Company Members APIs
+## 4.8 Company Members APIs
 
 Base path: `/api/company/members`
 
-**Authentication**: Required (B2B role only)
+### GET `/`
+
+- Auth: required + b2b + company member
+- Query filters:
+
+| Field | Rules |
+|---|---|
+| `status` | `active`/`invited`/`disabled` |
+| `role` | `admin`/`member`/`viewer` |
+
+- Success: `data[]` members + `meta` counts.
+
+### POST `/`
+
+- Auth: required + b2b + company admin
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `email` | yes | valid email |
+| `full_name` | yes | 2..100 |
+| `password` | yes | strong password |
+| `role` | yes | `member` or `viewer` |
+| `send_notification_email` | no | boolean, default true |
+
+- Success `201`: created member summary.
+
+### PUT `/:id`
+
+- Auth: required + b2b + company admin
+- Body optional: `role` (`member|viewer`), `status` (`active|disabled`)
+- Main constraints in service:
+  - cannot update yourself
+  - cannot update admin members
+
+### DELETE `/:id`
+
+- Auth: required + b2b + company admin
+- Main constraints in service:
+  - cannot delete yourself
+  - cannot delete admin members
 
 ---
 
-### 7.1. Danh Sách Members
+## 4.9 Reports APIs
 
-**Endpoint**: `GET /api/company/members`
+Base path: `/api/reports`
+All endpoints: auth required + b2b.
 
-**Authorization**: Company member hoặc admin
+### GET `/`
 
-**Query Parameters**:
-- `status`: Enum ['active', 'invited', 'disabled']
-- `role`: Enum ['admin', 'member', 'viewer']
+- Query:
 
-**Response** (200 OK):
+| Field | Rules |
+|---|---|
+| `search` | string |
+| `type` | `carbon_audit`/`compliance`/`export_declaration`/`sustainability`/`dataset_export`/`manual`/`export_data` |
+| `status` | `processing`/`completed`/`failed` |
+| `date_from` | ISO date |
+| `date_to` | ISO date |
+| `page` | int >=1 |
+| `page_size` | int 1..100 |
+| `sort_by` | `created_at`/`updated_at`/`title`/`status`/`generated_at` |
+| `sort_order` | `asc`/`desc` |
+
+- Success: items + pagination.
+
+### POST `/exports`
+
+- Unified dataset export pipeline.
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `dataset_type` | yes | `product`/`activity`/`audit`/`users`/`history`/`analytics`/`company` |
+| `file_format` | no | `csv` or `xlsx` |
+| `title` | no | 3..200 chars |
+
+- Success `202`: report job metadata (`report_id`, `status`, `records`).
+
+### POST `/export-jobs`
+
+- Alias endpoint for `/exports`.
+- Same request/response/validation.
+
+### GET `/export-sources`
+
+- Returns consolidated source counts in one call.
+
+### GET `/export-sources/:type`
+
+- Supported route values:
+- `products|product|activity|audit|users|history|analytics|company`
+
+- Success returns mapped `dataset_type`, `count`, `last_updated`.
+- Error: `400 INVALID_SOURCE_TYPE`.
+
+### GET `/export-data/:type`
+
+- Returns raw dataset as JSON.
+- Supported route values same as above.
+- Success:
+
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "user_id": "uuid",
-      "email": "member@company.com",
-      "full_name": "Nguyễn Văn Member",
-      "role": "member",
-      "status": "active",
-      "invited_by": "uuid",
-      "invited_by_name": "Admin User",
-      "last_login": "2026-02-19T15:30:00.000Z",
-      "created_at": "2026-01-15T00:00:00.000Z"
-    }
-  ],
-  "meta": {
-    "total": 5,
-    "active": 4,
-    "invited": 1,
-    "disabled": 0
+  "data": {
+    "dataset_type": "product",
+    "columns": ["sku", "name"],
+    "rows": [],
+    "total": 0
   }
 }
 ```
 
----
+### GET `/:id`
 
-### 7.2. Tạo Member Mới
+- Report detail by id.
+- Error: `404 REPORT_NOT_FOUND`.
 
-**Endpoint**: `POST /api/company/members`
+### GET `/:id/status`
 
-**Authorization**: Company admin only
+- Lightweight polling endpoint.
+- Returns: `id`, `status`, `file_format`, `file_size_bytes`, `download_url`, `error_message`, timestamps.
+- Error: `404 REPORT_NOT_FOUND`.
 
-**Request Body**:
-```json
-{
-  "email": "newmember@company.com",
-  "full_name": "Trần Thị New",
-  "password": "TempPassword123!",
-  "role": "member",
-  "send_notification_email": true
-}
-```
+### GET `/:id/download`
 
-**Response** (201 Created):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "user_id": "uuid",
-    "email": "newmember@company.com",
-    "full_name": "Trần Thị New",
-    "role": "member",
-    "status": "invited",
-    "created_at": "2026-02-20T10:00:00.000Z"
-  },
-  "message": "Member created successfully. Notification email sent."
-}
-```
+- Returns binary file stream for completed report.
+- If provider local and file missing in dev, placeholder file may be auto-created.
+- Errors:
+  - `404 REPORT_NOT_FOUND`
+  - `409 REPORT_NOT_READY`
+  - `404 FILE_NOT_FOUND` (if placeholder disabled)
+  - `501 STORAGE_NOT_IMPLEMENTED` (non-local storage)
 
-**Validation**:
-- Email must not exist in system
-- Password: Min 8 chars, must include uppercase, lowercase, number, special char
-- Role: 'admin', 'member', or 'viewer'
+### POST `/`
 
----
+- Creates manual report job (`status=processing`) then background generation.
+- Body:
 
-### 7.3. Cập Nhật Member
+| Field | Required | Rules |
+|---|---|---|
+| `report_type` | yes | `carbon_audit`/`compliance`/`export_declaration`/`sustainability`/`manual`/`export_data` |
+| `title` | yes | 3..200 |
+| `description` | no | max 1000 |
+| `period_start` | no | ISO date |
+| `period_end` | no | ISO date, must be >= start |
+| `target_market` | no | max 100 |
+| `file_format` | no | `pdf`/`xlsx`/`csv` |
+| `filters` | no | object |
 
-**Endpoint**: `PUT /api/company/members/:id`
+- Success `202`: `{ id, status, message }`
 
-**Authorization**: Company admin only
+### DELETE `/:id`
 
-**Request Body**:
-```json
-{
-  "role": "admin",
-  "status": "active"
-}
-```
+- Deletes report record and tries to delete local file.
+- Error: `404 REPORT_NOT_FOUND`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "role": "admin",
-    "status": "active",
-    "updated_at": "2026-02-20T10:00:00.000Z"
-  },
-  "message": "Member updated successfully"
-}
-```
+### PATCH `/:id/status`
+
+- Body: `status` required (`processing`/`completed`/`failed`)
+- Transition rules:
+  - `processing -> completed|failed`
+  - `failed -> processing`
+  - `completed` terminal
+
+- Errors:
+  - `404 REPORT_NOT_FOUND`
+  - `400 INVALID_STATUS_TRANSITION`
 
 ---
 
-### 7.4. Xóa Member
+## 4.10 Export Markets APIs
 
-**Endpoint**: `DELETE /api/company/members/:id`
+Base path: `/api/export/markets`
+All endpoints: auth required + b2b.
 
-**Authorization**: Company admin only
+### GET `/`
 
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "message": "Member removed successfully"
-}
-```
+- Returns all market compliance cards for current company.
+- Side effect: ensures missing target markets + required document placeholders are auto-created.
 
-**Note**: Không thể xóa chính mình hoặc member cuối cùng có role 'admin'
-
----
-
-## 8. Reports & Export Compliance APIs
-
-This section defines the production contract used by:
-- `/dashboard/reports` (Reports + Export Data tabs)
-- `/dashboard/export` (Export & Compliance page)
-
-Detailed FE/BE alignment rules are tracked in `REPORTS_EXPORT_BE_REQUIREMENTS.md`.
-Reports-page specific restructure is tracked in `REPORTS_PAGE_API_RESTRUCTURE.md`.
-
-### 8.1. Reports Overview
-
-Base path: `/api/reports`  
-Authentication: Required (B2B role only)
-
-Report status persisted by backend:
-- `processing`
-- `completed`
-- `failed`
-
-Note:
-- Reports UI no longer exposes manual status editing.
-- Status still exists in API payload and backend workflow.
-
----
-
-### 8.2. List Reports
-
-**Endpoint**: `GET /api/reports`
-
-**Query Parameters**:
-- `search`
-- `type`
-- `status`
-- `date_from`
-- `date_to`
-- `page`
-- `page_size`
-- `sort_by`
-- `sort_order`
-
-**Minimum item fields required by frontend**:
-- `id`
-- `title`
-- `report_type`
-- `status` (`processing | completed | failed`)
-- `file_format`
-- `records`
-- `file_size_bytes`
-- `generated_at` or `created_at`
-- `download_url` (optional)
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "id": "uuid",
-        "title": "EU Compliance Export",
-        "report_type": "compliance",
-        "status": "completed",
-        "file_format": "xlsx",
-        "records": 248,
-        "file_size_bytes": 245800,
-        "generated_at": "2026-02-20T10:00:00.000Z",
-        "download_url": "/reports/uuid/download"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "page_size": 20,
-      "total_items": 12,
-      "total_pages": 1
-    }
-  }
-}
-```
-
----
-
-### 8.3. Report Detail
-
-**Endpoint**: `GET /api/reports/:id`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "title": "EU Compliance Export",
-    "report_type": "compliance",
-    "status": "completed",
-    "file_format": "xlsx",
-    "records": 248,
-    "file_size_bytes": 245800,
-    "generated_at": "2026-02-20T10:00:00.000Z",
-    "download_url": "/reports/uuid/download",
-    "metadata": {
-      "target_market": "EU",
-      "generated_by": "uuid"
-    }
-  }
-}
-```
-
----
-
-### 8.4. Create Report (Manual)
-
-**Endpoint**: `POST /api/reports`
-
-Used by the `Create report` action in Reports tab.
-
-**Request Body (minimum)**:
-```json
-{
-  "title": "Q1 2026 Carbon Summary",
-  "report_type": "carbon_audit",
-  "file_format": "xlsx"
-}
-```
-
-**Response** (202 Accepted):
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "status": "processing",
-    "created_at": "2026-02-20T10:00:00.000Z"
-  }
-}
-```
-
----
-
-### 8.5. Update Report Status
-
-**Endpoint**: `PATCH /api/reports/:id/status`
-
-**Request Body**:
-```json
-{
-  "status": "completed"
-}
-```
-
-Valid values:
-- `processing`
-- `completed`
-- `failed`
-
-This endpoint is intended for system/workflow roles.
-
----
-
-### 8.6. Download Report
-
-**Endpoint**: `GET /api/reports/:id/download`
-
-Required behavior:
-- Return the actual binary file stream, or
-- Return 302 redirect to a short-lived signed file URL
-
-**Important contract (mandatory)**:
-- Do not return JSON metadata payload for this endpoint.
-- Metadata responses (for example `file_url`) belong to `GET /api/reports/:id`, not the download endpoint.
-
-Recommended headers (direct streaming):
-- `Content-Type`: correct mime type (`application/pdf`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `text/csv`, ...)
-- `Content-Disposition`: `attachment; filename="..."`
-
-Error responses:
-- `404`: report not found
-- `409`: report is not ready yet (`REPORT_NOT_READY`)
-
----
-
-### 8.7. Unified Dataset Export Pipeline
-
-Preferred endpoint:
-- `POST /api/reports/exports`
-
-Backward-compatible fallback:
-- `POST /api/reports/export-jobs`
-
-Used by all Export Data actions on `/dashboard/reports`.
-
-**Request Body**:
-```json
-{
-  "dataset_type": "product",
-  "file_format": "csv",
-  "title": "Products Export"
-}
-```
-
-`dataset_type` values:
-- `product`
-- `activity`
-- `audit`
-- `users`
-- `history`
-- `analytics`
-- `company`
-
-Backend pipeline responsibilities:
-1. Validate tenant/permissions.
-2. Create processing report record.
-3. Query dataset data.
-4. Generate output file.
-5. Store file and persist storage key.
-6. Update report status (`completed` or `failed`).
-7. Return metadata for FE polling/download.
-
-**Response** (202 Accepted):
-```json
-{
-  "success": true,
-  "data": {
-    "report_id": "uuid",
-    "status": "processing",
-    "title": "Products Export"
-  }
-}
-```
-
----
-
-### 8.8. Export Source Counts
-
-Primary endpoints:
-- `GET /api/reports/export-sources/products`
-- `GET /api/reports/export-sources/activity`
-- `GET /api/reports/export-sources/audit`
-- `GET /api/reports/export-sources/users`
-- `GET /api/reports/export-sources/history`
-
-Compatible alternatives are acceptable if response includes equivalent total count fields.
-
----
-
-### 8.9. Export Compliance Overview
-
-Base path: `/api/export/markets`  
-Authentication: Required (B2B role only)
-
----
-
-### 8.10. List Market Compliance
-
-**Endpoint**: `GET /api/export/markets`
-
-Each market item should provide enough data for:
-- Market cards on `/dashboard/export`
-- Compliance detail modal with 4 tabs: overview, products, carbon, documents
-- Centralized document manager in `/dashboard/export`
-
-**Minimum fields per market**:
-- `market_code`
-- `market_name`
-- `status` (`draft | incomplete | ready | verified`)
-- `score` (source of truth for readiness %)
-- `documents[]` (company-specific document state)
-- `document_requirements[]` or `required_documents[]`
-- `required_documents_count`
-- `required_documents_uploaded_count`
-- `required_documents_missing_count`
-- `documents_total_count`
-- `documents_uploaded_count`
-- `documents_missing_count`
+Each market item contains:
+- identity/status: `id`, `market_code`, `market_name`, `status`, `score`
+- verification fields
+- required document summaries
+- `document_requirements` (from DB requirements table if available)
+- `documents[]`
 - `product_scope[]`
 - `carbon_data[]`
 - `recommendations[]`
-- `emission_factors[]`
-- `verification_*` fields (optional)
+- `emission_factors[]` (global reference subset)
+
+### POST `/:market_code/recommendations/:recommendation_id/actions`
+
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `action` | yes | `start`/`complete`/`dismiss`/`reset`/`mark_completed` |
+
+- Success: recommendation action state update.
+- Errors:
+  - `404 MARKET_NOT_FOUND`
+  - `404 RECOMMENDATION_NOT_FOUND`
+  - `400 INVALID_ACTION`
+
+### POST `/:market_code/products`
+
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `product_id` | yes | non-empty |
+| `hs_code` | no | max 50 |
+| `notes` | no | max 500 |
+
+- Upsert behavior on `(market_id, product_id)`.
+- Errors:
+  - `404 MARKET_NOT_FOUND`
+  - `404 PRODUCT_NOT_FOUND`
+
+### PATCH `/:market_code/products/:product_id`
+
+- Body: optional `hs_code`, `notes`
+- Error: `404 PRODUCT_SCOPE_NOT_FOUND`
+
+### DELETE `/:market_code/products/:product_id`
+
+- Removes product from scope.
+- Error: `404 PRODUCT_SCOPE_NOT_FOUND`
+
+### PATCH `/:market_code/carbon-data/:scope`
+
+- Path `scope`: `scope1|scope2|scope3`
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `value` | yes | numeric |
+| `unit` | no | max 20 |
+| `methodology` | no | max 500 |
+| `data_source` | no | max 200 |
+| `reporting_period` | no | max 100 |
+
+- Upsert behavior by `(market_id, scope)`.
+
+### POST `/:market_code/documents/:document_id/upload`
+
+- Current implementation accepts metadata in JSON body (not multipart file content yet).
+- Body fields used:
+- `document_name`, `document_code`, `original_filename`, `file_size_bytes`, `mime_type`, `checksum_sha256`
+
+- Behavior:
+  - sanitize filename
+  - generate tenant-aware storage key
+  - update existing document row or create new row
+
+### GET `/:market_code/documents/:document_id/download`
+
+- Returns binary stream for local storage.
+- In dev, placeholder document may be generated if file missing and placeholders enabled.
+- Errors:
+  - `404 MARKET_NOT_FOUND`
+  - `404 DOCUMENT_NOT_FOUND`
+  - `404 DOCUMENT_FILE_NOT_FOUND`
+  - `501 STORAGE_NOT_IMPLEMENTED`
+
+### DELETE `/:market_code/documents/:document_id`
+
+- Marks document back to `missing` and clears storage fields.
+- Error: `404 DOCUMENT_NOT_FOUND`
+
+### POST `/:market_code/reports`
+
+- Generates compliance report job for one market.
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `file_format` | yes | `xlsx`/`csv`/`pdf` |
+
+- Preconditions:
+  - market must exist
+  - market status must be `ready` or `verified`
+
+- Success `202`: `{ report_id, status, download_url: null }`
+- Errors:
+  - `404 MARKET_NOT_FOUND`
+  - `400 MARKET_NOT_READY`
 
 ---
 
-### 8.10.1. Document Item Payload (minimum)
-
-Each item in `documents[]` should include:
-- `id` (stable document id for upload/download/remove)
-- `name`
-- `required` (boolean)
-- `status` (`missing | uploaded | approved | expired`)
-- `valid_to` (optional)
-- `uploaded_by` (optional)
-- `uploaded_at` (optional)
-
----
-
-### 8.10.2. Recommendation Payload Contract
-
-Each item in `recommendations[]` should include:
-- `recommendation_id` (valid uuid/object-id/ulid)
-- `type` (`document | carbon_data | verification | product_scope`)
-- `missing_item`
-- `regulatory_reason`
-- `impact_if_missing` (required, non-empty string)
-- `priority` (`mandatory | important | recommended`)
-- `status` (`active | completed | ignored`)
-- `document_id` (optional link to documents tab)
-
-Accepted aliases for backward compatibility:
-- `business_impact` / `businessImpact`
-- `impact_message`
-- `consequence`
-
-If impact is not provided, FE falls back to:
-- `Chua co thong tin anh huong neu thieu.`
-
----
-
-### 8.11. Recommendation Action (Optional/Deferred)
-
-**Endpoint**: `POST /api/export/markets/:market_code/recommendations/:recommendation_id/actions`
-
-**Request Body**:
-```json
-{
-  "action": "mark_completed"
-}
-```
-
-Current FE behavior:
-- Recommendations are shown as read-only guidance.
-- There is no `Apply` button dependency in current FE.
-- This endpoint can be kept for a future workflow phase.
-
----
-
-### 8.12. Product Scope CRUD
-
-- `POST /api/export/markets/:market_code/products`
-- `PATCH /api/export/markets/:market_code/products/:product_id`
-- `DELETE /api/export/markets/:market_code/products/:product_id`
-
----
-
-### 8.13. Carbon Data Update
-
-**Endpoint**: `PATCH /api/export/markets/:market_code/carbon-data/:scope`
-
-**Request Body**:
-```json
-{
-  "value": 123.4,
-  "unit": "kgCO2e",
-  "methodology": "GHG Protocol",
-  "data_source": "Internal meter",
-  "reporting_period": "2026-Q1"
-}
-```
-
-`scope` values:
-- `scope1`
-- `scope2`
-- `scope3`
-
----
-
-### 8.14. Document Actions
-
-- Upload: `POST /api/export/markets/:market_code/documents/:document_id/upload` (multipart/form-data)
-- Download: `GET /api/export/markets/:market_code/documents/:document_id/download`
-- Remove: `DELETE /api/export/markets/:market_code/documents/:document_id`
-
-Download contract:
-- Must return actual binary file stream, or
-- Must return redirect to signed file URL
-- Must not return JSON metadata payload
-
-Remove contract:
-- After delete, `GET /api/export/markets` should reflect updated document state immediately for FE refresh.
-
----
-
-### 8.15. Generate Compliance Report
-
-**Endpoint**: `POST /api/export/markets/:market_code/reports`
-
-**Request Body**:
-```json
-{
-  "file_format": "xlsx"
-}
-```
-
-Allowed `file_format`:
-- `xlsx`
-- `csv`
-- `pdf`
-
-Required backend behavior:
-1. Validate market readiness (`ready` or `verified`).
-2. Create processing report record.
-3. Generate compliance file.
-4. Store file and persist storage key.
-5. Update report status to `completed` or `failed`.
-6. Return `report_id`, `status`, and `download_url` when available.
-
----
-
-## 9. Subscription APIs
+## 4.11 Subscription APIs
 
 Base path: `/api/subscription`
 
-**Authentication**: Required (B2B role only)
+### GET `/`
+
+- Auth: required + b2b
+- Returns:
+- `current_plan`
+- `plan_details`
+- `limits`
+- `usage`
+
+### POST `/upgrade`
+
+- Auth: required + b2b + company admin
+- Body:
+
+| Field | Required | Rules |
+|---|---|---|
+| `target_plan` | yes | `starter`/`standard`/`export` |
+| `billing_cycle` | yes | `monthly`/`yearly` |
+
+- Returns mock payment session (`checkout_url`, `session_id`, `amount`).
 
 ---
 
-### 9.1. Thông Tin Subscription
-
-**Endpoint**: `GET /api/subscription`
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "company_id": "uuid",
-    "current_plan": "starter",
-    "plan_details": {
-      "name": "Starter Plan",
-      "price": 0,
-      "features": [
-        "Up to 50 products",
-        "Basic carbon calculation",
-        "1 market analysis"
-      ],
-      "limits": {
-        "max_products": 50,
-        "max_calculations_per_month": 100,
-        "max_team_members": 3,
-        "export_reports": false
-      }
-    },
-    "usage": {
-      "current_products": 25,
-      "calculations_this_month": 45,
-      "team_members": 2
-    },
-    "billing": {
-      "cycle": "monthly",
-      "next_billing_date": null,
-      "billing_email": "admin@company.com"
-    },
-    "available_upgrades": [
-      {
-        "plan": "standard",
-        "name": "Standard Plan",
-        "price_monthly": 99,
-        "price_yearly": 950
-      },
-      {
-        "plan": "export",
-        "name": "Export Plan",
-        "price_monthly": 299,
-        "price_yearly": 2990
-      }
-    ]
-  }
-}
-```
-
----
-
-### 9.2. Nâng Cấp Subscription
-
-**Endpoint**: `POST /api/subscription/upgrade`
-
-**Authorization**: Company admin only
-
-**Request Body**:
-```json
-{
-  "target_plan": "standard",
-  "billing_cycle": "yearly"
-}
-```
-
-**Response** (200 OK):
-```json
-{
-  "success": true,
-  "data": {
-    "payment_session": {
-      "session_id": "stripe_session_id",
-      "payment_url": "https://checkout.stripe.com/...",
-      "amount": 950,
-      "currency": "USD"
-    },
-    "target_plan": "standard",
-    "billing_cycle": "yearly"
-  },
-  "message": "Payment session created"
-}
-```
-
-**Available Plans**:
-- `starter`: Free (current)
-- `standard`: $99/month or $950/year
-- `export`: $299/month or $2990/year
-
----
-
-## 10. Error Codes
-
-### Authentication Errors
-
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `EMAIL_EXISTS` | 409 | Email đã được đăng ký |
-| `INVALID_CREDENTIALS` | 401 | Email hoặc mật khẩu không đúng |
-| `EMAIL_NOT_VERIFIED` | 403 | Email chưa được xác thực |
-| `INVALID_REFRESH_TOKEN` | 401 | Refresh token không hợp lệ |
-| `INVALID_VERIFICATION_TOKEN` | 400 | Token xác thực email không hợp lệ |
-| `USER_NOT_FOUND` | 404 | Không tìm thấy user |
-| `ALREADY_VERIFIED` | 400 | Email đã được xác thực |
-
-### Authorization Errors
-
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `UNAUTHORIZED` | 401 | Chưa đăng nhập |
-| `FORBIDDEN` | 403 | Không có quyền truy cập |
-| `INVALID_TOKEN` | 401 | Token không hợp lệ |
-| `TOKEN_EXPIRED` | 401 | Token hết hạn |
-| `ADMIN_REQUIRED` | 403 | Yêu cầu quyền admin |
-
-### Resource Errors
-
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `NO_COMPANY` | 404 | User không thuộc company nào |
-| `COMPANY_NOT_FOUND` | 404 | Không tìm thấy company |
-| `PRODUCT_NOT_FOUND` | 404 | Không tìm thấy sản phẩm |
-| `BATCH_NOT_FOUND` | 404 | Không tìm thấy batch |
-| `SHIPMENT_NOT_FOUND` | 404 | Không tìm thấy shipment |
-| `REPORT_NOT_FOUND` | 404 | Không tìm thấy report |
-| `MARKET_NOT_FOUND` | 404 | Không tìm thấy market compliance |
-| `COMPLIANCE_DOCUMENT_NOT_FOUND` | 404 | Không tìm thấy document compliance |
-
-### Validation Errors
-
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `VALIDATION_ERROR` | 400 | Dữ liệu không hợp lệ |
-| `DUPLICATE_SKU` | 400 | SKU đã tồn tại |
-| `INVALID_STATUS_TRANSITION` | 400 | Chuyển trạng thái không hợp lệ |
-| `EMPTY_SHIPMENT_PRODUCTS` | 400 | Shipment cần ít nhất 1 sản phẩm |
-| `BATCH_ALREADY_PUBLISHED` | 400 | Batch đã được publish |
-| `BATCH_EMPTY` | 400 | Không thể publish batch rỗng |
-| `INVALID_DATASET_TYPE` | 400 | `dataset_type` không hợp lệ |
-| `INVALID_FILE_FORMAT` | 400 | `file_format` không được hỗ trợ |
-| `INVALID_CARBON_SCOPE` | 400 | `scope` phải là scope1/scope2/scope3 |
-
-### Business Logic Errors
-
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `ALREADY_HAS_COMPANY` | 400 | User đã có company |
-| `PRODUCT_NOT_IN_COMPANY` | 400 | Sản phẩm không thuộc company |
-| `DUPLICATE_BATCH_ITEM` | 400 | Sản phẩm đã có trong batch |
-| `REPORT_NOT_READY` | 409 | Report chưa sẵn sàng để tải |
-| `COMPLIANCE_MARKET_NOT_READY` | 409 | Market chưa đạt `ready|verified` để export |
-| `EXPORT_SOURCE_NOT_SUPPORTED` | 400 | Dataset export source chưa được hỗ trợ |
-| `EXPORT_JOB_FAILED` | 500 | Job export thất bại ở backend pipeline |
-| `NOT_IMPLEMENTED` | 501 | Tính năng chưa được triển khai |
-
----
-
-## Response Format Chuẩn
-
-### Success Response
-
-```json
-{
-  "success": true,
-  "data": {
-    // Response data here
-  },
-  "message": "Optional success message",
-  "meta": {
-    // Optional metadata (pagination, etc.)
-  }
-}
-```
-
-### Error Response
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "Human-readable error message",
-    "details": {
-      // Optional additional error details
-    }
-  }
-}
-```
-
-### Pagination Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "items": [],
-    "pagination": {
-      "page": 1,
-      "page_size": 20,
-      "total_items": 156,
-      "total_pages": 8
-    }
-  }
-}
-```
-
----
-
-## Rate Limiting
-
-- **Global API Limit**: 100 requests per 15 minutes per IP
-- **Signup**: 10 requests per 15 minutes per IP
-- **Signin**: 5 requests per 15 minutes per IP
-- **Refresh Token**: 10 requests per 15 minutes per IP
-- **Email Verification**: 3 requests per 15 minutes per IP
-- **Google OAuth**: 10 requests per 15 minutes per IP
-
-**Rate Limit Headers**:
-```
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 95
-X-RateLimit-Reset: 1645363200
-```
-
----
-
-## Authentication
-
-### Sử Dụng Access Token
-
-Thêm token vào header của mỗi request:
-
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-### Token Expiry
-
-- **Access Token**: 15 minutes
-- **Refresh Token**: 7 days
-- **Email Verification Token**: 24 hours
-
-### Token Refresh Flow
-
-1. Khi access token hết hạn (401 error)
-2. Gọi `POST /api/auth/refresh` với refresh token
-3. Nhận access token và refresh token mới
-4. Retry request ban đầu với token mới
-
----
-
-## Database Schema Overview
-
-### Core Tables
-
-- **users**: User accounts (auth credentials)
-- **profiles**: Extended user info
-- **companies**: B2B organizations
-- **user_roles**: Role assignments (b2b/b2c/admin)
-- **company_members**: Team management
-
-### Product & Carbon Tables
-
-- **products**: Product catalog
-- **product_materials**: Material composition
-- **materials**: Material master data
-- **suppliers**: Supplier information
-- **emission_factors**: Carbon emission factors
-- **carbon_calculations**: Calculation audit logs
-- **carbon_targets**: Monthly carbon targets
-
-### Logistics Tables
-
-- **shipments**: Shipment tracking
-- **shipment_legs**: Multi-modal transport routes
-- **shipment_products**: Products in shipments
-- **product_batches**: Product batch management
-- **product_batch_items**: Items in batches
-
-### Compliance Tables
-
-- **reports**: Generated reports
-- **certificates**: Certifications
-- **market_readiness**: Export market readiness
-
-### AI & Chat Tables
-
-- **ai_recommendations**: AI-generated recommendations
-- **chat_conversations**: Chat sessions
-- **chat_messages**: Chat message history
-
----
-
-## Environment Variables
-
-```env
-# Server
-PORT=4000
-NODE_ENV=production
-
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/weavecarbon
-
-# JWT
-JWT_SECRET=your-secret-key-here
-JWT_REFRESH_SECRET=your-refresh-secret-here
-
-# Email
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-EMAIL_FROM=noreply@weavecarbon.com
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:4000/api/auth/google/callback
-
-# Frontend
-FRONTEND_URL=http://localhost:3000
-CORS_ORIGIN=http://localhost:3000
-```
-
----
-
-## Testing
-
-### Health Check
-
-```bash
-curl http://localhost:4000/health
-```
-
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "status": "healthy",
-    "timestamp": "2026-02-20T10:00:00.000Z",
-    "uptime": 3600.52
-  }
-}
-```
-
-### Sample Test Accounts
-
-```
-# B2B Admin
-Email: admin@greenfashion.com
-Password: Password123!
-
-# B2B Member
-Email: member@greenfashion.com
-Password: Password123!
-
-# B2C User
-Email: user1@gmail.com
-Password: Password123!
-```
-
----
-
-## Changelog
-
-### Version 1.0.0 (2026-02-20)
-
-**Initial Release**:
-- ✅ Authentication & Authorization
-- ✅ Account Management
-- ✅ Dashboard APIs
-- ✅ Product Management
-- ✅ Batch Management
-- ✅ Logistics Management
-- ✅ Company Members
-- ✅ Reports
-- ✅ Subscription Management
-
-**Upcoming Features**:
-- 🔜 B2C Donation APIs
-- 🔜 Collection Points APIs
-- 🔜 Rewards System APIs
-- 🔜 Webhook Events
-- 🔜 GraphQL API
-
----
-
-## Support & Contact
-
-- **Documentation**: https://docs.weavecarbon.com
-- **API Status**: https://status.weavecarbon.com
-- **Email**: support@weavecarbon.com
-- **GitHub Issues**: https://github.com/weavecarbon/backend/issues
-
----
-
-**Last Updated**: February 20, 2026  
-**API Version**: 1.0.0  
-**Document Version**: 1.0
+## 5. Key Business Rules
+
+- Product status transitions are controlled (draft/published/archived semantics).
+- Publishing product/batch may auto-create shipment when logistics data is sufficient.
+- Shipment status transitions are strictly validated.
+- Export market score/status is recalculated after scope/carbon/doc/recommendation changes.
+- Report/export generation is asynchronous (`202`) and should be polled using report status endpoints.
+
+## 6. Error Code Catalog (Observed in Implementation)
+
+### Auth / Permission
+- `UNAUTHORIZED`
+- `INVALID_TOKEN`
+- `TOKEN_EXPIRED`
+- `FORBIDDEN`
+- `USER_NOT_FOUND`
+- `INVALID_CREDENTIALS`
+- `EMAIL_NOT_VERIFIED`
+- `INVALID_REFRESH_TOKEN`
+- `INVALID_VERIFICATION_TOKEN`
+- `ALREADY_VERIFIED`
+- `EMAIL_EXISTS`
+
+### Validation / Request
+- `VALIDATION_ERROR`
+- `MISSING_PARAMETERS`
+- `INVALID_PARAMETER`
+- `INVALID_SOURCE_TYPE`
+- `INVALID_ACTION`
+- `INVALID_SHIPMENT_PAYLOAD`
+
+### Resource Not Found
+- `NOT_FOUND`
+- `NO_COMPANY`
+- `COMPANY_NOT_FOUND`
+- `PRODUCT_NOT_FOUND`
+- `BATCH_NOT_FOUND`
+- `BATCH_ITEM_NOT_FOUND`
+- `SHIPMENT_NOT_FOUND`
+- `REPORT_NOT_FOUND`
+- `MARKET_NOT_FOUND`
+- `RECOMMENDATION_NOT_FOUND`
+- `DOCUMENT_NOT_FOUND`
+- `DOCUMENT_FILE_NOT_FOUND`
+- `PRODUCT_SCOPE_NOT_FOUND`
+
+### Business / Conflict
+- `DUPLICATE_SKU`
+- `DUPLICATE_BATCH_ITEM`
+- `INVALID_STATUS_TRANSITION`
+- `INVALID_BATCH_STATUS_TRANSITION`
+- `INVALID_SHIPMENT_STATUS_TRANSITION`
+- `BATCH_EMPTY`
+- `EMPTY_SHIPMENT_PRODUCTS`
+- `PRODUCT_NOT_IN_COMPANY`
+- `REPORT_NOT_READY`
+- `MARKET_NOT_READY`
+- `RATE_LIMITED`
+
+### Storage / Infra
+- `FILE_NOT_FOUND`
+- `STORAGE_NOT_IMPLEMENTED`
+- `INTERNAL_ERROR`
+
+## 7. Postman Quick Start
+
+1. Call `POST /api/auth/signin` and copy `access_token`.
+2. Set header `Authorization: Bearer <access_token>`.
+3. Test protected endpoints, e.g. `GET /api/account`, `GET /api/products`, `GET /api/reports`.
+4. For async report/export APIs (`POST /api/reports`, `POST /api/reports/exports`), poll `GET /api/reports/:id/status`.
+
+## 8. Implementation Notes / Known Placeholders
+
+- `GET /api/products/bulk-template` -> not implemented (`501`)
+- `POST /api/products/bulk-import/file` -> not implemented (`501`)
+- Export market document upload currently stores metadata only (file middleware not wired yet).
+- Non-local storage providers for download are not implemented (`501`).
+
+## 9. Changelog
+
+- `2026-02-24`: Rebuilt documentation from current codebase routes/validators/services.
+- `2026-02-25`: Updated email verification docs for HTML verify page + content negotiation (`GET /api/auth/verify-email`) and email link URL resolution (`API_BASE_URL` fallback chain).

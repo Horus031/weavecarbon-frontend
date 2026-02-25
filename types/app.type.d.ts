@@ -12,5 +12,7 @@ export interface Profile {
   full_name?: string;
   company_id?: string | null;
   user_type?: "b2b" | "b2c" | "admin";
+  company_role?: "root" | "member" | "viewer";
+  is_root?: boolean;
   avatar_url?: string | null;
 }

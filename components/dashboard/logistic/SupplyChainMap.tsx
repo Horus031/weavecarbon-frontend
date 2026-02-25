@@ -1,5 +1,6 @@
-import React, { useState, lazy, Suspense } from "react";
-import { Map, Globe } from "lucide-react";
+﻿import React, { lazy, Suspense, useState } from "react";
+import { useTranslations } from "next-intl";
+import { Globe, Map } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export interface SupplyChainNode {
@@ -36,23 +37,27 @@ interface SupplyChainMapProps {
   showModeToggle?: boolean;
 }
 
-const LoadingPlaceholder: React.FC<{height: string;}> = ({ height }) =>
-<div
-  className="relative rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center"
-  style={{ height }}>
-  
-    <div className="text-center text-muted-foreground">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-      <p className="text-sm">Đang tải bản đồ...</p>
-    </div>
-  </div>;
+const LoadingPlaceholder: React.FC<{height: string;}> = ({ height }) => {
+  const t = useTranslations("logistics.supplyChainMap");
 
+  return (
+    <div
+      className="relative rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center"
+      style={{ height }}>
 
+      <div className="text-center text-muted-foreground">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+        <p className="text-sm">{t("loading")}</p>
+      </div>
+    </div>);
+
+};
 
 const LazyMapContent = lazy(() => import("./SupplyChainMapContent"));
 const LazyMap3D = lazy(() => import("./SupplyChainMap3D"));
 
 const SupplyChainMap: React.FC<SupplyChainMapProps> = (props) => {
+  const t = useTranslations("logistics.supplyChainMap");
   const {
     height = "500px",
     defaultMapMode = "3d",
@@ -64,7 +69,6 @@ const SupplyChainMap: React.FC<SupplyChainMapProps> = (props) => {
 
   return (
     <div className="space-y-3">
-      
       {showModeToggle &&
       <div className="flex justify-end">
           <ToggleGroup
@@ -72,28 +76,27 @@ const SupplyChainMap: React.FC<SupplyChainMapProps> = (props) => {
           value={mapMode}
           onValueChange={(value) => value && setMapMode(value as "2d" | "3d")}
           className="bg-muted p-1 rounded-lg">
-          
+
             <ToggleGroupItem
             value="2d"
-            aria-label="2D Map"
+            aria-label={t("modes.twoDAria")}
             className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3">
-            
+
               <Map className="w-4 h-4 mr-2" />
-              2D
+              {t("modes.twoD")}
             </ToggleGroupItem>
             <ToggleGroupItem
             value="3d"
-            aria-label="3D Satellite"
+            aria-label={t("modes.threeDAria")}
             className="data-[state=on]:bg-background data-[state=on]:shadow-sm px-3">
-            
+
               <Globe className="w-4 h-4 mr-2" />
-              3D Satellite
+              {t("modes.threeD")}
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
       }
 
-      
       <Suspense fallback={<LoadingPlaceholder height={height} />}>
         {mapMode === "3d" ?
         <LazyMap3D {...mapProps} height={height} /> :
@@ -106,3 +109,4 @@ const SupplyChainMap: React.FC<SupplyChainMapProps> = (props) => {
 };
 
 export default SupplyChainMap;
+

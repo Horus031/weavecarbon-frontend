@@ -41,7 +41,7 @@ import {
 interface Shipment {
   shipmentId: string;
   id: string;
-  productId: string;
+  productId: string | null;
   productName: string;
   sku: string;
   status: "in_transit" | "delivered" | "pending" | "cancelled";
@@ -97,7 +97,8 @@ shipment: LogisticsShipmentSummary | LogisticsShipmentDetail)
 };
 
 const mapShipmentToOverview = (
-shipment: LogisticsShipmentSummary | LogisticsShipmentDetail)
+shipment: LogisticsShipmentSummary | LogisticsShipmentDetail,
+fallbacks: {shipmentName: string;unknownCarrier: string;})
 : Shipment => {
   const detailLike = toShipmentDetailLike(shipment);
   const firstProduct = detailLike.products[0];
@@ -121,9 +122,11 @@ shipment: LogisticsShipmentSummary | LogisticsShipmentDetail)
   return {
     shipmentId: detailLike.id,
     id: detailLike.reference_number || detailLike.id,
-    productId: firstProduct?.product_id || detailLike.id,
+    productId: firstProduct?.product_id || null,
     productName:
-    firstProduct?.product_name || detailLike.reference_number || "Shipment",
+    firstProduct?.product_name ||
+    detailLike.reference_number ||
+    fallbacks.shipmentName,
     sku: firstProduct?.sku || detailLike.reference_number || detailLike.id,
     status,
     progress,
@@ -142,7 +145,7 @@ shipment: LogisticsShipmentSummary | LogisticsShipmentDetail)
     totalCO2: detailLike.total_co2e,
     carrier:
     detailLike.legs.find((leg) => leg.carrier_name.trim().length > 0)?.carrier_name ||
-    "Unknown carrier"
+    fallbacks.unknownCarrier
   };
 };
 
@@ -243,7 +246,39 @@ const ShippingOverviewMap: React.FC = () => {
       if (requestSeq !== detailRequestSeqRef.current) {
         return;
       }
-      setDetailShipment(toDetailShipment(mapShipmentToOverview(detail)));
+      setDetailShipment(
+        toDetailShipment(
+          mapShipmentToOverview(detail, {
+            shipmentName: t("fallbacks.shipment"),
+            unknownCarrier: t("fallbacks.unknownCarrier")
+          })
+        )
+      );
+    } catch {
+
+    }
+  };
+
+  const openQr = async (shipment: Shipment) => {
+    if (shipment.productId && isValidUuid(shipment.productId)) {
+      setQrShipment(shipment);
+      return;
+    }
+
+    if (!isValidUuid(shipment.shipmentId)) {
+      return;
+    }
+
+    try {
+      const detail = await fetchLogisticsShipmentById(shipment.shipmentId);
+      const resolved = mapShipmentToOverview(detail, {
+        shipmentName: t("fallbacks.shipment"),
+        unknownCarrier: t("fallbacks.unknownCarrier")
+      });
+
+      if (resolved.productId && isValidUuid(resolved.productId)) {
+        setQrShipment(resolved);
+      }
     } catch {
 
     }
@@ -256,7 +291,10 @@ const ShippingOverviewMap: React.FC = () => {
       try {
         const shipmentSummaries = await fetchAllLogisticsShipments();
         const userShipments = shipmentSummaries.map((shipment) =>
-        mapShipmentToOverview(shipment)
+        mapShipmentToOverview(shipment, {
+          shipmentName: t("fallbacks.shipment"),
+          unknownCarrier: t("fallbacks.unknownCarrier")
+        })
         );
         setAllShipments(userShipments);
       } catch {
@@ -267,7 +305,7 @@ const ShippingOverviewMap: React.FC = () => {
     };
 
     void loadUserShipments();
-  }, []);
+  }, [t]);
 
   const getStatusBadge = (status: Shipment["status"]) => {
     const palette = STATUS_PALETTE[status];
@@ -334,7 +372,7 @@ const ShippingOverviewMap: React.FC = () => {
       shipment.productId,
       shipment.carrier].
 
-      filter(Boolean).
+      filter((value): value is string => typeof value === "string" && value.length > 0).
       some((value) => value.toLowerCase().includes(query));
     });
   }, [allShipments, searchTerm, statusFilter]);
@@ -360,7 +398,7 @@ const ShippingOverviewMap: React.FC = () => {
         const originKey = `${leg.origin.lat.toFixed(2)}-${leg.origin.lng.toFixed(2)}`;
         if (!addedLocations.has(originKey)) {
           addedLocations.add(originKey);
-          nodes.push({
+            nodes.push({
             id: `${shipment.id}-${leg.id}-origin`,
             name: leg.origin.name,
             lat: leg.origin.lat,
@@ -371,7 +409,7 @@ const ShippingOverviewMap: React.FC = () => {
             leg.origin.type === "airport" ?
             "airport" :
             "factory",
-            country: "Vietnam",
+            country: t("shipmentContext.defaults.vietnam"),
             co2: shipment.totalCO2,
             status:
             shipment.status === "delivered" ?
@@ -392,7 +430,7 @@ const ShippingOverviewMap: React.FC = () => {
               lat: leg.destination.lat,
               lng: leg.destination.lng,
               type: "destination",
-              country: shipment.destination.split(", ").pop() || "International",
+              country: shipment.destination.split(", ").pop() || t("fallbacks.international"),
               status:
               shipment.status === "delivered" ?
               "completed" :
@@ -404,7 +442,7 @@ const ShippingOverviewMap: React.FC = () => {
     });
 
     return nodes;
-  }, [paginatedShipments]);
+  }, [paginatedShipments, t]);
 
   const allRoutes = useMemo(
     (): SupplyChainRoute[] =>
@@ -628,7 +666,7 @@ const ShippingOverviewMap: React.FC = () => {
                     className="h-7 w-7 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setQrShipment(shipment);
+                      void openQr(shipment);
                     }}
                     title={t("qrCodeTitle")}>
                     
@@ -662,7 +700,7 @@ const ShippingOverviewMap: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between border-t border-slate-300 pt-2">
                     <span className="text-xs font-medium text-slate-700">
-                      {shipment.totalCO2.toFixed(1)} kg CO2e
+                      {shipment.totalCO2.toFixed(1)} {tTrack("units.kgCo2e")}
                     </span>
                     <span className="text-xs text-slate-500">
                       {shipment.carrier}
@@ -677,13 +715,13 @@ const ShippingOverviewMap: React.FC = () => {
               <CardContent className="py-6 text-center">
                 <p className="text-sm font-medium text-slate-800">
                   {allShipments.length === 0 ?
-                "Chưa có lô hàng nào" :
-                "Không có lô hàng phù hợp với bộ lọc hiện tại"}
+                t("empty.noShipments") :
+                t("empty.noFilteredShipments")}
                 </p>
                 <p className="mt-1 text-xs text-slate-600">
                   {allShipments.length === 0 ?
-                "Hãy tạo và xuất bản lô hàng để dữ liệu hiển thị tại đây." :
-                "Hãy thử đổi từ khóa tìm kiếm hoặc trạng thái."}
+                t("empty.createAndPublishHint") :
+                t("empty.changeFilterHint")}
                 </p>
               </CardContent>
             </Card>
@@ -761,9 +799,10 @@ const ShippingOverviewMap: React.FC = () => {
       </Dialog>
 
       
-      {qrShipment &&
+      {qrShipment?.productId &&
       <ProductQRCode
-        productId={qrShipment.productId}
+        productId={qrShipment.productId!}
+        shipmentId={qrShipment.shipmentId}
         productName={qrShipment.productName}
         sku={qrShipment.sku}
         isOpen={!!qrShipment}
@@ -775,3 +814,4 @@ const ShippingOverviewMap: React.FC = () => {
 };
 
 export default ShippingOverviewMap;
+

@@ -2,8 +2,10 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Card,
   CardContent,
@@ -25,7 +27,12 @@ import {
 "lucide-react";
 import StepIndicators from "./StepIndicators";
 import StepContent from "./StepContent";
-import { DraftVersion, ProductAssessmentData } from "./steps/types";
+import {
+  DESTINATION_MARKETS,
+  DraftVersion,
+  PRODUCT_TYPES,
+  ProductAssessmentData
+} from "./steps/types";
 import {
   createProduct,
   formatApiErrorMessage,
@@ -33,13 +40,28 @@ import {
   updateProduct } from
 "@/lib/productsApi";
 
-const steps = [
-{ id: 1, title: "Product Info", icon: Package, key: "productInfo" },
-{ id: 2, title: "Materials", icon: Leaf, key: "materials" },
-{ id: 3, title: "Manufacturing", icon: Factory, key: "manufacturing" },
-{ id: 4, title: "Logistics", icon: Truck, key: "logistics" },
-{ id: 5, title: "Assessment", icon: CheckCircle2, key: "assessment" },
-{ id: 6, title: "Save", icon: Save, key: "save" }];
+const STEP_CONFIG = [
+{
+  id: 1,
+  titleKey: "steps.productInfo",
+  icon: Package,
+  key: "productInfo"
+},
+{ id: 2, titleKey: "steps.materials", icon: Leaf, key: "materials" },
+{
+  id: 3,
+  titleKey: "steps.manufacturing",
+  icon: Factory,
+  key: "manufacturing"
+},
+{ id: 4, titleKey: "steps.logistics", icon: Truck, key: "logistics" },
+{
+  id: 5,
+  titleKey: "steps.assessment",
+  icon: CheckCircle2,
+  key: "assessment"
+},
+{ id: 6, titleKey: "steps.save", icon: Save, key: "save" }];
 
 
 const emptyAddress = {
@@ -51,6 +73,55 @@ const emptyAddress = {
   stateRegion: "",
   country: "Vietnam",
   postalCode: ""
+};
+
+const PRODUCT_TYPE_VALUES = PRODUCT_TYPES.map((type) => type.value);
+const DESTINATION_MARKET_VALUES = DESTINATION_MARKETS.map((market) => market.value);
+
+const normalizeOptionToken = (value: string): string =>
+value.
+normalize("NFD").
+replace(/[\u0300-\u036f]/g, "").
+toLowerCase().
+replace(/[^a-z0-9]+/g, "");
+
+const resolveNormalizedOptionValue = (
+rawValue: string | undefined,
+options: readonly string[],
+aliases: Record<string, string> = {}
+): string => {
+  if (!rawValue) return "";
+
+  const trimmedValue = rawValue.trim();
+  if (!trimmedValue) return "";
+
+  const normalizedValue = normalizeOptionToken(trimmedValue);
+  if (aliases[normalizedValue]) {
+    return aliases[normalizedValue];
+  }
+
+  const matchedValue = options.find(
+    (option) => normalizeOptionToken(option) === normalizedValue
+  );
+
+  return matchedValue || trimmedValue;
+};
+
+const DESTINATION_MARKET_ALIASES: Record<string, string> = {
+  us: "usa",
+  unitedstate: "usa",
+  unitedstates: "usa",
+  america: "usa",
+  hoaky: "usa",
+  domestic: "vietnam",
+  noidia: "vietnam",
+  noidiavietnam: "vietnam",
+  vietnamdomestic: "vietnam",
+  hanquoc: "korea",
+  nhatban: "japan",
+  chaua: "eu",
+  europe: "eu",
+  chauau: "eu"
 };
 
 const initialProductData: ProductAssessmentData = {
@@ -108,6 +179,15 @@ initialData?: ProductAssessmentData | null)
   return {
     ...initialProductData,
     ...initialData,
+    productType: resolveNormalizedOptionValue(
+      initialData.productType,
+      PRODUCT_TYPE_VALUES
+    ),
+    destinationMarket: resolveNormalizedOptionValue(
+      initialData.destinationMarket,
+      DESTINATION_MARKET_VALUES,
+      DESTINATION_MARKET_ALIASES
+    ),
     originAddress: { ...emptyAddress, ...(initialData.originAddress ?? {}) },
     destinationAddress: {
       ...emptyAddress,
@@ -219,11 +299,17 @@ export default function AssessmentClient({
   onClose,
   onCompleted
 }: AssessmentClientProps) {
+  const t = useTranslations("assessment.client");
   const router = useRouter();
+  const { canMutate } = usePermissions();
   const { setPageTitle } = useDashboardTitle();
   const isModalMode = mode === "modal";
   const isEditing = Boolean(productId);
   const skipCreateDraftPersistenceRef = useRef(false);
+  const steps = STEP_CONFIG.map((step) => ({
+    ...step,
+    title: t(step.titleKey)
+  }));
 
   const [currentStep, setCurrentStep] = useState(1);
   const [productData, setProductData] = useState<ProductAssessmentData>(() =>
@@ -234,8 +320,19 @@ export default function AssessmentClient({
 
   useEffect(() => {
     if (isModalMode) return;
-    setPageTitle("Product Assessment", "Create a new product assessment");
-  }, [isModalMode, setPageTitle]);
+    setPageTitle(t("pageTitle"), t("pageSubtitle"));
+  }, [isModalMode, setPageTitle, t]);
+
+  useEffect(() => {
+    if (canMutate) return;
+
+    if (isModalMode) {
+      onClose?.();
+      return;
+    }
+
+    router.replace("/products");
+  }, [canMutate, isModalMode, onClose, router]);
 
   useEffect(() => {
     skipCreateDraftPersistenceRef.current = false;
@@ -346,6 +443,7 @@ export default function AssessmentClient({
   };
 
   const handleSaveDraft = async () => {
+    if (!canMutate) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -374,8 +472,8 @@ export default function AssessmentClient({
 
       toast.success(
         isEditing ?
-        "Đã cập nhật sản phẩm nháp thành công" :
-        "Đã lưu nháp sản phẩm thành công"
+        t("toast.draftUpdated") :
+        t("toast.draftSaved")
       );
 
       if (isModalMode) {
@@ -391,13 +489,14 @@ export default function AssessmentClient({
         onClose?.();
       }
     } catch (error) {
-      toast.error(formatApiErrorMessage(error, "Lưu nháp thất bại"));
+      toast.error(formatApiErrorMessage(error, t("toast.draftSaveFailed")));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handlePublish = async () => {
+    if (!canMutate) return;
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -414,8 +513,8 @@ export default function AssessmentClient({
 
       toast.success(
         isEditing ?
-        "Đã cập nhật và xuất bản sản phẩm thành công" :
-        "Xuất bản sản phẩm thành công"
+        t("toast.publishUpdated") :
+        t("toast.publishSuccess")
       );
 
       if (isModalMode) {
@@ -435,22 +534,26 @@ export default function AssessmentClient({
       if (isValidProductId(result.id)) {
         router.push(`/summary/${result.id}`);
       } else {
-        toast.error("Product ID is invalid. Please check backend response.");
+        toast.error(t("toast.invalidProductId"));
         router.push("/products");
       }
     } catch (error) {
-      toast.error(formatApiErrorMessage(error, "Xuất bản thất bại"));
+      toast.error(formatApiErrorMessage(error, t("toast.publishFailed")));
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (!canMutate) {
+    return null;
+  }
 
   return (
     <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto">
       <div>
         <div className="flex items-center justify-between mb-4">
           <span className="text-xs md:text-sm text-muted-foreground">
-            Step {currentStep} / {steps.length}
+            {t("stepCounter", { current: currentStep, total: steps.length })}
           </span>
         </div>
         <Progress value={progress} className="h-2" />
@@ -468,7 +571,7 @@ export default function AssessmentClient({
           </CardTitle>
           {currentStep < steps.length &&
           <CardDescription className="text-xs md:text-sm">
-              Fill in the information below to continue
+              {t("fillInfoToContinue")}
             </CardDescription>
           }
         </CardHeader>
@@ -493,7 +596,7 @@ export default function AssessmentClient({
           className="gap-2 w-full sm:w-auto">
 
           <ArrowLeft className="w-4 h-4" />
-          {isModalMode && currentStep === 1 ? "Close" : "Back"}
+          {isModalMode && currentStep === 1 ? t("buttons.close") : t("buttons.back")}
         </Button>
 
         {currentStep < steps.length ?
@@ -502,7 +605,7 @@ export default function AssessmentClient({
           disabled={!canProceed()}
           className="gap-2 w-full sm:w-auto">
 
-            Next
+            {t("buttons.next")}
             <ArrowRight className="w-4 h-4" />
           </Button> :
         isModalMode ?
@@ -511,7 +614,7 @@ export default function AssessmentClient({
           onClick={onClose}
           className="gap-2 w-full sm:w-auto">
 
-            Close
+            {t("buttons.close")}
             <CheckCircle2 className="w-4 h-4" />
           </Button> :
 
@@ -520,7 +623,7 @@ export default function AssessmentClient({
           onClick={() => router.push("/products")}
           className="gap-2 w-full sm:w-auto">
 
-            Back to Products
+            {t("buttons.backToProducts")}
             <CheckCircle2 className="w-4 h-4" />
           </Button>
         }

@@ -1,11 +1,12 @@
-import React from "react";
+﻿import React from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription } from
-"@/components/ui/dialog";
+  DialogDescription
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,69 +18,88 @@ interface PricingModalProps {
   onSelectPlan?: (plan: string) => void;
 }
 
-const pricingPlans = [
-{
-  id: "starter",
-  name: "Starter",
-  nameVi: "Khởi động",
-  price: "149k - 299k",
-  currency: "VNĐ/tháng",
-  icon: Zap,
-  color: "bg-blue-500",
-  popular: false,
-  features: [
-  { text: "Nhập SKU cơ bản", included: true },
-  { text: "Carbon proxy đơn giản", included: true },
-  { text: "Vận chuyển nội địa", included: true },
-  { text: "Xuất PDF báo cáo", included: false },
-  { text: "Breakdown CO₂ chi tiết", included: false },
-  { text: "Export readiness score", included: false }]
+type PlanId = "starter" | "standard" | "export";
 
-},
-{
-  id: "standard",
-  name: "Standard",
-  nameVi: "Tiêu chuẩn",
-  price: "599k - 1.2M",
-  currency: "VNĐ/tháng",
-  icon: Sparkles,
-  color: "bg-primary",
-  popular: true,
-  features: [
-  { text: "Nhập SKU cơ bản", included: true },
-  { text: "Carbon proxy đơn giản", included: true },
-  { text: "Vận chuyển nội địa", included: true },
-  { text: "Breakdown CO₂ chi tiết", included: true },
-  { text: "Vận chuyển xuất khẩu", included: true },
-  { text: "Export readiness score", included: true }]
+const pricingPlans: Array<{
+  id: PlanId;
+  icon: typeof Zap;
+  color: string;
+  popular: boolean;
+  contact?: boolean;
+  featureKeys: string[];
+}> = [
+  {
+    id: "starter",
+    icon: Zap,
+    color: "bg-blue-500",
+    popular: false,
+    featureKeys: [
+      "basicSku",
+      "simpleProxy",
+      "domesticTransport",
+      "pdfReport",
+      "detailedBreakdown",
+      "exportReadiness"
+    ]
+  },
+  {
+    id: "standard",
+    icon: Sparkles,
+    color: "bg-primary",
+    popular: true,
+    featureKeys: [
+      "basicSku",
+      "simpleProxy",
+      "domesticTransport",
+      "detailedBreakdown",
+      "exportTransport",
+      "exportReadiness"
+    ]
+  },
+  {
+    id: "export",
+    icon: Crown,
+    color: "bg-amber-500",
+    popular: false,
+    contact: true,
+    featureKeys: [
+      "allStandard",
+      "usEuCompliance",
+      "circularCredit",
+      "advancedAudit",
+      "erpApi",
+      "dedicatedManager"
+    ]
+  }
+];
 
-},
-{
-  id: "export",
-  name: "Export",
-  nameVi: "Xuất khẩu",
-  price: "3M - 6M",
-  currency: "VNĐ/tháng",
-  icon: Crown,
-  color: "bg-amber-500",
-  popular: false,
-  contact: true,
-  features: [
-  { text: "Tất cả tính năng Standard", included: true },
-  { text: "Báo cáo US/EU compliance", included: true },
-  { text: "Circular credit tracking", included: true },
-  { text: "Hỗ trợ audit chuyên sâu", included: true },
-  { text: "API tích hợp ERP", included: true },
-  { text: "Dedicated account manager", included: true }]
-
-}];
-
+const includedFeaturesByPlan: Record<PlanId, Set<string>> = {
+  starter: new Set(["basicSku", "simpleProxy", "domesticTransport"]),
+  standard: new Set([
+    "basicSku",
+    "simpleProxy",
+    "domesticTransport",
+    "detailedBreakdown",
+    "exportTransport",
+    "exportReadiness"
+  ]),
+  export: new Set([
+    "allStandard",
+    "usEuCompliance",
+    "circularCredit",
+    "advancedAudit",
+    "erpApi",
+    "dedicatedManager"
+  ])
+};
 
 const PricingModal: React.FC<PricingModalProps> = ({
   open,
   onClose,
   onSelectPlan
 }) => {
+  const t = useTranslations("pricingModal");
+
   const handleSelectPlan = (planId: string) => {
     if (onSelectPlan) {
       onSelectPlan(planId);
@@ -98,99 +118,91 @@ const PricingModal: React.FC<PricingModalProps> = ({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleSkip()}>
       <DialogContent className="max-w-4xl! max-h-[90vh] overflow-y-auto">
         <DialogHeader className="text-center pb-4">
-          <DialogTitle className="text-2xl font-bold">
-            Chọn gói phù hợp với doanh nghiệp của bạn
-          </DialogTitle>
-          <DialogDescription className="text-base">
-            Bắt đầu theo dõi carbon footprint và chuẩn bị cho xuất khẩu bền vững
-          </DialogDescription>
+          <DialogTitle className="text-2xl font-bold">{t("title")}</DialogTitle>
+          <DialogDescription className="text-base">{t("description")}</DialogDescription>
         </DialogHeader>
 
         <div className="grid md:grid-cols-3 gap-4 mt-4">
           {pricingPlans.map((plan) => {
             const Icon = plan.icon;
+
             return (
               <Card
                 key={plan.id}
                 className={`relative transition-all hover:shadow-lg ${
-                plan.popular ? "ring-2 ring-primary shadow-md" : ""}`
-                }>
-                
-                {plan.popular &&
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
-                    Phổ biến nhất
+                  plan.popular ? "ring-2 ring-primary shadow-md" : ""
+                }`}
+              >
+                {plan.popular && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
+                    {t("popularBadge")}
                   </Badge>
-                }
+                )}
                 <CardHeader className="text-center pb-2">
                   <div
-                    className={`mx-auto w-12 h-12 rounded-full ${plan.color} flex items-center justify-center mb-3`}>
-                    
+                    className={`mx-auto w-12 h-12 rounded-full ${plan.color} flex items-center justify-center mb-3`}
+                  >
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <CardTitle className="text-lg">
-                    {plan.name}
+                    {t(`plans.${plan.id}.name`)}
                     <span className="block text-sm font-normal text-muted-foreground">
-                      {plan.nameVi}
+                      {t(`plans.${plan.id}.description`)}
                     </span>
                   </CardTitle>
                   <div className="mt-2">
-                    <span className="text-2xl font-bold">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground block">
-                      {plan.currency}
-                    </span>
+                    <span className="text-2xl font-bold">{t(`plans.${plan.id}.price`)}</span>
+                    <span className="text-sm text-muted-foreground block">{t("currencyPerMonth")}</span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ul className="space-y-2">
-                    {plan.features.map((feature, idx) =>
-                    <li key={idx} className="flex items-start gap-2 text-sm">
-                        {feature.included ?
-                      <Check className="w-4 h-4 text-green-600 mt-0.5 shrink-0" /> :
+                    {plan.featureKeys.map((featureKey) => {
+                      const included = includedFeaturesByPlan[plan.id].has(featureKey);
 
-                      <X className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                      }
-                        <span
-                        className={
-                        feature.included ? "" : "text-muted-foreground"
-                        }>
-                        
-                          {feature.text}
-                        </span>
-                      </li>
-                    )}
+                      return (
+                        <li key={`${plan.id}-${featureKey}`} className="flex items-start gap-2 text-sm">
+                          {included ? (
+                            <Check className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                          ) : (
+                            <X className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                          )}
+                          <span className={included ? "" : "text-muted-foreground"}>
+                            {t(`features.${featureKey}`)}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
-                  {plan.contact ?
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => handleSelectPlan(plan.id)}>
-                    
+
+                  {plan.contact ? (
+                    <Button variant="outline" className="w-full" onClick={() => handleSelectPlan(plan.id)}>
                       <MessageCircle className="w-4 h-4 mr-2" />
-                      Liên hệ
-                    </Button> :
-
-                  <Button
-                    variant={plan.popular ? "default" : "outline"}
-                    className="w-full"
-                    onClick={() => handleSelectPlan(plan.id)}>
-                    
-                      Chọn gói này
+                      {t("contact")}
                     </Button>
-                  }
+                  ) : (
+                    <Button
+                      variant={plan.popular ? "default" : "outline"}
+                      className="w-full"
+                      onClick={() => handleSelectPlan(plan.id)}
+                    >
+                      {t("selectPlan")}
+                    </Button>
+                  )}
                 </CardContent>
-              </Card>);
-
+              </Card>
+            );
           })}
         </div>
 
         <div className="flex justify-center mt-6">
           <Button variant="ghost" onClick={handleSkip}>
-            Bỏ qua, khám phá trước
+            {t("skip")}
           </Button>
         </div>
       </DialogContent>
-    </Dialog>);
-
+    </Dialog>
+  );
 };
 
 export default PricingModal;

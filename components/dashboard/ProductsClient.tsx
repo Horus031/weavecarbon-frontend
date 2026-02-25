@@ -20,12 +20,12 @@ import {
   ChevronRight,
   QrCode,
   Search,
-  Filter,
   FileText,
   TrendingUp,
   Upload,
   Layers,
   Pencil,
+  Loader2,
   X } from
 "lucide-react";
 import ProductQRCode from "@/components/dashboard/ProductQRCode";
@@ -34,14 +34,20 @@ import BatchManagementModal from "@/components/dashboard/products/BatchManagemen
 import AssessmentClient from "@/components/dashboard/assessment/AssessmentClient";
 import { useRouter } from "next/navigation";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { usePermissions } from "@/hooks/usePermissions";
+import { showNoPermissionToast } from "@/lib/noPermissionToast";
 import { ProductAssessmentData } from "@/components/dashboard/assessment/steps/types";
 import {
+  fetchProductById,
   fetchProducts,
-  formatApiErrorMessage,
   isValidProductId,
   type ProductRecord,
   type ProductStatus } from
 "@/lib/productsApi";
+import {
+  fetchLogisticsShipmentById,
+  toTransportLegs } from
+"@/lib/logisticsApi";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -49,6 +55,7 @@ const ProductsClient: React.FC = () => {
   const router = useRouter();
   const t = useTranslations("products");
   const { setPageTitle } = useDashboardTitle();
+  const { canMutate } = usePermissions();
 
   const STATUS_CONFIG: Record<
     ProductStatus,
@@ -63,7 +70,7 @@ const ProductsClient: React.FC = () => {
       className: "border border-emerald-300 bg-emerald-100 text-emerald-800"
     },
     archived: {
-      label: "Archived",
+      label: t("statusLabel.archived"),
       className: "border border-amber-300 bg-amber-100 text-amber-800"
     }
   };
@@ -96,6 +103,7 @@ const ProductsClient: React.FC = () => {
     id: string;
     name: string;
     sku: string;
+    shipmentId?: string;
   } | null>(null);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -105,9 +113,14 @@ const ProductsClient: React.FC = () => {
   );
   const [assessmentInitialData, setAssessmentInitialData] =
   useState<ProductAssessmentData | null>(null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   const triggerRefresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
+  }, []);
+
+  const notifyNoPermission = useCallback(() => {
+    showNoPermissionToast();
   }, []);
 
   const mapProductToAssessmentData = useCallback(
@@ -144,23 +157,157 @@ const ProductsClient: React.FC = () => {
   }, []);
 
   const openCreateAssessment = useCallback(() => {
+    if (!canMutate) {
+      notifyNoPermission();
+      return;
+    }
     setAssessmentProductId(null);
     setAssessmentInitialData(null);
     setShowAssessmentModal(true);
-  }, []);
+  }, [canMutate, notifyNoPermission]);
 
   const openEditAssessment = useCallback(
-    (product: ProductRecord) => {
+    async (product: ProductRecord) => {
+      if (!canMutate) {
+        notifyNoPermission();
+        return;
+      }
       if (!isValidProductId(product.id)) {
-        toast.error("Product ID is invalid. Please refresh and try again.");
+        toast.error(t("errors.invalidProductId"));
         return;
       }
 
-      setAssessmentProductId(product.id);
-      setAssessmentInitialData(mapProductToAssessmentData(product));
-      setShowAssessmentModal(true);
+      setEditingProductId(product.id);
+      try {
+        const fullProduct = await fetchProductById(product.id);
+
+        let editableProduct = fullProduct;
+        const shouldHydrateTransportFromShipment =
+        editableProduct.shipmentId &&
+        (
+        editableProduct.transportLegs.length === 0 ||
+        editableProduct.estimatedTotalDistance <= 0 ||
+        !editableProduct.destinationMarket
+        );
+
+        if (shouldHydrateTransportFromShipment) {
+          try {
+            const shipment = await fetchLogisticsShipmentById(
+              editableProduct.shipmentId as string
+            );
+            const shipmentLegs = toTransportLegs(shipment);
+            const mappedLegs = shipmentLegs.map((leg, index) => {
+              const normalizedMode: "road" | "sea" | "air" | "rail" =
+              leg.mode === "ship" ? "sea" :
+              leg.mode === "air" ? "air" :
+              leg.mode === "rail" ? "rail" :
+              "road";
+
+              return {
+              id: leg.id || `leg-${index + 1}`,
+              mode: normalizedMode,
+              estimatedDistance: leg.distanceKm > 0 ? leg.distanceKm : undefined
+              };
+            });
+            const inferredDistance =
+            shipment.total_distance_km > 0 ?
+            shipment.total_distance_km :
+            mappedLegs.reduce(
+              (sum, leg) => sum + (typeof leg.estimatedDistance === "number" ? leg.estimatedDistance : 0),
+              0
+            );
+            const hasAddressValue = (
+            address: ProductRecord["originAddress"] | ProductRecord["destinationAddress"]) =>
+            Boolean(
+              address.streetNumber ||
+              address.street ||
+              address.ward ||
+              address.district ||
+              address.city ||
+              address.stateRegion ||
+              address.country ||
+              address.postalCode
+            );
+            const inferredDestinationMarket = (() => {
+              const normalizedCountry = shipment.destination.country.trim().toLowerCase();
+              if (!normalizedCountry) return editableProduct.destinationMarket;
+              if (normalizedCountry.includes("viet")) return "vietnam";
+              if (
+              normalizedCountry.includes("us") ||
+              normalizedCountry.includes("america") ||
+              normalizedCountry.includes("hoa ky"))
+              {
+                return "usa";
+              }
+              if (normalizedCountry.includes("korea") || normalizedCountry.includes("han quoc")) {
+                return "korea";
+              }
+              if (normalizedCountry.includes("japan") || normalizedCountry.includes("nhat")) {
+                return "japan";
+              }
+              if (normalizedCountry.includes("china") || normalizedCountry.includes("trung quoc")) {
+                return "china";
+              }
+              if (
+              normalizedCountry.includes("eu") ||
+              normalizedCountry.includes("europe") ||
+              normalizedCountry.includes("germany") ||
+              normalizedCountry.includes("netherlands"))
+              {
+                return "eu";
+              }
+              return editableProduct.destinationMarket;
+            })();
+
+            editableProduct = {
+              ...editableProduct,
+              destinationMarket: editableProduct.destinationMarket || inferredDestinationMarket,
+              originAddress:
+              hasAddressValue(editableProduct.originAddress) ?
+              editableProduct.originAddress :
+              {
+                ...editableProduct.originAddress,
+                street: shipment.origin.address || editableProduct.originAddress.street,
+                city: shipment.origin.city || editableProduct.originAddress.city,
+                country: shipment.origin.country || editableProduct.originAddress.country,
+                lat: shipment.origin.lat ?? editableProduct.originAddress.lat,
+                lng: shipment.origin.lng ?? editableProduct.originAddress.lng
+              },
+              destinationAddress:
+              hasAddressValue(editableProduct.destinationAddress) ?
+              editableProduct.destinationAddress :
+              {
+                ...editableProduct.destinationAddress,
+                street: shipment.destination.address || editableProduct.destinationAddress.street,
+                city: shipment.destination.city || editableProduct.destinationAddress.city,
+                country: shipment.destination.country || editableProduct.destinationAddress.country,
+                lat: shipment.destination.lat ?? editableProduct.destinationAddress.lat,
+                lng: shipment.destination.lng ?? editableProduct.destinationAddress.lng
+              },
+              transportLegs:
+              editableProduct.transportLegs.length > 0 ?
+              editableProduct.transportLegs :
+              mappedLegs,
+              estimatedTotalDistance:
+              editableProduct.estimatedTotalDistance > 0 ?
+              editableProduct.estimatedTotalDistance :
+              inferredDistance
+            };
+          } catch {
+
+          }
+        }
+
+        setAssessmentProductId(editableProduct.id);
+        setAssessmentInitialData(mapProductToAssessmentData(editableProduct));
+        setShowAssessmentModal(true);
+      } catch {
+        toast.error(t("errors.failedOpenProductDetail"));
+      } finally {
+        setEditingProductId((current) => current === product.id ? null : current);
+      }
     },
-    [mapProductToAssessmentData]
+    [canMutate, mapProductToAssessmentData, notifyNoPermission, t]
   );
 
   useEffect(() => {
@@ -231,7 +378,7 @@ const ProductsClient: React.FC = () => {
       if (currentPage > totalPages) {
         setCurrentPage(totalPages);
       }
-    } catch (loadError) {
+    } catch {
       if (requestSeq !== loadRequestSeqRef.current) {
         return;
       }
@@ -242,13 +389,13 @@ const ProductsClient: React.FC = () => {
         total: 0,
         total_pages: 0
       });
-      setError(formatApiErrorMessage(loadError, "Failed to load products"));
+      setError(t("errors.failedLoadProducts"));
     } finally {
       if (requestSeq === loadRequestSeqRef.current) {
         setLoading(false);
       }
     }
-  }, [debouncedSearchQuery, statusFilter, currentPage]);
+  }, [debouncedSearchQuery, statusFilter, currentPage, t]);
 
   useEffect(() => {
     void loadProducts();
@@ -260,12 +407,10 @@ const ProductsClient: React.FC = () => {
 
   const totalPages = Math.max(1, pagination.total_pages || 1);
   const statCardClass = (target: "all" | "draft" | "published") => {
-    const base =
-    "cursor-pointer border bg-white shadow transition-all hover:border-slate-400 hover:shadow-lg";
-    if (statusFilter !== target) return `${base} border-slate-300`;
-    if (target === "draft") return `${base} border-slate-400 bg-slate-200/80`;
+    const base = "border bg-white shadow";
+    if (target === "draft") return `${base} border-slate-300 bg-slate-50`;
     if (target === "published") return `${base} border-emerald-400 bg-emerald-100/75`;
-    return `${base} border-primary/45 bg-primary/10`;
+    return `${base} border-slate-300`;
   };
 
   const filterChipClass = (target: "all" | "draft" | "published") => {
@@ -314,7 +459,7 @@ const ProductsClient: React.FC = () => {
 
     const searchTerm = product.productCode || product.productName || undefined;
     if (!searchTerm) {
-      toast.error("Product ID is invalid. Please refresh and try again.");
+      toast.error(t("errors.invalidProductId"));
       return;
     }
 
@@ -342,57 +487,26 @@ const ProductsClient: React.FC = () => {
           router.push(`/summary/${encodeURIComponent(fallbackSlug)}`);
           return;
         }
-        toast.error("Product ID is invalid. Please refresh and try again.");
+        toast.error(t("errors.invalidProductId"));
         return;
       }
 
       handleViewProduct(resolvedId);
-    } catch (error) {
+    } catch {
       const fallbackSlug = (product.productCode || product.productName || "").trim();
       if (fallbackSlug.length > 0) {
         router.push(`/summary/${encodeURIComponent(fallbackSlug)}`);
         return;
       }
-      toast.error(formatApiErrorMessage(error, "Failed to open product detail"));
+      toast.error(t("errors.failedOpenProductDetail"));
     }
   };
 
   return (
     <>
       <div className="space-y-6">
-        
-        <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-end">
-          <div className="flex w-full flex-wrap gap-2 md:w-auto md:justify-end">
-            <div className="flex w-full flex-wrap gap-2 md:w-auto">
-              <Button
-                variant="outline"
-                onClick={() => setShowBatchModal(true)}
-                className="gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-100 w-full sm:w-auto">
-
-                <Layers className="w-4 h-4" /> {t("manageBatches")}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowBulkUpload(true)}
-                className="gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-100 w-full sm:w-auto">
-
-                <Upload className="w-4 h-4" /> {t("uploadFile")}
-              </Button>
-            </div>
-            <Button
-              onClick={openCreateAssessment}
-              className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700 w-full sm:w-auto">
-
-              <PlusCircle className="w-4 h-4" /> {t("addProduct")}
-            </Button>
-          </div>
-        </div>
-
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Card
-            className={statCardClass("all")}
-            onClick={() => setStatusFilter("all")}>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+          <Card className={statCardClass("all")}>
 
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -407,9 +521,7 @@ const ProductsClient: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card
-            className={statCardClass("draft")}
-            onClick={() => setStatusFilter("draft")}>
+          <Card className={statCardClass("draft")}>
 
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -424,9 +536,7 @@ const ProductsClient: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card
-            className={statCardClass("published")}
-            onClick={() => setStatusFilter("published")}>
+          <Card className={statCardClass("published")}>
 
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -442,34 +552,65 @@ const ProductsClient: React.FC = () => {
           </Card>
         </div>
 
-        
-        <div className="flex items-center gap-3 rounded-lg border border-slate-300 bg-slate-50 p-3 shadow">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            <Input
-              placeholder={t("searchPlaceholder")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-10 pl-10 border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 shadow-sm" />
+        <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 shadow">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Input
+                placeholder={t("searchPlaceholder")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10 pl-10 border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 shadow-sm" />
 
-            {searchQuery.trim().length > 0 &&
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-              aria-label="Clear search query">
+              {searchQuery.trim().length > 0 &&
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                aria-label={t("clearSearchAria")}>
 
-                <X className="h-4 w-4" />
-              </Button>
-            }
-          </div>
-          <div className="flex shrink-0 items-center gap-2 overflow-x-auto whitespace-nowrap">
-            <div className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium text-slate-600">
-              <Filter className="h-3.5 w-3.5" />
-              {t("statusFilter")}
+                  <X className="h-4 w-4" />
+                </Button>
+              }
             </div>
+            <div className="flex w-full flex-wrap gap-2 lg:w-auto lg:justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!canMutate) {
+                    notifyNoPermission();
+                    return;
+                  }
+                  setShowBatchModal(true);
+                }}
+                className="w-full gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-100 sm:w-auto">
+
+                <Layers className="w-4 h-4" /> {t("manageBatches")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (!canMutate) {
+                    notifyNoPermission();
+                    return;
+                  }
+                  setShowBulkUpload(true);
+                }}
+                className="w-full gap-2 border-slate-300 bg-white text-slate-800 hover:bg-slate-100 sm:w-auto">
+
+                <Upload className="w-4 h-4" /> {t("uploadFile")}
+              </Button>
+              <Button
+                onClick={openCreateAssessment}
+                className="w-full gap-2 bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto">
+
+                <PlusCircle className="w-4 h-4" /> {t("addProduct")}
+              </Button>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="outline"
@@ -518,9 +659,9 @@ const ProductsClient: React.FC = () => {
                   {error || t("tryChangeFilter")}
                 </p>
                 <Button
-                onClick={openCreateAssessment}
-                variant="outline"
-                className="border-slate-300 bg-white text-slate-800 hover:bg-slate-100">
+                  onClick={openCreateAssessment}
+                  variant="outline"
+                  className="border-slate-300 bg-white text-slate-800 hover:bg-slate-100">
 
                   <PlusCircle className="w-4 h-4 mr-2" /> {t("createNew")}
                 </Button>
@@ -575,16 +716,19 @@ const ProductsClient: React.FC = () => {
                       </Badge>
 
                       <Button
-                    variant="outline"
-                    size="icon"
-                    className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditAssessment(product);
-                    }}
-                    title="Edit product">
-
+                        variant="outline"
+                        size="icon"
+                        className="border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                        disabled={editingProductId === product.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void openEditAssessment(product);
+                        }}
+                        title={t("actions.editProduct")}>
+                        {editingProductId === product.id ?
+                        <Loader2 className="w-4 h-4 animate-spin" /> :
                         <Pencil className="w-4 h-4" />
+                        }
                       </Button>
 
                       {product.status === "published" &&
@@ -597,7 +741,8 @@ const ProductsClient: React.FC = () => {
                       setSelectedProductForQR({
                         id: product.id,
                         name: product.productName,
-                        sku: product.productCode
+                        sku: product.productCode,
+                        shipmentId: product.shipmentId || undefined
                       });
                     }}
                     title={t("createQR")}>
@@ -659,6 +804,7 @@ const ProductsClient: React.FC = () => {
       {selectedProductForQR &&
       <ProductQRCode
         productId={selectedProductForQR.id}
+        shipmentId={selectedProductForQR.shipmentId}
         productName={selectedProductForQR.name}
         productCode={selectedProductForQR.sku}
         open={!!selectedProductForQR}
@@ -667,30 +813,34 @@ const ProductsClient: React.FC = () => {
       }
 
       
+      {canMutate &&
       <BulkUploadModal
         open={showBulkUpload}
         onClose={() => setShowBulkUpload(false)}
         onCompleted={triggerRefresh} />
+      }
 
 
       
+      {canMutate &&
       <BatchManagementModal
         open={showBatchModal}
         onClose={() => setShowBatchModal(false)}
         onCompleted={triggerRefresh} />
+      }
 
 
       
-      <Dialog open={showAssessmentModal} onOpenChange={(open) => !open && closeAssessmentModal()}>
+      <Dialog open={canMutate && showAssessmentModal} onOpenChange={(open) => !open && closeAssessmentModal()}>
         <DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] overflow-y-auto p-4 md:p-6">
           <DialogHeader>
             <DialogTitle>
-              {assessmentProductId ? "Edit Product Assessment" : "Create Product Assessment"}
+              {assessmentProductId ? t("assessmentDialog.editTitle") : t("assessmentDialog.createTitle")}
             </DialogTitle>
             <DialogDescription>
               {assessmentProductId ?
-              "Update product information and re-calculate emissions." :
-              "Fill in product information to calculate emissions and save your product."}
+              t("assessmentDialog.editDescription") :
+              t("assessmentDialog.createDescription")}
             </DialogDescription>
           </DialogHeader>
           <AssessmentClient

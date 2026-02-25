@@ -12,6 +12,7 @@ export interface MarketRegulation {
   code: string;
   name: string;
   legalReference: string;
+  guideUrl: string;
   reportingScope: string;
   reportingFrequency: string;
   enforcementDate: string;
@@ -137,6 +138,7 @@ export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
     code: "EU CBAM",
     name: "Carbon Border Adjustment Mechanism",
     legalReference: "Regulation (EU) 2023/956",
+    guideUrl: "https://eur-lex.europa.eu/",
     reportingScope: "Product-level",
     reportingFrequency: "Quarterly",
     enforcementDate: "2026-01-01",
@@ -147,6 +149,7 @@ export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
     code: "US Climate Act",
     name: "California Climate Corporate Data Accountability Act",
     legalReference: "SB 253 & SB 261",
+    guideUrl: "https://ww2.arb.ca.gov/",
     reportingScope: "Company & Product-level",
     reportingFrequency: "Annual",
     enforcementDate: "2026-01-01",
@@ -157,6 +160,7 @@ export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
     code: "JIS Standards",
     name: "Japanese Industrial Standards - GX",
     legalReference: "JIS Q 14067",
+    guideUrl: "https://www.jisc.go.jp/",
     reportingScope: "Product-level",
     reportingFrequency: "Annual",
     enforcementDate: "2025-04-01",
@@ -167,6 +171,7 @@ export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
     code: "K-ETS",
     name: "Korea Emissions Trading Scheme",
     legalReference: "Act on Allocation and Trading of GHG Emission Permits",
+    guideUrl: "https://www.gir.go.kr/",
     reportingScope: "Facility & Product-level",
     reportingFrequency: "Annual",
     enforcementDate: "2025-01-01",
@@ -176,6 +181,7 @@ export const MARKET_REGULATIONS: Record<MarketCode, MarketRegulation> = {
     code: "VN GHG",
     name: "Vietnam GHG Inventory",
     legalReference: "Nghi dinh 06/2022/ND-CP",
+    guideUrl: "https://www.monre.gov.vn/",
     reportingScope: "Company & Facility-level",
     reportingFrequency: "Annual",
     enforcementDate: "2026-01-01",

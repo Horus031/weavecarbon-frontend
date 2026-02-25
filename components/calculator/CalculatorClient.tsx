@@ -127,7 +127,7 @@ export default function CalculatorClient() {
             className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8">
             
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-medium">Back to Home</span>
+            <span className="text-sm font-medium">{t("backToHome")}</span>
           </Link>
 
           
@@ -245,7 +245,7 @@ export default function CalculatorClient() {
                       <p className="text-5xl font-display font-bold mb-1">
                         {emissions.total.toFixed(2)}
                       </p>
-                      <p className="text-sm opacity-80">kg CO₂e</p>
+                      <p className="text-sm opacity-80">{t("kgCO2e")}</p>
                     </div>
 
                     

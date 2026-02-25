@@ -1,11 +1,13 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+﻿import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
-  DialogTitle,
-  DialogDescription } from
-"@/components/ui/dialog";
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,16 +15,15 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
 import {
+  CheckCircle2,
+  Layers,
   Package,
   Plus,
-  Trash2,
-  Send,
-  Layers,
   Search,
-  CheckCircle2 } from
-"lucide-react";
+  Send,
+  Trash2
+} from "lucide-react";
 import {
   addProductToBatch,
   createProductBatch,
@@ -35,8 +36,8 @@ import {
   removeProductBatchItem,
   type ProductBatchDetail,
   type ProductBatchSummary,
-  type ProductRecord } from
-"@/lib/productsApi";
+  type ProductRecord
+} from "@/lib/productsApi";
 
 interface BatchManagementModalProps {
   open: boolean;
@@ -51,6 +52,9 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
   initialBatchId,
   onCompleted
 }) => {
+  const t = useTranslations("products.batchManagement");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
   const [batches, setBatches] = useState<ProductBatchSummary[]>([]);
   const [products, setProducts] = useState<ProductRecord[]>([]);
   const [activeTab, setActiveTab] = useState<"list" | "create" | "detail">(
@@ -88,6 +92,22 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
   selectedBatchDetail.items.length :
   selectedBatch?.totalProducts ?? 0;
 
+  const getStatusBadgeClass = (status: ProductBatchSummary["status"]) => {
+    if (status === "published") {
+      return "bg-green-100 text-green-700";
+    }
+    if (status === "archived") {
+      return "bg-yellow-100 text-yellow-700";
+    }
+    return "bg-gray-100 text-gray-700";
+  };
+
+  const getStatusLabel = (status: ProductBatchSummary["status"]) => {
+    if (status === "published") return t("status.published");
+    if (status === "archived") return t("status.archived");
+    return t("status.draft");
+  };
+
   const loadBatches = useCallback(async () => {
     const result = await listProductBatches({
       page: 1,
@@ -105,12 +125,12 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
     const normalizedBatchId = batchId.trim();
     if (!normalizedBatchId) {
       setSelectedBatchDetail(null);
-      setDetailLoadError("Thiếu ID lô hàng.");
+      setDetailLoadError(t("errors.missingBatchId"));
       return;
     }
     if (!isValidBatchId(normalizedBatchId)) {
       setSelectedBatchDetail(null);
-      setDetailLoadError("ID lô hàng không hợp lệ.");
+      setDetailLoadError(t("errors.invalidBatchId"));
       return;
     }
 
@@ -122,13 +142,13 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
       setDetailLoadError(null);
     } catch (error) {
       setSelectedBatchDetail(null);
-      const message = formatApiErrorMessage(error, "Không thể tải chi tiết lô hàng");
+      const message = formatApiErrorMessage(error, t("errors.loadBatchDetailFailed"));
       setDetailLoadError(message);
       toast.error(message);
     } finally {
       setIsDetailLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!open) return;
@@ -157,7 +177,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
               await loadBatchDetail(targetBatchId);
             } else {
               setSelectedBatchDetail(null);
-              setDetailLoadError("ID lô hàng không hợp lệ.");
+              setDetailLoadError(t("errors.invalidBatchId"));
             }
           }
         } else if (!cancelled) {
@@ -167,7 +187,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
         }
       } catch (error) {
         if (!cancelled) {
-          toast.error(formatApiErrorMessage(error, "Không thể tải dữ liệu lô hàng"));
+          toast.error(formatApiErrorMessage(error, t("errors.loadBatchDataFailed")));
         }
       } finally {
         if (!cancelled) {
@@ -181,7 +201,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [open, initialBatchId, loadBatchDetail]);
+  }, [open, initialBatchId, loadBatchDetail, t]);
 
   const searchedProducts = useMemo(() => {
     return products.filter((product) => {
@@ -201,7 +221,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
 
   const handleCreateBatch = async () => {
     if (!newBatchName.trim()) {
-      toast.error("Vui lòng nhập tên lô hàng");
+      toast.error(t("errors.enterBatchName"));
       return;
     }
 
@@ -241,10 +261,13 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
 
         if (failedCount > 0) {
           toast.warning(
-            `Đã tạo lô hàng, nhưng ${failedCount}/${selectedProducts.length} sản phẩm chưa thêm được.`
+            t("toasts.createdBatchButSomeFailed", {
+              failed: failedCount,
+              total: selectedProducts.length
+            })
           );
         } else if (addedCount > 0) {
-          toast.success(`Đã thêm ${addedCount} sản phẩm vào lô hàng.`);
+          toast.success(t("toasts.addedProductsCount", { count: addedCount }));
         }
       }
 
@@ -258,9 +281,9 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
       setActiveTab("detail");
 
       onCompleted?.();
-      toast.success(`Đã tạo lô hàng "${batch.name}"`);
+      toast.success(t("toasts.createdBatch", { name: batch.name }));
     } catch (error) {
-      toast.error(formatApiErrorMessage(error, "Tạo lô hàng thất bại"));
+      toast.error(formatApiErrorMessage(error, t("errors.createBatchFailed")));
     } finally {
       setIsLoading(false);
     }
@@ -269,7 +292,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
   const handleAddProductToBatch = async (product: ProductRecord) => {
     if (!selectedBatchId) return;
     if (!isValidBatchId(selectedBatchId)) {
-      toast.error("ID lô hàng không hợp lệ, không thể cập nhật.");
+      toast.error(t("errors.invalidBatchIdForUpdate"));
       return;
     }
 
@@ -289,16 +312,16 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
 
       await Promise.all([loadBatchDetail(selectedBatchId), loadBatches()]);
       onCompleted?.();
-      toast.success(`Đã thêm "${product.productName}" vào lô hàng`);
+      toast.success(t("toasts.addedProductToBatch", { name: product.productName }));
     } catch (error) {
-      toast.error(formatApiErrorMessage(error, "Thêm sản phẩm vào lô hàng thất bại"));
+      toast.error(formatApiErrorMessage(error, t("errors.addProductFailed")));
     }
   };
 
   const handleRemoveProductFromBatch = async (productId: string) => {
     if (!selectedBatchId) return;
     if (!isValidBatchId(selectedBatchId)) {
-      toast.error("ID lô hàng không hợp lệ, không thể cập nhật.");
+      toast.error(t("errors.invalidBatchIdForUpdate"));
       return;
     }
 
@@ -306,21 +329,21 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
       await removeProductBatchItem(selectedBatchId, productId);
       await Promise.all([loadBatchDetail(selectedBatchId), loadBatches()]);
       onCompleted?.();
-      toast.success("Đã xóa sản phẩm khỏi lô hàng");
+      toast.success(t("toasts.removedProduct"));
     } catch (error) {
-      toast.error(formatApiErrorMessage(error, "Xóa sản phẩm khỏi lô hàng thất bại"));
+      toast.error(formatApiErrorMessage(error, t("errors.removeProductFailed")));
     }
   };
 
   const handlePublishBatch = async () => {
     if (!selectedBatch || resolvedItemCount === 0) {
-      toast.error("Lô hàng cần có ít nhất 1 sản phẩm");
+      toast.error(t("errors.atLeastOneProduct"));
       return;
     }
 
     if (!selectedBatchId) return;
     if (!isValidBatchId(selectedBatchId)) {
-      toast.error("ID lô hàng không hợp lệ, không thể xuất bản.");
+      toast.error(t("errors.invalidBatchIdForPublish"));
       return;
     }
 
@@ -331,14 +354,15 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
       await Promise.all([loadBatchDetail(selectedBatchId), loadBatches()]);
       onCompleted?.();
 
-      toast.success(
-        publishResult.message || (
-        publishResult.shipmentId ?
-        `Xuất bản lô hàng thành công. Shipment: ${publishResult.shipmentId}` :
-        "Xuất bản lô hàng thành công")
-      );
+      if (publishResult.message) {
+        toast.success(publishResult.message);
+      } else if (publishResult.shipmentId) {
+        toast.success(t("toasts.publishedSuccessWithShipment", { shipmentId: publishResult.shipmentId }));
+      } else {
+        toast.success(t("toasts.publishedSuccess"));
+      }
     } catch (error) {
-      toast.error(formatApiErrorMessage(error, "Xuất bản lô hàng thất bại"));
+      toast.error(formatApiErrorMessage(error, t("errors.publishBatchFailed")));
     } finally {
       setIsPublishing(false);
     }
@@ -367,10 +391,10 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Layers className="w-5 h-5" />
-            Quản lý Lô hàng (Batch)
+            {t("modal.title")}
           </DialogTitle>
           <DialogDescription>
-            Nhóm nhiều sản phẩm vào 1 lô để xuất khẩu và tạo 1 Shipment chung
+            {t("modal.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -380,13 +404,13 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
           className="flex-1 overflow-hidden flex flex-col">
 
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="list">Danh sách ({batches.length})</TabsTrigger>
-            <TabsTrigger value="create">Tạo mới</TabsTrigger>
+            <TabsTrigger value="list">{t("tabs.list", { count: batches.length })}</TabsTrigger>
+            <TabsTrigger value="create">{t("tabs.create")}</TabsTrigger>
             <TabsTrigger
               value="detail"
               disabled={!hasSelectedBatchId}>
 
-              Chi tiết {selectedBatch ? `(${resolvedItemCount})` : ""}
+              {t("tabs.detail", { count: selectedBatch ? resolvedItemCount : 0 })}
             </TabsTrigger>
           </TabsList>
 
@@ -405,9 +429,9 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
             batches.length === 0 ?
             <div className="text-center py-8">
                 <Layers className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Chưa có lô hàng nào</p>
+                <p className="text-muted-foreground">{t("list.noBatches")}</p>
                 <Button onClick={() => setActiveTab("create")} className="mt-4">
-                  <Plus className="w-4 h-4 mr-2" /> Tạo lô hàng
+                  <Plus className="w-4 h-4 mr-2" /> {t("list.createBatch")}
                 </Button>
               </div> :
 
@@ -435,29 +459,20 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
                         <div>
                           <h4 className="font-medium">{batch.name}</h4>
                           <p className="text-sm text-muted-foreground">
-                            {batch.totalProducts} sản phẩm • {batch.totalQuantity.toLocaleString()} đơn vị
+                            {t("list.productsAndUnits", {
+                              products: batch.totalProducts,
+                              units: batch.totalQuantity.toLocaleString(displayLocale)
+                            })}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
                           <p className="font-bold text-primary">{batch.totalCO2.toFixed(1)} kg</p>
-                          <p className="text-xs text-muted-foreground">CO2e tổng</p>
+                          <p className="text-xs text-muted-foreground">{t("list.totalCo2")}</p>
                         </div>
-                        <Badge
-                      className={
-                      batch.status === "published" ?
-                      "bg-green-100 text-green-700" :
-                      batch.status === "archived" ?
-                      "bg-yellow-100 text-yellow-700" :
-                      "bg-gray-100 text-gray-700"
-                      }>
-
-                          {batch.status === "published" ?
-                      "Đã xuất bản" :
-                      batch.status === "archived" ?
-                      "Archived" :
-                      "Nháp"}
+                        <Badge className={getStatusBadgeClass(batch.status)}>
+                          {getStatusLabel(batch.status)}
                         </Badge>
                       </div>
                     </div>
@@ -470,18 +485,18 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
           <TabsContent value="create" className="flex-1 overflow-auto space-y-4">
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Tên lô hàng *</label>
+                <label className="text-sm font-medium">{t("form.batchName")}</label>
                 <Input
-                  placeholder="VD: Lô xuất EU Q1-2026"
+                  placeholder={t("form.batchNamePlaceholder")}
                   value={newBatchName}
                   onChange={(event) => setNewBatchName(event.target.value)}
                   className="mt-1" />
 
               </div>
               <div>
-                <label className="text-sm font-medium">Mô tả</label>
+                <label className="text-sm font-medium">{t("form.description")}</label>
                 <Textarea
-                  placeholder="Mô tả lô hàng..."
+                  placeholder={t("form.descriptionPlaceholder")}
                   value={newBatchDescription}
                   onChange={(event) => setNewBatchDescription(event.target.value)}
                   className="mt-1"
@@ -492,12 +507,12 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
 
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Chọn sản phẩm ({selectedProductIds.length} đã chọn)
+                {t("form.selectProducts", { count: selectedProductIds.length })}
               </label>
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Tìm sản phẩm..."
+                  placeholder={t("form.searchProducts")}
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   className="pl-10" />
@@ -532,7 +547,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
             </div>
 
             <Button onClick={() => void handleCreateBatch()} className="w-full" disabled={isLoading}>
-              <Plus className="w-4 h-4 mr-2" /> Tạo lô hàng
+              <Plus className="w-4 h-4 mr-2" /> {t("form.createButton")}
             </Button>
           </TabsContent>
 
@@ -541,7 +556,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
             <>
                 {!selectedBatchHasValidId &&
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                    ID lô hàng không đúng định dạng, nên chỉ hiển thị thông tin tổng quan.
+                    {t("errors.invalidBatchIdOverview")}
                   </div>
               }
                 <Card>
@@ -553,39 +568,29 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
                       <p className="text-sm text-muted-foreground">{selectedBatch.description}</p>
                       }
                       </div>
-                      <Badge
-                      className={
-                      selectedBatch.status === "published" ?
-                      "bg-green-100 text-green-700" :
-                      selectedBatch.status === "archived" ?
-                      "bg-yellow-100 text-yellow-700" :
-                      "bg-gray-100 text-gray-700"
-                      }>
-
-                        {selectedBatch.status === "published" ?
-                      "Đã xuất bản" :
-                      selectedBatch.status === "archived" ?
-                      "Archived" :
-                      "Nháp"}
+                      <Badge className={getStatusBadgeClass(selectedBatch.status)}>
+                        {getStatusLabel(selectedBatch.status)}
                       </Badge>
                     </div>
 
                     <div className="grid grid-cols-4 gap-4 text-center">
                       <div className="p-3 bg-muted rounded-lg">
                         <p className="text-2xl font-bold">{selectedBatch.totalProducts}</p>
-                        <p className="text-xs text-muted-foreground">Sản phẩm</p>
+                        <p className="text-xs text-muted-foreground">{t("summary.products")}</p>
                       </div>
                       <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-2xl font-bold">{selectedBatch.totalQuantity.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">Số lượng</p>
+                        <p className="text-2xl font-bold">
+                          {selectedBatch.totalQuantity.toLocaleString(displayLocale)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{t("summary.quantity")}</p>
                       </div>
                       <div className="p-3 bg-primary/10 rounded-lg">
                         <p className="text-2xl font-bold text-primary">{selectedBatch.totalCO2.toFixed(1)}</p>
-                        <p className="text-xs text-muted-foreground">kg CO2e</p>
+                        <p className="text-xs text-muted-foreground">{t("summary.totalCo2")}</p>
                       </div>
                       <div className="p-3 bg-muted rounded-lg">
                         <p className="text-2xl font-bold">{selectedBatch.totalWeight.toFixed(1)}</p>
-                        <p className="text-xs text-muted-foreground">kg tổng</p>
+                        <p className="text-xs text-muted-foreground">{t("summary.totalWeight")}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -593,7 +598,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
 
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium">Sản phẩm trong lô ({resolvedItemCount})</h4>
+                    <h4 className="font-medium">{t("detail.itemsTitle", { count: resolvedItemCount })}</h4>
                     {selectedBatch.status === "draft" && selectedBatchHasValidId &&
                   <Button
                     variant="outline"
@@ -609,13 +614,13 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
                       });
                     }}>
 
-                        <Plus className="w-4 h-4 mr-1" /> Thêm
+                        <Plus className="w-4 h-4 mr-1" /> {t("detail.add")}
                       </Button>
                   }
                   </div>
 
                   {isDetailLoading ?
-                <div className="p-6 text-center text-sm text-muted-foreground">Đang tải chi tiết lô hàng...</div> :
+                <div className="p-6 text-center text-sm text-muted-foreground">{t("detail.loading")}</div> :
                 selectedBatchDetail ?
                 <div className="space-y-2 max-h-50 overflow-auto">
                       {selectedBatch.items.map((item) =>
@@ -629,7 +634,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
                             <p className="text-sm text-muted-foreground">{item.productCode}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">{item.quantity} pcs</p>
+                            <p className="font-medium">{item.quantity} {t("detail.unit")}</p>
                             <p className="text-xs text-muted-foreground">
                               {(item.quantity * item.co2PerUnit).toFixed(1)} kg CO2e
                             </p>
@@ -648,25 +653,25 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
                     </div> :
                 detailLoadError ?
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                      Không tải được danh sách chi tiết sản phẩm trong lô.
+                      {t("errors.failedLoadDetailList")}
                       <div className="mt-1 text-xs text-amber-700">{detailLoadError}</div>
                     </div> :
 
                 <div className="space-y-2 max-h-50 overflow-auto">
                       <div className="p-3 text-sm text-muted-foreground">
-                        Chưa có dữ liệu chi tiết sản phẩm.
+                        {t("errors.noDetailData")}
                       </div>
                     </div>
                 }
 
                   {selectedBatch.status === "draft" && selectedBatchHasValidId &&
                 <div className="mt-4">
-                      <p className="text-sm font-medium mb-2">Thêm sản phẩm</p>
+                      <p className="text-sm font-medium mb-2">{t("detail.addProductsTitle")}</p>
                       <div className="relative mb-2">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                       ref={addProductSearchInputRef}
-                      placeholder="Tìm sản phẩm..."
+                      placeholder={t("detail.searchProducts")}
                       value={searchQuery}
                       onChange={(event) => setSearchQuery(event.target.value)}
                       className="pl-10" />
@@ -675,7 +680,7 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
                       <div className="max-h-37.5 overflow-auto space-y-1">
                         {addableProducts.length === 0 &&
                     <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-                            Không còn sản phẩm phù hợp để thêm vào lô hàng.
+                            {t("detail.noAddableProducts")}
                           </div>
                     }
                         {addableProducts.slice(0, 5).map((product) =>
@@ -704,16 +709,16 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
                   disabled={isPublishing || resolvedItemCount === 0}>
 
                       {isPublishing ?
-                  <>Đang xuất bản...</> :
+                  <>{t("detail.publishInProgress")}</> :
 
                   <>
                           <Send className="w-4 h-4 mr-2" />
-                          Xuất bản & Tạo Shipment
+                          {t("detail.publishButton")}
                         </>
                   }
                     </Button>
                     <p className="text-xs text-muted-foreground text-center mt-2">
-                      Xuất bản sẽ tạo 1 vận đơn (Shipment) cho toàn bộ lô hàng
+                      {t("detail.publishHint")}
                     </p>
                   </div>
               }
@@ -723,8 +728,8 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
                     <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
                       <CheckCircle2 className="w-5 h-5 text-green-600" />
                       <div>
-                        <p className="text-sm font-medium text-green-700">Đã xuất bản</p>
-                        <p className="text-xs text-green-600">Vận đơn: {selectedBatch.shipmentId}</p>
+                        <p className="text-sm font-medium text-green-700">{t("detail.published")}</p>
+                        <p className="text-xs text-green-600">{t("detail.shipment", { shipmentId: selectedBatch.shipmentId })}</p>
                       </div>
                     </div>
                   </div>
@@ -739,3 +744,4 @@ const BatchManagementModal: React.FC<BatchManagementModalProps> = ({
 };
 
 export default BatchManagementModal;
+

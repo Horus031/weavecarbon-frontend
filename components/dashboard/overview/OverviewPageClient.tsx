@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProducts } from "@/contexts/ProductContext";
 import { api } from "@/lib/apiClient";
+import { showNoPermissionToast } from "@/lib/noPermissionToast";
 import {
   Card,
   CardContent,
@@ -26,7 +27,7 @@ import {
   Lightbulb,
   PlusCircle } from
 "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import ProductOverviewModal from "../assessment/ProductOverviewModal";
 import OverviewCharts, {
   EmissionBreakdownPoint,
@@ -34,6 +35,7 @@ import OverviewCharts, {
 "../OverviewCharts";
 import { useRouter } from "next/navigation";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Company {
   target_markets: string[] | null;
@@ -197,6 +199,9 @@ const getImpactColor = (impact: string) => {
 
 const OverviewPage: React.FC = () => {
   const t = useTranslations("overview");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
+  const { canMutate } = usePermissions();
   const { user } = useAuth();
   const { products, pendingProductData, clearPendingProduct } = useProducts();
   const navigate = useRouter();
@@ -387,7 +392,7 @@ const OverviewPage: React.FC = () => {
               {t("stats.totalCO2")}
             </CardDescription>
             <CardTitle className="text-3xl font-bold text-slate-900">
-              {stats.totalCO2.toLocaleString()}
+              {stats.totalCO2.toLocaleString(displayLocale)}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
@@ -550,7 +555,13 @@ const OverviewPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card
           className="cursor-pointer overflow-hidden border border-slate-300 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-all hover:border-primary/55 hover:shadow-md"
-          onClick={() => navigate.push("/products")}>
+          onClick={() => {
+            if (!canMutate) {
+              showNoPermissionToast();
+              return;
+            }
+            navigate.push("/products");
+          }}>
 
           <CardHeader className="rounded-t-[inherit] border-b border-slate-300 bg-slate-100">
             <PlusCircle className="w-8 h-8 text-primary mb-2" />

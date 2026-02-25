@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { api } from "@/lib/apiClient";
 import {
   Card,
@@ -38,7 +39,7 @@ import {
   SelectValue } from
 "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Users, UserPlus, Mail, MoreHorizontal, Check, X, Eye, EyeOff, RefreshCw, Copy } from "lucide-react";
+import { Users, UserPlus, Mail, MoreHorizontal, Check, X, Eye, EyeOff, RefreshCw, Copy, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,9 +60,43 @@ interface TeamMember {
   created_at: string;
 }
 
+type TeamMemberPatchResponse = Partial<TeamMember> & Pick<TeamMember, "id">;
+type TeamManageableRole = "admin" | "member" | "viewer";
+
+const toManageableRole = (role: TeamMember["role"]): TeamManageableRole => {
+  if (role === "admin") return "admin";
+  if (role === "viewer") return "viewer";
+  return "member";
+};
+
+const keepPreviousWhenUndefined = <T,>(value: T | undefined, fallback: T): T =>
+value === undefined ? fallback : value;
+
+const mergeMemberPatch = (
+current: TeamMember,
+patch: TeamMemberPatchResponse | null,
+optimistic: Partial<TeamMember> = {})
+: TeamMember => {
+  const merged = { ...optimistic, ...(patch || {}) };
+  return {
+    ...current,
+    ...merged,
+    user_id: keepPreviousWhenUndefined(merged.user_id, current.user_id),
+    full_name: keepPreviousWhenUndefined(merged.full_name, current.full_name),
+    email: keepPreviousWhenUndefined(merged.email, current.email),
+    role: keepPreviousWhenUndefined(merged.role, current.role),
+    status: keepPreviousWhenUndefined(merged.status, current.status),
+    last_login: keepPreviousWhenUndefined(merged.last_login, current.last_login),
+    created_at: keepPreviousWhenUndefined(merged.created_at, current.created_at)
+  };
+};
+
+const MEMBERS_PAGE_SIZE = 8;
+
 const UsersSettings: React.FC = () => {
   const t = useTranslations("settings.users");
   const { user } = useAuth();
+  const { canAccessUsersSettings } = usePermissions();
   const companyId = user?.company_id || null;
 
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -73,6 +108,11 @@ const UsersSettings: React.FC = () => {
   const [invitePassword, setInvitePassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [inviteRole, setInviteRole] = useState<"member" | "viewer">("member");
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [roleTargetMember, setRoleTargetMember] = useState<TeamMember | null>(null);
+  const [nextRole, setNextRole] = useState<TeamManageableRole>("member");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const generateTemporaryPassword = () => {
     const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -122,14 +162,14 @@ const UsersSettings: React.FC = () => {
     }
 
     if (!companyId) {
-      toast.error("Company is not set.");
+      toast.error(t("companyNotSet"));
       return;
     }
 
     setUpdating(true);
     try {
       const inviteFullName =
-      inviteName.trim() || inviteEmail.split("@")[0] || "Team Member";
+      inviteName.trim() || inviteEmail.split("@")[0] || t("defaultTeamMember");
       const created = await api.post<TeamMember | null>(
         "/company/members",
         {
@@ -156,7 +196,7 @@ const UsersSettings: React.FC = () => {
       toast.success(t("inviteSuccess", { email: inviteEmail }));
     } catch (error) {
       console.error("Failed to invite member:", error);
-      toast.error(error instanceof Error ? error.message : "Invite failed.");
+      toast.error(error instanceof Error ? error.message : t("inviteFailed"));
     } finally {
       setUpdating(false);
     }
@@ -170,7 +210,7 @@ const UsersSettings: React.FC = () => {
       toast.success(t("resendSuccess", { email: member.email || "" }));
     } catch (error) {
       console.error("Failed to resend invite:", error);
-      toast.error(error instanceof Error ? error.message : "Resend failed.");
+      toast.error(error instanceof Error ? error.message : t("resendFailed"));
     }
   };
 
@@ -186,22 +226,18 @@ const UsersSettings: React.FC = () => {
 
     setUpdating(true);
     try {
-      const updated = await api.put<TeamMember | null>(
+      const updated = await api.put<TeamMemberPatchResponse | null>(
         `/company/members/${member.id}`,
         { status: nextStatus }
       );
 
-      if (updated?.id) {
-        setMembers((prev) =>
-        prev.map((m) => m.id === member.id ? updated : m)
-        );
-      } else {
-        setMembers((prev) =>
-        prev.map((m) =>
-        m.id === member.id ? { ...m, status: nextStatus } : m
-        )
-        );
-      }
+      setMembers((prev) =>
+      prev.map((m) =>
+      m.id === member.id ?
+      mergeMemberPatch(m, updated, { status: nextStatus }) :
+      m
+      )
+      );
 
       toast.success(
         t("toggleSuccess", {
@@ -215,7 +251,7 @@ const UsersSettings: React.FC = () => {
     } catch (error) {
       console.error("Failed to update member status:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to update member."
+        error instanceof Error ? error.message : t("updateMemberFailed")
       );
     } finally {
       setUpdating(false);
@@ -236,7 +272,54 @@ const UsersSettings: React.FC = () => {
       toast.success(t("removeSuccess", { email: member.email || "" }));
     } catch (error) {
       console.error("Failed to remove member:", error);
-      toast.error(error instanceof Error ? error.message : "Remove failed.");
+      toast.error(error instanceof Error ? error.message : t("removeFailed"));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const openRoleDialog = (member: TeamMember) => {
+    setRoleTargetMember(member);
+    setNextRole(toManageableRole(member.role));
+    setRoleDialogOpen(true);
+  };
+
+  const handleUpdateRole = async () => {
+    if (!roleTargetMember || !companyId) return;
+
+    if (roleTargetMember.user_id === user?.id) {
+      toast.error(t("cannotChangeOwnRole"));
+      return;
+    }
+
+    const currentRole = toManageableRole(roleTargetMember.role);
+    if (currentRole === nextRole) {
+      setRoleDialogOpen(false);
+      setRoleTargetMember(null);
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const updated = await api.put<TeamMemberPatchResponse | null>(
+        `/company/members/${roleTargetMember.id}`,
+        { role: nextRole }
+      );
+
+      setMembers((prev) =>
+      prev.map((member) =>
+      member.id === roleTargetMember.id ?
+      mergeMemberPatch(member, updated, { role: nextRole }) :
+      member
+      )
+      );
+
+      toast.success(t("roleUpdateSuccess", { email: roleTargetMember.email || "" }));
+      setRoleDialogOpen(false);
+      setRoleTargetMember(null);
+    } catch (error) {
+      console.error("Failed to update member role:", error);
+      toast.error(error instanceof Error ? error.message : t("updateMemberFailed"));
     } finally {
       setUpdating(false);
     }
@@ -300,14 +383,55 @@ const UsersSettings: React.FC = () => {
   };
 
   const isLoading = loadingMembers || updating;
+  const normalizedSearchKeyword = searchKeyword.trim().toLowerCase();
+
+  const filteredMembers = useMemo(() => {
+    if (!normalizedSearchKeyword) return members;
+    return members.filter((member) => {
+      const fullName = (member.full_name || "").toLowerCase();
+      const email = (member.email || "").toLowerCase();
+      const role = (member.role || "").toLowerCase();
+      const status = (member.status || "").toLowerCase();
+      return (
+        fullName.includes(normalizedSearchKeyword) ||
+        email.includes(normalizedSearchKeyword) ||
+        role.includes(normalizedSearchKeyword) ||
+        status.includes(normalizedSearchKeyword)
+      );
+    });
+  }, [members, normalizedSearchKeyword]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredMembers.length / MEMBERS_PAGE_SIZE)
+  );
+
+  const paginatedMembers = useMemo(() => {
+    const startIndex = (currentPage - 1) * MEMBERS_PAGE_SIZE;
+    return filteredMembers.slice(startIndex, startIndex + MEMBERS_PAGE_SIZE);
+  }, [filteredMembers, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [normalizedSearchKeyword]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  if (!canAccessUsersSettings) {
+    return null;
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card className="overflow-hidden border border-slate-200 shadow-sm">
-        <CardHeader className="rounded-t-[inherit] border-b border-slate-200 bg-slate-50/70">
-          <div className="flex items-center justify-between">
+        <CardHeader className="rounded-t-[inherit] border-b border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-xl">
                 <Users className="w-5 h-5" />
                 {t("teamMembersCount", { count: members.length })}
               </CardTitle>
@@ -316,6 +440,7 @@ const UsersSettings: React.FC = () => {
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
               <DialogTrigger asChild>
                 <Button
+                  size="sm"
                   className="bg-emerald-600 text-white hover:bg-emerald-700"
                   disabled={!companyId || isLoading}>
 
@@ -457,15 +582,34 @@ const UsersSettings: React.FC = () => {
             </Dialog>
           </div>
         </CardHeader>
-        <CardContent className="bg-white">
+        <CardContent className="bg-white p-4 pt-4">
           {!companyId ?
           <p className="text-sm text-slate-600">
-              Company context is missing.
+              {t("companyContextMissing")}
             </p> :
           isLoading && members.length === 0 ?
           <div className="h-20 animate-pulse rounded-md border border-slate-200 bg-slate-100/70" /> :
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <div className="space-y-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative w-full sm:max-w-xs">
+                  <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    placeholder={t("searchPlaceholder")}
+                    className="h-9 border-slate-200 bg-white pl-8"
+                  />
+                </div>
+                <p className="text-xs text-slate-500">
+                  {t("searchResults", {
+                    matched: filteredMembers.length,
+                    total: members.length
+                  })}
+                </p>
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
               <Table className="w-full">
                 <TableHeader className="bg-slate-50/80">
                   <TableRow className="border-slate-200">
@@ -477,17 +621,19 @@ const UsersSettings: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                {members.length === 0 ?
+                {filteredMembers.length === 0 ?
                 <TableRow>
                     <TableCell
                     colSpan={5}
                     className="py-8 text-center text-sm text-slate-600">
 
-                      No team members found.
+                      {normalizedSearchKeyword ?
+                  t("noSearchResults") :
+                  t("noTeamMembersFound")}
                     </TableCell>
                   </TableRow> :
 
-                members.map((member) =>
+                paginatedMembers.map((member) =>
                 <TableRow key={member.id} className="border-slate-200 hover:bg-slate-50/70">
                       <TableCell>
                         <div>
@@ -507,8 +653,7 @@ const UsersSettings: React.FC = () => {
                     t("neverLogged")}
                       </TableCell>
                       <TableCell>
-                        {member.role !== "admin" &&
-                    <DropdownMenu>
+                        <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button
                           variant="ghost"
@@ -522,6 +667,12 @@ const UsersSettings: React.FC = () => {
                             <DropdownMenuContent
                         align="end"
                         className="border-slate-200 bg-white">
+                              <DropdownMenuItem
+                          className="text-slate-700 focus:bg-slate-100 focus:text-slate-800"
+                          onClick={() => openRoleDialog(member)}>
+
+                                {t("changeRole")}
+                              </DropdownMenuItem>
 
                               {member.status === "invited" &&
                         <DropdownMenuItem
@@ -532,6 +683,7 @@ const UsersSettings: React.FC = () => {
                                   {t("resendInvite")}
                                 </DropdownMenuItem>
                         }
+                              {member.role !== "admin" &&
                               <DropdownMenuItem
                           className="text-slate-700 focus:bg-slate-100 focus:text-slate-800"
                           onClick={() => handleToggleStatus(member)}>
@@ -548,6 +700,8 @@ const UsersSettings: React.FC = () => {
                                   </>
                           }
                               </DropdownMenuItem>
+                              }
+                              {member.role !== "admin" &&
                               <DropdownMenuItem
                           onClick={() => handleRemove(member)}
                           className="text-rose-600 focus:bg-rose-50 focus:text-rose-700">
@@ -555,9 +709,9 @@ const UsersSettings: React.FC = () => {
                                 <X className="w-4 h-4 mr-2" />
                                 {t("removeAccount")}
                               </DropdownMenuItem>
+                              }
                             </DropdownMenuContent>
                           </DropdownMenu>
-                    }
                       </TableCell>
                     </TableRow>
                 )
@@ -565,9 +719,94 @@ const UsersSettings: React.FC = () => {
                 </TableBody>
               </Table>
             </div>
+
+              {filteredMembers.length > 0 && totalPages > 1 &&
+            <div className="flex items-center justify-end gap-2">
+                  <Button
+                variant="outline"
+                size="sm"
+                className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}>
+                    {t("paginationPrev")}
+                  </Button>
+                  <span className="text-xs text-slate-600">
+                    {t("paginationPage", { current: currentPage, total: totalPages })}
+                  </span>
+                  <Button
+                variant="outline"
+                size="sm"
+                className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                onClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
+                disabled={currentPage === totalPages}>
+                    {t("paginationNext")}
+                  </Button>
+                </div>
+            }
+            </div>
           }
         </CardContent>
       </Card>
+
+      <Dialog
+        open={roleDialogOpen}
+        onOpenChange={(open) => {
+          setRoleDialogOpen(open);
+          if (!open) {
+            setRoleTargetMember(null);
+          }
+        }}>
+        <DialogContent className="border border-slate-200 bg-white">
+          <DialogHeader>
+            <DialogTitle>{t("changeRole")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-slate-600">
+              {t("changeRoleDescription")}
+            </p>
+            {roleTargetMember &&
+            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                {roleTargetMember.full_name || roleTargetMember.email || t("noName")}
+              </div>
+            }
+            <div className="space-y-2">
+              <Label>{t("role")}</Label>
+              <Select
+                value={nextRole}
+                onValueChange={(value: TeamManageableRole) => setNextRole(value)}>
+                <SelectTrigger className="border-slate-200 bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-slate-200 bg-white">
+                  <SelectItem value="admin">{t("admin")}</SelectItem>
+                  <SelectItem value="member">{t("member")}</SelectItem>
+                  <SelectItem value="viewer">{t("viewer")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              onClick={() => {
+                setRoleDialogOpen(false);
+                setRoleTargetMember(null);
+              }}
+              disabled={isLoading}>
+              {t("cancel")}
+            </Button>
+            <Button
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              onClick={handleUpdateRole}
+              disabled={isLoading || !roleTargetMember}>
+              {t("saveRole")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>);
 
 };

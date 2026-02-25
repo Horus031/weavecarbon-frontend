@@ -29,12 +29,22 @@ const normalizeHistory = (raw: unknown): CalculationHistoryItem[] => {
     `calc-${Date.now()}-${index}`,
     productId: typeof item.productId === "string" ? item.productId : "",
     productName: typeof item.productName === "string" ? item.productName : "",
-    materialsCO2: Number(item.materialsCO2) || 0,
-    manufacturingCO2: Number(item.manufacturingCO2) || 0,
-    transportCO2: Number(item.transportCO2) || 0,
-    packagingCO2: Number(item.packagingCO2) || 0,
-    totalCO2: Number(item.totalCO2) || 0,
-    carbonVersion: typeof item.carbonVersion === "string" ? item.carbonVersion : "v1",
+    materialsCO2: Number(item.materialsCO2 ?? item.materials) || 0,
+    manufacturingCO2: Number(
+      item.manufacturingCO2 ??
+      item.productionCO2 ??
+      item.manufacturing ??
+      item.production
+    ) || 0,
+    transportCO2: Number(item.transportCO2 ?? item.transport) || 0,
+    packagingCO2: Number(item.packagingCO2 ?? item.packaging) || 0,
+    totalCO2: Number(item.totalCO2 ?? item.total) || 0,
+    carbonVersion:
+    typeof item.carbonVersion === "string" ?
+    item.carbonVersion :
+    typeof item.version === "string" ?
+    item.version :
+    "v1",
     createdAt:
     typeof item.createdAt === "string" && item.createdAt.length > 0 ?
     item.createdAt :

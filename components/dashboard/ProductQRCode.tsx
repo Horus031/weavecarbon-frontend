@@ -1,27 +1,28 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { QRCodeSVG } from "qrcode.react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
-  DialogTitle,
-  DialogDescription } from
-"@/components/ui/dialog";
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Download,
-  Share2,
-  QrCode,
-  Leaf,
-  Shield,
-  Copy,
   CheckCircle2,
-  Printer } from
-"lucide-react";
+  Copy,
+  Download,
+  Leaf,
+  Printer,
+  QrCode,
+  Share2,
+  Shield
+} from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 
 export interface ProductQRCodeProps {
@@ -29,6 +30,7 @@ export interface ProductQRCodeProps {
   productName: string;
   productCode?: string;
   sku?: string;
+  shipmentId?: string;
   open?: boolean;
   isOpen?: boolean;
   onClose: () => void;
@@ -39,21 +41,27 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
   productName,
   productCode,
   sku,
+  shipmentId,
   open,
   isOpen,
   onClose
 }) => {
-
+  const t = useTranslations("products.qrCode");
   const isDialogOpen = open ?? isOpen ?? false;
   const code = productCode ?? sku ?? productId;
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-
+  // Generate public passport URL - accessible without authentication
+  // This allows customers to scan QR and view product info without logging in
   const passportUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
-    return `${window.location.origin}/passport?id=${productId}`;
-  }, [productId]);
+    const params = new URLSearchParams({ id: productId });
+    if (shipmentId && shipmentId.trim().length > 0) {
+      params.set("shipmentId", shipmentId.trim());
+    }
+    return `${window.location.origin}/passport?${params.toString()}`;
+  }, [productId, shipmentId]);
 
   const handleCopyLink = async () => {
     if (!passportUrl) return;
@@ -61,14 +69,14 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
       await navigator.clipboard.writeText(passportUrl);
       setCopied(true);
       toast({
-        title: "Đã sao chép",
-        description: "Link Green Passport đã được sao chép vào clipboard"
+        title: t("toasts.copiedTitle"),
+        description: t("toasts.copiedDescription")
       });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast({
-        title: "Lỗi",
-        description: "Không thể sao chép link",
+        title: t("toasts.copyErrorTitle"),
+        description: t("toasts.copyErrorDescription"),
         variant: "destructive"
       });
     }
@@ -88,20 +96,17 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
       canvas.height = 500;
 
       if (ctx) {
-
         ctx.fillStyle = "white";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
 
         const qrSize = 300;
         const qrX = (canvas.width - qrSize) / 2;
         ctx.drawImage(img, qrX, 30, qrSize, qrSize);
 
-
         ctx.fillStyle = "#166534";
         ctx.font = "bold 18px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("Green Passport", canvas.width / 2, 360);
+        ctx.fillText(t("canvas.greenPassport"), canvas.width / 2, 360);
 
         ctx.fillStyle = "#374151";
         ctx.font = "14px sans-serif";
@@ -109,10 +114,10 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
 
         ctx.fillStyle = "#6b7280";
         ctx.font = "12px sans-serif";
-        ctx.fillText(`SKU: ${code}`, canvas.width / 2, 415);
+        ctx.fillText(`${t("canvas.sku")}: ${code}`, canvas.width / 2, 415);
 
         ctx.fillText(
-          "Quét mã để xem thông tin sản phẩm",
+          t("canvas.scanToView"),
           canvas.width / 2,
           450
         );
@@ -126,8 +131,8 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
       downloadLink.click();
 
       toast({
-        title: "Đã tải xuống",
-        description: "QR Code đã được lưu thành công"
+        title: t("toasts.downloadedTitle"),
+        description: t("toasts.downloadedDescription")
       });
     };
 
@@ -149,7 +154,7 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Green Passport - ${code}</title>
+          <title>${t("print.documentTitle", { code })}</title>
           <style>
             body {
               display: flex;
@@ -191,11 +196,11 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
         </head>
         <body>
           <div class="container">
-            <div class="title">🌿 Green Passport</div>
+            <div class="title">${t("print.greenPassport")}</div>
             ${svgData}
             <div class="product-name">${productName}</div>
-            <div class="sku">SKU: ${code}</div>
-            <div class="footer">Quét mã để xem thông tin sản phẩm • WeaveCarbon</div>
+            <div class="sku">${t("canvas.sku")}: ${code}</div>
+            <div class="footer">${t("print.footer")}</div>
           </div>
           <script>
             window.onload = () => {
@@ -213,15 +218,15 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Green Passport - ${productName}`,
-          text: `Xem thông tin carbon footprint của sản phẩm ${productName}`,
+          title: t("share.title", { productName }),
+          text: t("share.text", { productName }),
           url: passportUrl
         });
       } catch {
 
       }
     } else {
-      handleCopyLink();
+      void handleCopyLink();
     }
   };
 
@@ -231,16 +236,14 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="w-5 h-5 text-green-600" />
-            Green Passport QR Code
+            {t("dialog.title")}
           </DialogTitle>
           <DialogDescription>
-            Mã QR này giống như passport cho sản phẩm - quét để xem nguồn gốc,
-            dấu chân carbon và tuân thủ xuất khẩu
+            {t("dialog.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          
           <Card className="bg-linear-to-br from-green-50 to-emerald-50">
             <CardContent className="p-6 flex flex-col items-center">
               <div className="bg-white p-4 rounded-xl shadow-sm">
@@ -257,58 +260,54 @@ const ProductQRCode: React.FC<ProductQRCodeProps> = ({
                     width: 30,
                     excavate: true
                   }} />
-                
+
               </div>
 
               <div className="mt-4 text-center">
                 <Badge className="bg-green-100 text-green-700 mb-2">
                   <Shield className="w-3 h-3 mr-1" />
-                  Verified Product
+                  {t("badge.verifiedProduct")}
                 </Badge>
                 <h3 className="font-semibold text-sm">{productName}</h3>
-                <p className="text-xs text-muted-foreground">SKU: {code}</p>
+                <p className="text-xs text-muted-foreground">{t("canvas.sku")}: {code}</p>
               </div>
             </CardContent>
           </Card>
 
-          
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={handleDownload}>
               <Download className="w-4 h-4 mr-2" />
-              Tải xuống
+              {t("actions.download")}
             </Button>
             <Button variant="outline" onClick={handlePrint}>
               <Printer className="w-4 h-4 mr-2" />
-              In
+              {t("actions.print")}
             </Button>
-            <Button variant="outline" onClick={handleCopyLink}>
+            <Button variant="outline" onClick={() => void handleCopyLink()}>
               {copied ?
               <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" /> :
 
               <Copy className="w-4 h-4 mr-2" />
               }
-              {copied ? "Đã sao chép" : "Sao chép link"}
+              {copied ? t("actions.copied") : t("actions.copyLink")}
             </Button>
-            <Button variant="outline" onClick={handleShare}>
+            <Button variant="outline" onClick={() => void handleShare()}>
               <Share2 className="w-4 h-4 mr-2" />
-              Chia sẻ
+              {t("actions.share")}
             </Button>
           </div>
 
-          
           <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
             <p className="flex items-start gap-2">
               <Leaf className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Dành cho khách hàng:</strong> Quét để xem hàng đang ở
-                đâu trong chuỗi vận chuyển
+                <strong>{t("help.customerTitle")}</strong> {t("help.customerDesc")}
               </span>
             </p>
             <p className="flex items-start gap-2 mt-2">
               <Shield className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Dành cho thuế quan:</strong> Xác minh nguồn gốc, chứng
-                nhận và tuân thủ US/EU
+                <strong>{t("help.customsTitle")}</strong> {t("help.customsDesc")}
               </span>
             </p>
           </div>

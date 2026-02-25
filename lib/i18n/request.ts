@@ -11,8 +11,5 @@ export default getRequestConfig(async () => {
   localeCookie as Locale :
   defaultLocale;
 
-  return {
-    locale,
-    messages: (await import(`@/locales/${locale}/common.json`)).default
-  };
+  return { locale };
 });

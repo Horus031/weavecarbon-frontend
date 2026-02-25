@@ -6,21 +6,25 @@ import Features from "@/components/landing/Features";
 import HowItWorks from "@/components/landing/HowItWorks";
 import Stats from "@/components/landing/Stats";
 import CTA from "@/components/landing/CTA";
+import ScopedIntlProvider from "@/components/i18n/ScopedIntlProvider";
+import { HOME_NAMESPACES } from "@/lib/i18n/namespaces";
 
 
 export default function Home() {
   return (
-    <HomeClient>
-      <Header />
-      <main>
-        
-        <Hero />
-        <Features />
-        <HowItWorks />
-        <Stats />
-        <CTA />
-      </main>
-      <Footer />
-    </HomeClient>);
+    <ScopedIntlProvider namespaces={HOME_NAMESPACES}>
+      <HomeClient>
+        <Header />
+        <main>
+          
+          <Hero />
+          <Features />
+          <HowItWorks />
+          <Stats />
+          <CTA />
+        </main>
+        <Footer />
+      </HomeClient>
+    </ScopedIntlProvider>);
 
 }

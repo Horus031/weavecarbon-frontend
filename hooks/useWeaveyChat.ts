@@ -16,7 +16,8 @@ interface UseWeaveyChatOptions {
 const WEAVEY_API_URL = process.env.NEXT_PUBLIC_WEAVEY_API_URL;
 
 
-export function useWeaveyChat(_options: UseWeaveyChatOptions = {}) {
+export function useWeaveyChat(options: UseWeaveyChatOptions = {}) {
+  void options;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 

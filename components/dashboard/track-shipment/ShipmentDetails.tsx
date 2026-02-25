@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -23,7 +23,6 @@ import {
   CheckCircle2,
   XCircle } from
 "lucide-react";
-import { TRANSPORT_MODE_LABELS } from "@/lib/productLabels";
 import type { TrackShipment } from "./types";
 import TransportMap from "@/components/ui/TransportMap";
 
@@ -75,9 +74,13 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
   onRefresh
 }) => {
   const t = useTranslations("trackShipment");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
   const router = useRouter();
   const formatDistanceKm = (value: number) =>
-  value.toLocaleString("en-US", { maximumFractionDigits: 3 });
+  value.toLocaleString(displayLocale, { maximumFractionDigits: 3 });
+  const formatExactValue = (value: number) =>
+  value.toLocaleString(displayLocale, { maximumFractionDigits: 3 });
   const statusPalette =
   shipment && shipment.status in STATUS_PALETTE ?
   STATUS_PALETTE[shipment.status as keyof typeof STATUS_PALETTE] :
@@ -129,6 +132,11 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
     }
   };
 
+  const getModeLabel = (mode: string) =>
+  t.has(`transportModes.${mode}`) ?
+  t(`transportModes.${mode}`) :
+  mode;
+
   if (!shipment) {
     return (
       <div className="lg:col-span-2">
@@ -149,7 +157,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
         legs={shipment.legs}
         onRefresh={onRefresh}
         mapSubject={shipment.productName}
-        mapSubjectMeta={`SKU: ${shipment.sku}`} />
+        mapSubjectMeta={`${t("skuLabel")}: ${shipment.sku}`} />
 
 
       
@@ -162,7 +170,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
                 {shipment.productName}
               </CardTitle>
               <CardDescription className="text-slate-600">
-                {shipment.id} • Container: {shipment.containerNo}
+                {shipment.id} | {t("containerLabel")}: {shipment.containerNo}
               </CardDescription>
             </div>
             {getStatusBadge(shipment.status)}
@@ -186,7 +194,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
               <Calendar className="mx-auto mb-1 h-5 w-5 text-slate-500" />
               <p className="text-xs text-slate-500">{t("departureDate")}</p>
               <p className="font-medium text-slate-800">
-                {new Date(shipment.departureDate).toLocaleDateString("vi-VN")}
+                {new Date(shipment.departureDate).toLocaleDateString(displayLocale)}
               </p>
             </div>
             <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-center">
@@ -194,7 +202,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
               <p className="text-xs text-slate-500">{t("estimatedArrival")}</p>
               <p className="font-medium text-slate-800">
                 {new Date(shipment.estimatedArrival).toLocaleDateString(
-                  "vi-VN"
+                  displayLocale
                 )}
               </p>
             </div>
@@ -205,11 +213,11 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
             </div>
             <div className="rounded-lg border border-orange-200 bg-orange-50/70 p-3 text-center">
               <div className="mx-auto mb-1 flex h-5 w-5 items-center justify-center text-xs font-bold text-orange-500">
-                CO₂
+                CO2
               </div>
               <p className="text-xs text-slate-500">{t("emissions")}</p>
               <p className="font-medium text-orange-600">
-                {shipment.totalCO2.toFixed(1)} kg
+                {formatExactValue(shipment.totalCO2)} {t("units.kg")}
               </p>
             </div>
           </div>
@@ -257,7 +265,7 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
                       <div className="flex items-center justify-between">
                         <h5 className="font-medium text-slate-800">
                           {t("legNumber")} {leg.legNumber}:{" "}
-                          {TRANSPORT_MODE_LABELS[leg.mode]}
+                          {getModeLabel(leg.mode)}
                         </h5>
                         <Badge
                           className={
@@ -270,12 +278,12 @@ const ShipmentDetails: React.FC<ShipmentDetailsProps> = ({
                         </Badge>
                       </div>
                       <p className="mt-1 text-sm text-slate-600">
-                        {leg.origin.name} → {leg.destination.name}
+                        {leg.origin.name} {"->"} {leg.destination.name}
                       </p>
                       <div className="mt-2 flex items-center gap-4 text-xs text-slate-500">
-                        <span>{formatDistanceKm(leg.distanceKm)} km</span>
+                        <span>{formatDistanceKm(leg.distanceKm)} {t("units.km")}</span>
                         <span className="text-orange-600">
-                          {leg.co2Kg.toFixed(2)} kg CO₂
+                          {formatExactValue(leg.co2Kg)} {t("units.kgCo2")}
                         </span>
                       </div>
                     </div>

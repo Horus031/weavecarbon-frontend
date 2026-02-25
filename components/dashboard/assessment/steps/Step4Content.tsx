@@ -1,4 +1,7 @@
+﻿"use client";
+
 import React from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -6,8 +9,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue } from
-"@/components/ui/select";
+  SelectValue
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -18,15 +21,15 @@ import {
   Train,
   Plus,
   Trash2,
-  ArrowRight } from
-"lucide-react";
+  ArrowRight
+} from "lucide-react";
 import {
   ProductAssessmentData,
   AddressInput,
   TransportLeg,
   DESTINATION_MARKETS,
-  TRANSPORT_MODES } from
-"./types";
+  TRANSPORT_MODES
+} from "./types";
 import dynamic from "next/dynamic";
 
 interface LocationPickerProps {
@@ -36,31 +39,7 @@ interface LocationPickerProps {
   defaultCenter?: [number, number];
 }
 
-
-const LocationPicker = dynamic<LocationPickerProps>(
-  () => import("./LocationPicker"),
-  {
-    ssr: false,
-    loading: () =>
-    <Card>
-        <CardContent className="p-4 h-87.5 flex items-center justify-center">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="w-4 h-4 animate-pulse" />
-            <span>Đang tải bản đồ...</span>
-          </div>
-        </CardContent>
-      </Card>
-
-  }
-);
-
-interface Step4LogisticsProps {
-  data: ProductAssessmentData;
-  onChange: (updates: Partial<ProductAssessmentData>) => void;
-}
-
-
-const TransportIcon: React.FC<{mode: string;className?: string;}> = ({
+const TransportIcon: React.FC<{ mode: string; className?: string }> = ({
   mode,
   className = "w-4 h-4"
 }) => {
@@ -77,7 +56,6 @@ const TransportIcon: React.FC<{mode: string;className?: string;}> = ({
       return <Truck className={className} />;
   }
 };
-
 
 const getDestinationDefaultCenter = (market: string): [number, number] => {
   switch (market) {
@@ -97,20 +75,47 @@ const getDestinationDefaultCenter = (market: string): [number, number] => {
   }
 };
 
-const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
-  const isInternational =
-  data.destinationMarket && data.destinationMarket !== "vietnam";
+const LocationPickerLoading = () => {
+  const t = useTranslations("assessment.step4");
 
+  return (
+    <Card>
+      <CardContent className="p-4 h-87.5 flex items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <MapPin className="w-4 h-4 animate-pulse" />
+          <span>{t("loadingMap")}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const LocationPicker = dynamic<LocationPickerProps>(
+  () => import("./LocationPicker"),
+  {
+    ssr: false,
+    loading: () => <LocationPickerLoading />
+  }
+);
+
+interface Step4LogisticsProps {
+  data: ProductAssessmentData;
+  onChange: (updates: Partial<ProductAssessmentData>) => void;
+}
+
+const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
+  const t = useTranslations("assessment.step4");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
+  const isInternational = data.destinationMarket && data.destinationMarket !== "vietnam";
 
   const updateOriginAddress = (address: AddressInput) => {
     onChange({ originAddress: address });
   };
 
-
   const updateDestinationAddress = (address: AddressInput) => {
     onChange({ destinationAddress: address });
   };
-
 
   const addTransportLeg = () => {
     const newLeg: TransportLeg = {
@@ -118,32 +123,29 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
       mode: "road",
       estimatedDistance: undefined
     };
+
     onChange({ transportLegs: [...data.transportLegs, newLeg] });
   };
 
-
   const removeTransportLeg = (id: string) => {
-    onChange({ transportLegs: data.transportLegs.filter((l) => l.id !== id) });
+    onChange({ transportLegs: data.transportLegs.filter((leg) => leg.id !== id) });
   };
-
 
   const updateTransportLeg = (id: string, updates: Partial<TransportLeg>) => {
     onChange({
-      transportLegs: data.transportLegs.map((l) =>
-      l.id === id ? { ...l, ...updates } : l
+      transportLegs: data.transportLegs.map((leg) =>
+        leg.id === id ? { ...leg, ...updates } : leg
       )
     });
   };
-
 
   const totalDistance = data.transportLegs.reduce(
     (sum, leg) => sum + (leg.estimatedDistance || 0),
     0
   );
 
-
   const handleMarketChange = (market: string) => {
-    const marketInfo = DESTINATION_MARKETS.find((m) => m.value === market);
+    const marketInfo = DESTINATION_MARKETS.find((item) => item.value === market);
     let country = "Vietnam";
 
     switch (market) {
@@ -178,97 +180,91 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
 
   return (
     <div className="space-y-6">
-      
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Thị trường đích</CardTitle>
+          <CardTitle className="text-lg">{t("destinationMarket.title")}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Select
-            value={data.destinationMarket}
-            onValueChange={handleMarketChange}>
-            
+          <Select value={data.destinationMarket} onValueChange={handleMarketChange}>
             <SelectTrigger className="max-w-sm">
-              <SelectValue placeholder="Chọn thị trường tiêu thụ" />
+              <SelectValue placeholder={t("destinationMarket.placeholder")} />
             </SelectTrigger>
             <SelectContent>
-              {DESTINATION_MARKETS.map((market) =>
-              <SelectItem key={market.value} value={market.value}>
-                  {market.label}
+              {DESTINATION_MARKETS.map((market) => (
+                <SelectItem key={market.value} value={market.value}>
+                  {t.has(`markets.${market.value}`)
+                    ? t(`markets.${market.value}`)
+                    : market.label}
                 </SelectItem>
-              )}
+              ))}
             </SelectContent>
           </Select>
         </CardContent>
       </Card>
 
-      
-      {data.destinationMarket &&
-      <>
+      {data.destinationMarket ? (
+        <>
           <div className="grid lg:grid-cols-2 gap-4">
             <LocationPicker
-            label="A. Địa chỉ nơi giao (Origin)"
-            address={data.originAddress}
-            onChange={updateOriginAddress}
-            defaultCenter={[106.6297, 10.8231]} />
-          
+              label={t("address.origin")}
+              address={data.originAddress}
+              onChange={updateOriginAddress}
+              defaultCenter={[106.6297, 10.8231]}
+            />
             <LocationPicker
-            label="B. Địa chỉ nơi nhận (Destination)"
-            address={data.destinationAddress}
-            onChange={updateDestinationAddress}
-            defaultCenter={getDestinationDefaultCenter(
-              data.destinationMarket
-            )} />
-          
+              label={t("address.destination")}
+              address={data.destinationAddress}
+              onChange={updateDestinationAddress}
+              defaultCenter={getDestinationDefaultCenter(data.destinationMarket)}
+            />
           </div>
 
-          
           <Card>
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg">
-                    Phương thức vận chuyển
-                  </CardTitle>
+                  <CardTitle className="text-lg">{t("transport.title")}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Thêm các chặng vận chuyển từ nơi giao đến nơi nhận
+                    {t("transport.subtitle")}
                   </p>
                 </div>
-                {totalDistance > 0 &&
-              <Badge variant="outline" className="text-sm">
-                    Tổng: ~{totalDistance.toLocaleString()} km
+
+                {totalDistance > 0 ? (
+                  <Badge variant="outline" className="text-sm">
+                    {t("transport.totalDistance", {
+                      value: totalDistance.toLocaleString(displayLocale)
+                    })}
                   </Badge>
-              }
+                ) : null}
               </div>
             </CardHeader>
+
             <CardContent className="space-y-4">
-              
-              {data.transportLegs.length > 0 &&
-            <div className="space-y-3">
+              {data.transportLegs.length > 0 ? (
+                <div className="space-y-3">
                   {data.transportLegs.map((leg, index) => {
-                const modeInfo = TRANSPORT_MODES.find(
-                  (m) => m.value === leg.mode
-                );
-                return (
-                  <div
-                    key={leg.id}
-                    className="flex items-center gap-4 p-3 rounded-lg border bg-card">
-                    
+                    const modeInfo = TRANSPORT_MODES.find((mode) => mode.value === leg.mode);
+
+                    return (
+                      <div
+                        key={leg.id}
+                        className="flex items-center gap-4 p-3 rounded-lg border bg-card"
+                      >
                         <div className="flex items-center gap-2 min-w-25">
                           <span className="text-sm font-medium text-muted-foreground">
-                            Chặng {index + 1}
+                            {t("transport.leg", { index: index + 1 })}
                           </span>
-                          {index < data.transportLegs.length - 1 &&
-                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                      }
+                          {index < data.transportLegs.length - 1 ? (
+                            <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                          ) : null}
                         </div>
 
                         <Select
-                      value={leg.mode}
-                      onValueChange={(v: "road" | "sea" | "air" | "rail") =>
-                      updateTransportLeg(leg.id, { mode: v })
-                      }>
-                      
+                          value={leg.mode}
+                          onValueChange={(value: "road" | "sea" | "air" | "rail") =>
+                            updateTransportLeg(leg.id, { mode: value })
+                          }
+                        >
                           <SelectTrigger className="w-45">
                             <div className="flex items-center gap-2">
                               <TransportIcon mode={leg.mode} />
@@ -276,108 +272,109 @@ const Step4Logistics: React.FC<Step4LogisticsProps> = ({ data, onChange }) => {
                             </div>
                           </SelectTrigger>
                           <SelectContent>
-                            {TRANSPORT_MODES.map((mode) =>
-                        <SelectItem key={mode.value} value={mode.value}>
+                            {TRANSPORT_MODES.map((mode) => (
+                              <SelectItem key={mode.value} value={mode.value}>
                                 <div className="flex items-center gap-2">
                                   <TransportIcon mode={mode.value} />
-                                  <span>{mode.label}</span>
+                                  <span>
+                                    {t.has(`transportModes.${mode.value}`)
+                                      ? t(`transportModes.${mode.value}`)
+                                      : mode.label}
+                                  </span>
                                 </div>
                               </SelectItem>
-                        )}
+                            ))}
                           </SelectContent>
                         </Select>
 
                         <div className="flex items-center gap-2 flex-1">
                           <Input
-                        type="number"
-                        min="0"
-                        value={leg.estimatedDistance || ""}
-                        onChange={(e) =>
-                        updateTransportLeg(leg.id, {
-                          estimatedDistance: Number(e.target.value)
-                        })
-                        }
-                        placeholder="Km ước tính"
-                        className="w-32" />
-                      
-                          <span className="text-sm text-muted-foreground">
-                            km
-                          </span>
+                            type="number"
+                            min="0"
+                            value={leg.estimatedDistance || ""}
+                            onChange={(event) =>
+                              updateTransportLeg(leg.id, {
+                                estimatedDistance: Number(event.target.value)
+                              })
+                            }
+                            placeholder={t("transport.distancePlaceholder")}
+                            className="w-32"
+                          />
+
+                          <span className="text-sm text-muted-foreground">{t("transport.distanceUnit")}</span>
                           <span className="text-xs text-muted-foreground ml-2">
-                            ({modeInfo?.co2Factor} kg CO₂e/tấn.km)
+                            {t("transport.co2Factor", { value: modeInfo?.co2Factor || 0 })}
                           </span>
                         </div>
 
                         <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeTransportLeg(leg.id)}
-                      className="text-destructive hover:text-destructive">
-                      
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeTransportLeg(leg.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
-                      </div>);
-
-              })}
+                      </div>
+                    );
+                  })}
                 </div>
-            }
+              ) : null}
 
               <Button
-              variant="outline"
-              onClick={addTransportLeg}
-              className="w-full border-dashed">
-              
+                variant="outline"
+                onClick={addTransportLeg}
+                className="w-full border-dashed"
+              >
                 <Plus className="w-4 h-4 mr-2" />
-                Thêm chặng vận chuyển
+                {t("transport.addLeg")}
               </Button>
 
-              
-              {isInternational && data.transportLegs.length === 0 &&
-            <div className="p-4 rounded-lg bg-muted/50 border border-dashed">
-                  <p className="text-sm font-medium mb-2">
-                    Gợi ý tuyến vận chuyển:
-                  </p>
+              {isInternational && data.transportLegs.length === 0 ? (
+                <div className="p-4 rounded-lg bg-muted/50 border border-dashed">
+                  <p className="text-sm font-medium mb-2">{t("suggestedRoute.title")}</p>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Truck className="w-4 h-4" />
-                    <span>Đường bộ (nội địa)</span>
+                    <span>{t("suggestedRoute.road")}</span>
                     <ArrowRight className="w-4 h-4" />
                     <Ship className="w-4 h-4" />
-                    <span>Đường biển (quốc tế)</span>
+                    <span>{t("suggestedRoute.sea")}</span>
                   </div>
                   <Button
-                variant="link"
-                size="sm"
-                className="mt-2 h-auto p-0"
-                onClick={() => {
-                  const marketInfo = DESTINATION_MARKETS.find(
-                    (m) => m.value === data.destinationMarket
-                  );
-                  onChange({
-                    transportLegs: [
-                    {
-                      id: `leg-${Date.now()}-1`,
-                      mode: "road",
-                      estimatedDistance: 50
-                    },
-                    {
-                      id: `leg-${Date.now()}-2`,
-                      mode: "sea",
-                      estimatedDistance: marketInfo?.distance || 5000
-                    }]
+                    variant="link"
+                    size="sm"
+                    className="mt-2 h-auto p-0"
+                    onClick={() => {
+                      const marketInfo = DESTINATION_MARKETS.find(
+                        (market) => market.value === data.destinationMarket
+                      );
 
-                  });
-                }}>
-                
-                    Áp dụng gợi ý này
+                      onChange({
+                        transportLegs: [
+                          {
+                            id: `leg-${Date.now()}-1`,
+                            mode: "road",
+                            estimatedDistance: 50
+                          },
+                          {
+                            id: `leg-${Date.now()}-2`,
+                            mode: "sea",
+                            estimatedDistance: marketInfo?.distance || 5000
+                          }
+                        ]
+                      });
+                    }}
+                  >
+                    {t("suggestedRoute.apply")}
                   </Button>
                 </div>
-            }
+              ) : null}
             </CardContent>
           </Card>
         </>
-      }
-    </div>);
-
+      ) : null}
+    </div>
+  );
 };
 
 export default Step4Logistics;

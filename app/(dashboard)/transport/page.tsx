@@ -1,5 +1,7 @@
 import React from "react";
 import TransportClient from "@/components/dashboard/transport/TransportClient";
+import ScopedIntlProvider from "@/components/i18n/ScopedIntlProvider";
+import { DASHBOARD_TRANSPORT_NAMESPACES } from "@/lib/i18n/namespaces";
 
 interface TransportPageProps {
   searchParams: Promise<{
@@ -18,11 +20,13 @@ const TransportLogistics = async ({ searchParams }: TransportPageProps) => {
   const productCode = params?.productCode?.trim() || undefined;
 
   return (
-    <TransportClient
-      shipmentId={shipmentId}
-      productId={productId}
-      productName={productName}
-      productCode={productCode} />);
+    <ScopedIntlProvider namespaces={DASHBOARD_TRANSPORT_NAMESPACES}>
+      <TransportClient
+        shipmentId={shipmentId}
+        productId={productId}
+        productName={productName}
+        productCode={productCode} />
+    </ScopedIntlProvider>);
 
 
 };

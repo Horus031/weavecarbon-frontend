@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages, getLocale } from "next-intl/server";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Be_Vietnam_Pro } from "next/font/google";
+import { getScopedMessages } from "@/lib/i18n/messages";
+import { ROOT_NAMESPACES } from "@/lib/i18n/namespaces";
 
 const beVietnamProBody = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -31,8 +33,7 @@ export default async function RootLayout({
 
 
 }: Readonly<{children: React.ReactNode;}>) {
-  const locale = await getLocale();
-  const messages = await getMessages();
+  const { locale, messages } = await getScopedMessages(ROOT_NAMESPACES);
   return (
     <html data-scroll-behavior="smooth" lang={locale} suppressHydrationWarning>
       <body
@@ -43,6 +44,11 @@ export default async function RootLayout({
             <LanguageProvider>
               {children}
               <Toaster />
+              <SonnerToaster
+                position="top-right"
+                richColors
+                closeButton
+                duration={3000} />
             </LanguageProvider>
           </NextIntlClientProvider>
         </AuthProvider>

@@ -15,6 +15,7 @@ import { ArrowRight } from "lucide-react";
 import BusinessTypeSelector from "./BusinessTypeSelector";
 import TargetMarketSelector from "./TargetMarketSelector";
 import PlanInfo from "./PlanInfo";
+import { useTranslations } from "next-intl";
 
 interface OnboardingFormProps {
   companyName: string;
@@ -37,6 +38,8 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
   isSubmitting,
   onSubmit
 }) => {
+  const t = useTranslations("onboarding");
+
   const toggleMarket = (market: string) => {
     setTargetMarkets((prev) =>
     prev.includes(market) ?
@@ -48,9 +51,9 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
   return (
     <Card className="border-border/50 shadow-xl">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Set Up Your Business</CardTitle>
+        <CardTitle className="text-2xl">{t("title")}</CardTitle>
         <CardDescription>
-          Tell us about your company to get started
+          {t("subtitle")}
         </CardDescription>
       </CardHeader>
 
@@ -58,11 +61,11 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
         <form onSubmit={onSubmit} className="space-y-6">
           
           <div className="space-y-2">
-            <Label htmlFor="company-name">Company Name *</Label>
+            <Label htmlFor="company-name">{t("companyName")} *</Label>
             <Input
               id="company-name"
               type="text"
-              placeholder="Enter your company name"
+              placeholder={t("companyNamePlaceholder")}
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               disabled={isSubmitting}
@@ -93,7 +96,7 @@ const OnboardingForm: React.FC<OnboardingFormProps> = ({
             size="lg"
             disabled={isSubmitting}>
             
-            {isSubmitting ? "Creating..." : "Continue to Dashboard"}
+            {isSubmitting ? t("creating") : t("continue")}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </form>

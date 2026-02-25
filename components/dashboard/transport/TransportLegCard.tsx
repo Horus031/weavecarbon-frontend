@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 import { useTranslations } from "next-intl";
@@ -177,11 +177,11 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t("legCO2")}</span>
               <span className="font-medium text-primary">
-                {calculateCO2(leg).toFixed(2)} kg CO₂e
+                {calculateCO2(leg).toFixed(2)} {t("units.kgCO2e")}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("emissionFactor")}: {EMISSION_FACTORS[leg.mode]} kg CO₂/km
+              {t("emissionFactor")}: {EMISSION_FACTORS[leg.mode]} {t("units.kgCO2PerKm")}
             </p>
           </div>
         }
@@ -191,3 +191,4 @@ const TransportLegCard: React.FC<TransportLegCardProps> = ({
 };
 
 export default TransportLegCard;
+

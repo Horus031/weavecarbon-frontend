@@ -14,10 +14,12 @@ import B2CDonateCard from "./B2CDonateCard";
 import B2CRecentActivity from "./B2CRecentActivity";
 import B2CImagePreview from "./B2CImagePreview";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 const B2CClient: React.FC = () => {
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
+  const t = useTranslations("b2c");
   const { profile, isLoaded: profileLoaded } = useUserProfile(user?.email);
   const { activities, isLoaded: activitiesLoaded } = useRecentActivity(
     user?.email
@@ -42,7 +44,7 @@ const B2CClient: React.FC = () => {
 
   const handleCameraClick = () => {
     if (hasCameraPermission) {
-      toast.info("Camera workflow will be enabled after API integration.");
+      toast.info(t("cameraWorkflowPending"));
     } else {
       setShowCameraPermission(true);
     }
@@ -50,7 +52,7 @@ const B2CClient: React.FC = () => {
 
   const handleLocationClick = () => {
     if (hasLocationPermission) {
-      toast.info("Location workflow will be enabled after API integration.");
+      toast.info(t("locationWorkflowPending"));
     } else {
       setShowLocationPermission(true);
     }
@@ -111,7 +113,7 @@ const B2CClient: React.FC = () => {
           onRetake={() => setCapturedImage(null)}
           onContinue={() => {
             setCapturedImage(null);
-            toast.success("Image captured successfully.");
+            toast.success(t("imageCapturedSuccess"));
           }} />
 
         }

@@ -1,15 +1,11 @@
+﻿"use client";
 
-
-"use client";
-
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { configureMapboxRuntime, hasMapboxPublicToken } from "@/lib/mapbox";
 import type { SupplyChainNode, SupplyChainRoute } from "./SupplyChainMap";
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
-console.log("MAPBOX_TOKEN:", MAPBOX_TOKEN ? "✅ Found" : "❌ Not found");
 
 interface SupplyChainMapContentProps {
   nodes: SupplyChainNode[];
@@ -20,7 +16,6 @@ interface SupplyChainMapContentProps {
   onNodeClick?: (node: SupplyChainNode) => void;
   onRouteClick?: (route: SupplyChainRoute) => void;
 }
-
 
 const getRouteColor = (mode: string, status: string) => {
   if (status === "completed") return "#22c55e";
@@ -59,17 +54,17 @@ const getMarkerColor = (status?: string) => {
 const getTypeEmoji = (type: string) => {
   switch (type) {
     case "factory":
-      return "🏭";
+      return "F";
     case "warehouse":
-      return "📦";
+      return "W";
     case "port":
-      return "⚓";
+      return "P";
     case "airport":
-      return "✈️";
+      return "A";
     case "destination":
-      return "📍";
+      return "D";
     default:
-      return "📌";
+      return "N";
   }
 };
 
@@ -82,21 +77,19 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
   onNodeClick,
   onRouteClick
 }) => {
+  const t = useTranslations("logistics.supplyChainMapContent");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const getNodeTypeLabel = useCallback((nodeType: SupplyChainNode["type"]) =>
+  t.has(`popup.nodeTypes.${nodeType}`) ?
+  t(`popup.nodeTypes.${nodeType}`) :
+  nodeType, [t]);
 
   useEffect(() => {
-    if (mapRef.current) {
-      console.log("Map already initialized");
-      return;
-    }
-
-    if (!mapContainerRef.current) {
-      console.log("No container ref");
+    if (mapRef.current || !mapContainerRef.current) {
       return;
     }
 
@@ -104,28 +97,26 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
     let loadTimeout: NodeJS.Timeout | undefined;
 
     try {
-      if (!MAPBOX_TOKEN) {
-        throw new Error("MAPBOX_TOKEN not found in environment variables");
+      if (!hasMapboxPublicToken()) {
+        throw new Error(t("errors.missingToken"));
       }
 
-      mapboxgl.accessToken = MAPBOX_TOKEN;
+      configureMapboxRuntime(mapboxgl);
 
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: "mapbox://styles/mapbox/satellite-streets-v12",
-        center: center,
-        zoom: zoom,
+        center,
+        zoom,
         antialias: true,
         pitch: 0,
         bearing: 0,
         maxPitch: 0,
-        projection: "mercator" as any
+        projection: "mercator"
       });
-
 
       loadTimeout = setTimeout(() => {
         if (isMounted && mapRef.current) {
-          console.warn("Map load timeout - proceeding anyway");
           setIsLoading(false);
         }
       }, 8000);
@@ -140,18 +131,16 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
         }
       };
 
-      const handleError = (e: any) => {
+      const handleError = () => {
         if (loadTimeout) clearTimeout(loadTimeout);
-        console.error("❌ Mapbox error:", e);
         if (isMounted) {
-          setError("Failed to load map");
+          setError(t("errors.loadFailed"));
           setIsLoading(false);
         }
       };
 
       map.on("load", handleLoad);
       map.on("error", handleError);
-
       mapRef.current = map;
 
       return () => {
@@ -167,38 +156,27 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
     } catch (err) {
       if (loadTimeout) clearTimeout(loadTimeout);
       if (isMounted) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        console.error("❌ Map error:", message);
+        const message = err instanceof Error ? err.message : t("errors.unknown");
         setError(message);
         setIsLoading(false);
       }
     }
-  }, [center, zoom]);
-
+  }, [center, zoom, t]);
 
   useEffect(() => {
-    if (!mapRef.current) {
-      console.log("Map not ready yet");
-      return;
-    }
+    if (!mapRef.current) return;
 
     const map = mapRef.current;
 
-
     const addRoutesAndMarkers = () => {
       if (!map.loaded() || !map.getCanvas()) {
-        console.log("Waiting for map to fully load...");
         setTimeout(addRoutesAndMarkers, 100);
         return;
       }
 
-      console.log("✅ Rendering routes and markers now");
-
       try {
-
         markersRef.current.forEach((marker) => marker.remove());
         markersRef.current = [];
-
 
         routes.forEach((_, idx) => {
           const lineId = `route-line-${idx}`;
@@ -206,11 +184,10 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
           try {
             if (map.getLayer(lineId)) map.removeLayer(lineId);
             if (map.getSource(sourceId)) map.removeSource(sourceId);
-          } catch (e) {
+          } catch {
 
           }
         });
-
 
         routes.forEach((route, idx) => {
           const sourceId = `route-source-${idx}`;
@@ -256,7 +233,6 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
               }
             });
 
-
             map.on("click", lineId, () => {
               if (onRouteClick) onRouteClick(route);
             });
@@ -268,14 +244,14 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
             map.on("mouseleave", lineId, () => {
               map.getCanvas().style.cursor = "";
             });
-          } catch (e) {
-            console.warn(`Error adding route ${idx}:`, e);
+          } catch {
+
           }
         });
 
-
         nodes.forEach((node) => {
           try {
+            const nodeTypeLabel = getNodeTypeLabel(node.type);
             const el = document.createElement("div");
             el.className = "custom-marker";
             el.innerHTML = `
@@ -301,9 +277,9 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
               <div style="padding: 8px; min-width: 220px;">
                 <div style="font-weight: bold; margin-bottom: 8px;">${node.name}</div>
                 <div style="font-size: 14px; line-height: 1.5;">
-                  <p>🏭 <strong>Type:</strong> ${node.type}</p>
-                  <p>🌍 <strong>Country:</strong> ${node.country}</p>
-                  ${node.co2 !== undefined ? `<p>♻️ <strong>CO₂:</strong> ${node.co2} tCO₂</p>` : ""}
+                  <p><strong>${t("popup.type")}:</strong> ${nodeTypeLabel}</p>
+                  <p><strong>${t("popup.country")}:</strong> ${node.country}</p>
+                  ${node.co2 !== undefined ? `<p><strong>${t("popup.co2")}:</strong> ${node.co2} tCO2</p>` : ""}
                 </div>
               </div>
             `);
@@ -318,52 +294,49 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
             }
 
             markersRef.current.push(marker);
-          } catch (e) {
-            console.warn(`Error adding marker for node ${node.id}:`, e);
+          } catch {
+
           }
         });
-
 
         if (nodes.length > 1) {
           try {
             const bounds = new mapboxgl.LngLatBounds();
             nodes.forEach((node) => bounds.extend([node.lng, node.lat]));
             map.fitBounds(bounds, { padding: 50, maxZoom: 10 });
-          } catch (e) {
-            console.warn("Error fitting bounds:", e);
+          } catch {
+
           }
         }
-      } catch (e) {
-        console.error("Error rendering map:", e);
+      } catch {
+
       }
     };
-
 
     if (map.loaded()) {
       addRoutesAndMarkers();
     } else {
-      console.log("Map not yet loaded, waiting for load event...");
       const onMapLoad = () => {
         addRoutesAndMarkers();
         map.off("load", onMapLoad);
       };
       map.once("load", onMapLoad);
     }
-  }, [nodes, routes, onNodeClick, onRouteClick]);
+  }, [nodes, routes, onNodeClick, onRouteClick, t, getNodeTypeLabel]);
 
   if (error) {
     return (
       <div
         style={{ height }}
         className="flex items-center justify-center bg-muted rounded-lg border">
-        
+
         <div className="text-center">
           <p className="text-sm text-destructive font-semibold mb-2">
-            ⚠️ Error
+            {t("errorTitle")}
           </p>
           <p className="text-xs text-muted-foreground">{error}</p>
           <p className="text-xs text-muted-foreground mt-2">
-            Add NEXT_PUBLIC_MAPBOX_TOKEN to .env.local
+            {t("addTokenHint")}
           </p>
         </div>
       </div>);
@@ -376,35 +349,33 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
         ref={mapContainerRef}
         style={{ height, width: "100%" }}
         className="z-0" />
-      
 
       {isLoading &&
       <div className="absolute inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-            <p className="text-sm text-muted-foreground">Loading map...</p>
+            <p className="text-sm text-muted-foreground">{t("loading")}</p>
           </div>
         </div>
       }
 
-      
       <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur rounded-lg p-3 shadow-lg border z-10">
-        <p className="text-xs font-semibold mb-2">Legend</p>
+        <p className="text-xs font-semibold mb-2">{t("legend.title")}</p>
         <div className="space-y-1 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-4 h-1 bg-blue-500 rounded" />
-            <span>Sea Route</span>
+            <span>{t("legend.seaRoute")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-4 h-1 bg-purple-500 rounded"
               style={{ borderStyle: "dashed" }} />
-            
-            <span>Air Route</span>
+
+            <span>{t("legend.airRoute")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-1 bg-amber-500 rounded" />
-            <span>Road Route</span>
+            <span>{t("legend.roadRoute")}</span>
           </div>
         </div>
       </div>
@@ -413,3 +384,4 @@ const SupplyChainMapContent: React.FC<SupplyChainMapContentProps> = ({
 };
 
 export default SupplyChainMapContent;
+

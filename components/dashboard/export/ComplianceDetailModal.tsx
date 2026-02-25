@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   AlertCircle,
@@ -19,6 +19,7 @@ import {
   Shield
 } from "lucide-react";
 import { resolveApiUrl } from "@/lib/apiClient";
+import { showNoPermissionToast } from "@/lib/noPermissionToast";
 import {
   createComplianceMarketReport,
   downloadComplianceDocument,
@@ -47,6 +48,7 @@ import ComplianceCarbonData from "./ComplianceCarbonData";
 import ComplianceDocuments from "./ComplianceDocuments";
 import ComplianceProductScope from "./ComplianceProductScope";
 import ComplianceRecommendations from "./ComplianceRecommendations";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface ComplianceDetailModalProps {
   open: boolean;
@@ -77,12 +79,10 @@ interface ProductFormState {
   unit: string;
 }
 
-const GUIDE_LINKS: Record<MarketCode, string> = {
-  EU: "https://eur-lex.europa.eu/",
-  US: "https://ww2.arb.ca.gov/",
-  JP: "https://www.jisc.go.jp/",
-  KR: "https://www.gir.go.kr/",
-  VN: "https://www.monre.gov.vn/"
+const getCurrentReportingPeriod = () => {
+  const now = new Date();
+  const quarter = Math.floor(now.getMonth() / 3) + 1;
+  return `${now.getFullYear()}-Q${quarter}`;
 };
 
 const parseNonNegativeNumber = (value: string) => {
@@ -101,6 +101,9 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
   onDataChanged
 }) => {
   const t = useTranslations("export.modal");
+  const locale = useLocale();
+  const { canMutate } = usePermissions();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
   const [activeTab, setActiveTab] = useState("overview");
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [carbonForm, setCarbonForm] = useState<CarbonFormState | null>(null);
@@ -135,7 +138,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
 
   const runAction = async (key: string, action: () => Promise<void>) => {
     if (isBusy) {
-      toast.info("Another action is in progress.");
+      toast.info(t("notifications.actionInProgress"));
       return;
     }
     setActionInProgress(key);
@@ -143,7 +146,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
       await action();
     } catch (error) {
       console.error(`Compliance action failed: ${key}`, error);
-      toast.error(error instanceof Error ? error.message : "Action failed.");
+      toast.error(error instanceof Error ? error.message : t("notifications.actionFailed"));
     } finally {
       setActionInProgress(null);
     }
@@ -165,26 +168,38 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
     }
 
     if (action === "remove") {
+      if (!canMutate) {
+        showNoPermissionToast();
+        return;
+      }
       setPendingDocumentRemoveId(documentId);
     }
   };
 
   const confirmRemoveDocument = () => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     if (!pendingDocumentRemoveId) return;
     const documentId = pendingDocumentRemoveId;
 
     void runAction(`remove-${documentId}`, async () => {
       await removeComplianceDocument(marketCode, documentId);
-      toast.success("File removed. Document requirement remains and may appear as missing.");
+      toast.success(t("notifications.documentRemoved"));
       setPendingDocumentRemoveId(null);
       await refreshComplianceData();
     });
   };
 
   const openCarbonForm = (scope: string) => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     const current = compliance.carbonData.find((item) => item.scope === scope);
     if (!current) {
-      toast.error("Invalid carbon scope.");
+      toast.error(t("validation.invalidCarbonScope"));
       return;
     }
 
@@ -194,7 +209,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
       unit: current.unit || "kgCO2e",
       methodology: current.methodology || "GHG Protocol",
       dataSource: current.dataSource || "Internal",
-      reportingPeriod: current.reportingPeriod || "2026-Q1"
+      reportingPeriod: current.reportingPeriod || getCurrentReportingPeriod()
     });
   };
 
@@ -204,26 +219,30 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
 
   const submitCarbonForm = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     if (!carbonForm) return;
 
     const value = parseNonNegativeNumber(carbonForm.value.trim());
     if (value === null) {
-      toast.error("Emission value must be a valid number >= 0.");
+      toast.error(t("validation.invalidEmissionValue"));
       return;
     }
 
     if (!carbonForm.methodology.trim()) {
-      toast.error("Methodology is required.");
+      toast.error(t("validation.methodologyRequired"));
       return;
     }
 
     if (!carbonForm.dataSource.trim()) {
-      toast.error("Data source is required.");
+      toast.error(t("validation.dataSourceRequired"));
       return;
     }
 
     if (!carbonForm.reportingPeriod.trim()) {
-      toast.error("Reporting period is required.");
+      toast.error(t("validation.reportingPeriodRequired"));
       return;
     }
 
@@ -237,19 +256,23 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
         dataSource: carbonForm.dataSource.trim(),
         reportingPeriod: carbonForm.reportingPeriod.trim()
       });
-      toast.success("Carbon data updated.");
+      toast.success(t("notifications.carbonDataUpdated"));
       setCarbonForm(null);
       await refreshComplianceData();
     });
   };
 
   const openProductForm = (mode: "add" | "edit", productId?: string) => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     const current = productId
       ? compliance.productScope.find((item) => item.productId === productId)
       : undefined;
 
     if (mode === "edit" && !current) {
-      toast.error("Product not found.");
+      toast.error(t("validation.productNotFound"));
       return;
     }
 
@@ -270,31 +293,35 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
 
   const submitProductForm = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     if (!productForm) return;
 
     if (!productForm.productName.trim()) {
-      toast.error("Product name is required.");
+      toast.error(t("validation.productNameRequired"));
       return;
     }
 
     if (!productForm.hsCode.trim()) {
-      toast.error("HS code is required.");
+      toast.error(t("validation.hsCodeRequired"));
       return;
     }
 
     if (!productForm.productionSite.trim()) {
-      toast.error("Production site is required.");
+      toast.error(t("validation.productionSiteRequired"));
       return;
     }
 
     if (!productForm.unit.trim()) {
-      toast.error("Unit is required.");
+      toast.error(t("validation.unitRequired"));
       return;
     }
 
     const exportVolume = parseNonNegativeNumber(productForm.exportVolume.trim());
     if (exportVolume === null) {
-      toast.error("Export volume must be a valid number >= 0.");
+      toast.error(t("validation.invalidExportVolume"));
       return;
     }
 
@@ -308,19 +335,27 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
         exportVolume,
         unit: productForm.unit.trim()
       });
-      toast.success(productForm.mode === "add" ? "Product added." : "Product updated.");
+      toast.success(
+        productForm.mode === "add" ?
+        t("notifications.productAdded") :
+        t("notifications.productUpdated")
+      );
       setProductForm(null);
       await refreshComplianceData();
     });
   };
 
   const confirmRemoveProduct = () => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     if (!pendingProductRemoveId) return;
     const productId = pendingProductRemoveId;
 
     void runAction(`product-remove-${productId}`, async () => {
       await removeComplianceProduct(marketCode, productId);
-      toast.success("Product removed.");
+      toast.success(t("notifications.productRemoved"));
       setPendingProductRemoveId(null);
       await refreshComplianceData();
     });
@@ -329,6 +364,10 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
   const handleProductAction =
     (action: "add" | "edit" | "remove") =>
     (productId?: string) => {
+      if (!canMutate) {
+        showNoPermissionToast();
+        return;
+      }
       if (action === "remove") {
         if (!productId) return;
         setPendingProductRemoveId(productId);
@@ -339,6 +378,10 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
     };
 
   const handleExportReport = () => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     if (compliance.status !== "ready" && compliance.status !== "verified") {
       toast.error(t("notReadyError"));
       return;
@@ -391,7 +434,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
               <Progress value={compliance.score} className="h-3" />
               <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                 <span>
-                  {t("updated")} {new Date(compliance.lastUpdated).toLocaleDateString()}
+                  {t("updated")} {new Date(compliance.lastUpdated).toLocaleDateString(displayLocale)}
                 </span>
                 <span>
                   {compliance.score >= 80 && (
@@ -550,7 +593,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
               <Button
                 variant="outline"
                 className="w-full sm:w-auto"
-                onClick={() => window.open(GUIDE_LINKS[marketCode], "_blank", "noopener,noreferrer")}
+                onClick={() => window.open(regulation.guideUrl, "_blank", "noopener,noreferrer")}
                 disabled={isBusy}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
@@ -576,11 +619,11 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
       <Dialog open={carbonForm !== null} onOpenChange={(isOpen) => (!isOpen ? setCarbonForm(null) : null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Cap nhat carbon data</DialogTitle>
+            <DialogTitle>{t("forms.carbon.title")}</DialogTitle>
           </DialogHeader>
           <form className="space-y-4" onSubmit={submitCarbonForm}>
             <div className="space-y-2">
-              <Label htmlFor="carbon-value">Emission value</Label>
+              <Label htmlFor="carbon-value">{t("forms.carbon.emissionValue")}</Label>
               <Input
                 id="carbon-value"
                 type="number"
@@ -594,7 +637,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="carbon-unit">Unit</Label>
+                <Label htmlFor="carbon-unit">{t("forms.carbon.unit")}</Label>
                 <Input
                   id="carbon-unit"
                   value={carbonForm?.unit || ""}
@@ -603,7 +646,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="carbon-period">Reporting period</Label>
+                <Label htmlFor="carbon-period">{t("forms.carbon.reportingPeriod")}</Label>
                 <Input
                   id="carbon-period"
                   value={carbonForm?.reportingPeriod || ""}
@@ -614,7 +657,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="carbon-methodology">Methodology</Label>
+              <Label htmlFor="carbon-methodology">{t("forms.carbon.methodology")}</Label>
               <Input
                 id="carbon-methodology"
                 value={carbonForm?.methodology || ""}
@@ -624,7 +667,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="carbon-source">Data source</Label>
+              <Label htmlFor="carbon-source">{t("forms.carbon.dataSource")}</Label>
               <Input
                 id="carbon-source"
                 value={carbonForm?.dataSource || ""}
@@ -635,10 +678,10 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setCarbonForm(null)} disabled={isBusy}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={isBusy}>
-                Save
+                {t("common.save")}
               </Button>
             </div>
           </form>
@@ -648,11 +691,13 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
       <Dialog open={productForm !== null} onOpenChange={(isOpen) => (!isOpen ? setProductForm(null) : null)}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>{productForm?.mode === "edit" ? "Chinh sua san pham" : "Them san pham"}</DialogTitle>
+            <DialogTitle>
+              {productForm?.mode === "edit" ? t("forms.product.editTitle") : t("forms.product.addTitle")}
+            </DialogTitle>
           </DialogHeader>
           <form className="space-y-4" onSubmit={submitProductForm}>
             <div className="space-y-2">
-              <Label htmlFor="product-name">Product name</Label>
+              <Label htmlFor="product-name">{t("forms.product.productName")}</Label>
               <Input
                 id="product-name"
                 value={productForm?.productName || ""}
@@ -663,7 +708,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="product-hs">HS code</Label>
+                <Label htmlFor="product-hs">{t("forms.product.hsCode")}</Label>
                 <Input
                   id="product-hs"
                   value={productForm?.hsCode || ""}
@@ -672,7 +717,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="product-unit">Unit</Label>
+                <Label htmlFor="product-unit">{t("forms.product.unit")}</Label>
                 <Input
                   id="product-unit"
                   value={productForm?.unit || ""}
@@ -683,7 +728,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product-site">Production site</Label>
+              <Label htmlFor="product-site">{t("forms.product.productionSite")}</Label>
               <Input
                 id="product-site"
                 value={productForm?.productionSite || ""}
@@ -693,7 +738,7 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="product-volume">Export volume</Label>
+              <Label htmlFor="product-volume">{t("forms.product.exportVolume")}</Label>
               <Input
                 id="product-volume"
                 type="number"
@@ -707,10 +752,10 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
 
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setProductForm(null)} disabled={isBusy}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={isBusy}>
-                Save
+                {t("common.save")}
               </Button>
             </div>
           </form>
@@ -723,17 +768,17 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Remove document?</DialogTitle>
+            <DialogTitle>{t("removeDocument.title")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            This action will remove the file from compliance documents.
+            {t("removeDocument.description")}
           </p>
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setPendingDocumentRemoveId(null)} disabled={isBusy}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="button" variant="destructive" onClick={confirmRemoveDocument} disabled={isBusy}>
-              Remove
+              {t("common.remove")}
             </Button>
           </div>
         </DialogContent>
@@ -745,17 +790,17 @@ const ComplianceDetailModal: React.FC<ComplianceDetailModalProps> = ({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Remove product?</DialogTitle>
+            <DialogTitle>{t("removeProduct.title")}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            This action will remove the product from export scope.
+            {t("removeProduct.description")}
           </p>
           <div className="flex items-center justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setPendingProductRemoveId(null)} disabled={isBusy}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="button" variant="destructive" onClick={confirmRemoveProduct} disabled={isBusy}>
-              Remove
+              {t("common.remove")}
             </Button>
           </div>
         </DialogContent>

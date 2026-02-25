@@ -25,6 +25,8 @@ export interface TransportLeg {
   id: string;
   mode: "road" | "sea" | "air" | "rail";
   estimatedDistance?: number;
+  emissionFactor?: number;
+  co2Kg?: number;
 }
 
 export interface AddressInput {
@@ -81,6 +83,7 @@ export interface CarbonBreakdown {
   production: number;
   energy: number;
   transport: number;
+  packaging?: number;
   total: number;
 }
 

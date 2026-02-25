@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { authTokenStore } from "@/lib/apiClient";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import {
   Leaf,
@@ -16,9 +17,7 @@ import {
   BarChart3,
   Settings,
   Menu,
-  X,
-  Home,
-  ArrowLeft } from
+  X } from
 "lucide-react";
 import { useRouter } from "next/navigation";
 import { Company, Profile } from "@/types/app.type";
@@ -68,6 +67,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 }) => {
   const t = useTranslations("sidebar");
   const { user, signOut } = useAuth();
+  const { canAccessSettings } = usePermissions();
   const router = useRouter();
   const pathname = usePathname();
   const hasSession = Boolean(user?.id || profile?.id || authTokenStore.getAccessToken());
@@ -81,6 +81,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   const isActive = (path: string) => {
     return pathname === path || pathname.startsWith(path + "/");
   };
+
+  const visibleMenuItems = menuItems.filter((item) =>
+  item.path === "/settings" ? canAccessSettings : true
+  );
 
   return (
     <>
@@ -99,25 +103,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         }>
         
         <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.back()}
-                className="text-muted-foreground hover:text-foreground"
-                title="Back">
-                
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <Link
-                href={homeHref}
-                className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-muted transition-colors"
-                title="Home">
-
-                <Home className="w-4 h-4" />
-              </Link>
-            </div>
+          <div className="flex justify-end mb-3 lg:hidden">
             <Button
               className="lg:hidden"
               variant="ghost"
@@ -144,7 +130,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {menuItems.map((item) => {
+          {visibleMenuItems.map((item) => {
             const active = isActive(item.path);
             return (
               <Link

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ interface Step1SKUInfoProps {
 }
 
 const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
+  const t = useTranslations("assessment.step1");
   const hasShownQuantityNoticeRef = useRef(false);
 
   useEffect(() => {
@@ -32,14 +34,14 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
 
     if (hasShownInSession) return;
 
-    toast.warning("Về số lượng sản xuất", {
+    toast.warning(t("quantityNotice.title"), {
       id: "assessment-quantity-note",
       duration: 12000,
       description:
       <ul className="list-disc pl-4 space-y-1 text-sm">
-          <li>Hệ thống sẽ tính carbon cho từng sản phẩm và tổng lô hàng</li>
-          <li>Các SKU instance dùng để nhóm theo batch/lô xuất khẩu</li>
-          <li>Bạn không cần nhập từng SKU, việc đánh số là tự động</li>
+          <li>{t("quantityNotice.item1")}</li>
+          <li>{t("quantityNotice.item2")}</li>
+          <li>{t("quantityNotice.item3")}</li>
         </ul>
 
     });
@@ -47,7 +49,7 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
     if (typeof window !== "undefined") {
       window.sessionStorage.setItem(storageKey, "1");
     }
-  }, []);
+  }, [t]);
 
 
   const generateSKUPreview = () => {
@@ -66,44 +68,46 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
       
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label htmlFor="productCode">Mã sản phẩm (Product Code) *</Label>
+          <Label htmlFor="productCode">{t("productCodeLabel")}</Label>
           <Input
             id="productCode"
             value={data.productCode}
             onChange={(e) =>
             onChange({ productCode: e.target.value.toUpperCase() })
             }
-            placeholder="VD: SKU-2024-001" />
+            placeholder={t("productCodePlaceholder")} />
           
           <p className="text-xs text-muted-foreground">
-            Mã định danh duy nhất cho sản phẩm
+            {t("productCodeHelp")}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="productName">Tên sản phẩm *</Label>
+          <Label htmlFor="productName">{t("productNameLabel")}</Label>
           <Input
             id="productName"
             value={data.productName}
             onChange={(e) => onChange({ productName: e.target.value })}
-            placeholder="VD: Áo T-shirt Organic Cotton" />
+            placeholder={t("productNamePlaceholder")} />
           
         </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <Label>Loại sản phẩm *</Label>
+          <Label>{t("productTypeLabel")}</Label>
           <Select
             value={data.productType}
             onValueChange={(v) => onChange({ productType: v })}>
             
             <SelectTrigger>
-              <SelectValue placeholder="Chọn loại sản phẩm" />
+              <SelectValue placeholder={t("productTypePlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               {PRODUCT_TYPES.map((type) =>
               <SelectItem key={type.value} value={type.value}>
-                  {type.label}
+                  {t.has(`productTypes.${type.value}`) ?
+                t(`productTypes.${type.value}`) :
+                type.label}
                 </SelectItem>
               )}
             </SelectContent>
@@ -111,7 +115,7 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
         </div>
         <div className="space-y-2">
           <Label htmlFor="weightPerUnit">
-            Trọng lượng TB / sản phẩm (gram) *
+            {t("weightPerUnitLabel")}
           </Label>
           <Input
             id="weightPerUnit"
@@ -122,10 +126,10 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
             onChange={(e) =>
             onChange({ weightPerUnit: Number(e.target.value) })
             }
-            placeholder="VD: 250" />
+            placeholder={t("weightPerUnitPlaceholder")} />
           
           <p className="text-xs text-muted-foreground">
-            Trọng lượng trung bình của 1 sản phẩm hoàn thiện
+            {t("weightPerUnitHelp")}
           </p>
         </div>
       </div>
@@ -140,10 +144,10 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
             <div className="flex-1 space-y-4">
               <div>
                 <Label htmlFor="quantity" className="text-base font-semibold">
-                  Số lượng sản xuất *
+                  {t("quantityLabel")}
                 </Label>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Hệ thống sẽ tự động tạo các SKU instance để theo dõi theo lô
+                  {t("quantityHelp")}
                 </p>
               </div>
               <div className="max-w-xs">
@@ -156,7 +160,7 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
                   onChange={(e) =>
                   onChange({ quantity: Number(e.target.value) })
                   }
-                  placeholder="VD: 30"
+                  placeholder={t("quantityPlaceholder")}
                   className="text-lg font-medium" />
                 
               </div>
@@ -165,7 +169,7 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
               {skuPreviews.length > 0 &&
               <div className="pt-2">
                   <p className="text-sm font-medium mb-2">
-                    SKU instances sẽ được tạo:
+                    {t("skuPreviewTitle")}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {skuPreviews.map((sku, i) =>
@@ -178,7 +182,7 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
                   )}
                     {data.quantity > 5 &&
                   <span className="px-2 py-1 text-xs text-muted-foreground">
-                        ... và {data.quantity - 5} SKU khác
+                        {t("skuPreviewMore", { count: data.quantity - 5 })}
                       </span>
                   }
                   </div>

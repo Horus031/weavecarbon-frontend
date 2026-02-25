@@ -34,14 +34,13 @@ function CommandDialog({
   description = "Search for a command to run...",
   children,
   className,
-  showCloseButton = true,
   ...props
 
 
 
 
 
-}: React.ComponentProps<typeof Dialog> & {title?: string;description?: string;className?: string;showCloseButton?: boolean;}) {
+}: React.ComponentProps<typeof Dialog> & {title?: string;description?: string;className?: string;}) {
   return (
     <Dialog {...props}>
       <DialogHeader className="sr-only">

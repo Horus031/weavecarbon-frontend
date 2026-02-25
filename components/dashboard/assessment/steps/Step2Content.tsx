@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -8,8 +9,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue } from
-"@/components/ui/select";
+  SelectValue
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Plus,
@@ -17,15 +18,15 @@ import {
   AlertCircle,
   CheckCircle2,
   Sparkles,
-  HelpCircle } from
-"lucide-react";
+  HelpCircle
+} from "lucide-react";
 import {
   ProductAssessmentData,
   MaterialInput,
   CERTIFICATIONS,
   ACCESSORY_TYPES,
-  AccessoryInput } from
-"./types";
+  AccessoryInput
+} from "./types";
 import MaterialCombobox from "../MaterialCombobox";
 import OtherMaterialModal from "../OtherMaterialModal";
 import { CatalogMaterial, MaterialType } from "../materialCatalog";
@@ -33,14 +34,13 @@ import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
-  TooltipTrigger } from
-"@/components/ui/tooltip";
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 
 interface Step2MaterialsProps {
   data: ProductAssessmentData;
   onChange: (updates: Partial<ProductAssessmentData>) => void;
 }
-
 
 interface ExtendedMaterialInput extends MaterialInput {
   catalogMaterialId?: string;
@@ -49,30 +49,29 @@ interface ExtendedMaterialInput extends MaterialInput {
   confidenceScore?: number;
 }
 
-const MATERIAL_SOURCES = [
-{ value: "domestic", label: "Trong nước" },
-{ value: "imported", label: "Nhập khẩu" },
-{ value: "unknown", label: "Không xác định" }];
-
+const MATERIAL_SOURCE_VALUES: Array<"domestic" | "imported" | "unknown"> = [
+  "domestic",
+  "imported",
+  "unknown"
+];
 
 const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
+  const t = useTranslations("assessment.step2");
   const [otherModalOpen, setOtherModalOpen] = useState(false);
-  const [editingMaterialIndex, setEditingMaterialIndex] = useState<
-    number | null>(
-    null);
-
+  const [editingMaterialIndex, setEditingMaterialIndex] = useState<number | null>(
+    null
+  );
 
   const totalPercentage = data.materials.reduce(
-    (sum, m) => sum + (m.percentage || 0),
+    (sum, material) => sum + (material.percentage || 0),
     0
   );
   const isValidTotal = totalPercentage === 100;
   const hasProxySource = data.materials.some(
-    (m) =>
-    m.source === "unknown" ||
-    (m as ExtendedMaterialInput).userSource === "user_other"
+    (material) =>
+      material.source === "unknown" ||
+      (material as ExtendedMaterialInput).userSource === "user_other"
   );
-
 
   const addMaterial = () => {
     const newMaterial: ExtendedMaterialInput = {
@@ -84,42 +83,36 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
       userSource: "selected_catalog",
       confidenceScore: 1.0
     };
+
     onChange({ materials: [...data.materials, newMaterial] });
   };
 
-
   const removeMaterial = (id: string) => {
-    onChange({ materials: data.materials.filter((m) => m.id !== id) });
+    onChange({ materials: data.materials.filter((material) => material.id !== id) });
   };
 
-
-  const updateMaterial = (
-  id: string,
-  updates: Partial<ExtendedMaterialInput>) =>
-  {
+  const updateMaterial = (id: string, updates: Partial<ExtendedMaterialInput>) => {
     onChange({
-      materials: data.materials.map((m) =>
-      m.id === id ? { ...m, ...updates } : m
+      materials: data.materials.map((material) =>
+        material.id === id ? { ...material, ...updates } : material
       )
     });
   };
 
-
   const handleCatalogSelect = (
-  materialId: string,
-  catalogMaterial: CatalogMaterial | null) =>
-  {
-    if (catalogMaterial) {
-      updateMaterial(materialId, {
-        materialType: catalogMaterial.id,
-        catalogMaterialId: catalogMaterial.id,
-        customName: undefined,
-        userSource: "selected_catalog",
-        confidenceScore: 1.0
-      });
-    }
-  };
+    materialId: string,
+    catalogMaterial: CatalogMaterial | null
+  ) => {
+    if (!catalogMaterial) return;
 
+    updateMaterial(materialId, {
+      materialType: catalogMaterial.id,
+      catalogMaterialId: catalogMaterial.id,
+      customName: undefined,
+      userSource: "selected_catalog",
+      confidenceScore: 1.0
+    });
+  };
 
   const handleOtherClick = (index: number) => {
     setEditingMaterialIndex(index);
@@ -127,22 +120,21 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
   };
 
   const handleOtherMaterialSelect = (
-  catalogMaterial: CatalogMaterial | null,
-  customData?: {
-    name: string;
-    description: string;
-    materialType: MaterialType;
-    confidenceScore: number;
-    isProxy: boolean;
-  }) =>
-  {
+    catalogMaterial: CatalogMaterial | null,
+    customData?: {
+      name: string;
+      description: string;
+      materialType: MaterialType;
+      confidenceScore: number;
+      isProxy: boolean;
+    }
+  ) => {
     if (editingMaterialIndex === null) return;
 
     const materialId = data.materials[editingMaterialIndex]?.id;
     if (!materialId) return;
 
     if (catalogMaterial) {
-
       updateMaterial(materialId, {
         materialType: catalogMaterial.id,
         catalogMaterialId: catalogMaterial.id,
@@ -151,7 +143,6 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
         confidenceScore: 0.75
       });
     } else if (customData) {
-
       updateMaterial(materialId, {
         materialType: "cat-other-generic",
         catalogMaterialId: "cat-other-generic",
@@ -164,33 +155,17 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
     setEditingMaterialIndex(null);
   };
 
-
   const toggleCertification = (materialId: string, certValue: string) => {
-    const material = data.materials.find((m) => m.id === materialId);
+    const material = data.materials.find((item) => item.id === materialId);
     if (!material) return;
 
-    const certs = material.certifications || [];
-    const updated = certs.includes(certValue) ?
-    certs.filter((c) => c !== certValue) :
-    [...certs, certValue];
+    const currentCerts = material.certifications || [];
+    const updated = currentCerts.includes(certValue)
+      ? currentCerts.filter((cert) => cert !== certValue)
+      : [...currentCerts, certValue];
 
     updateMaterial(materialId, { certifications: updated });
   };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   const getSourceBadge = (material: ExtendedMaterialInput) => {
     switch (material.userSource) {
@@ -198,24 +173,25 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
         return (
           <Badge variant="secondary" className="text-xs">
             <Sparkles className="w-3 h-3 mr-1" />
-            AI gợi ý
-          </Badge>);
+            {t("sourceBadges.aiSuggested")}
+          </Badge>
+        );
 
       case "user_other":
         return (
           <Badge
             variant="outline"
-            className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-            
+            className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+          >
             <AlertCircle className="w-3 h-3 mr-1" />
-            Proxy
-          </Badge>);
+            {t("sourceBadges.proxy")}
+          </Badge>
+        );
 
       default:
         return null;
     }
   };
-
 
   const addAccessory = () => {
     const newAccessory: AccessoryInput = {
@@ -224,19 +200,18 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
       type: "",
       weight: undefined
     };
+
     onChange({ accessories: [...data.accessories, newAccessory] });
   };
 
-
   const removeAccessory = (id: string) => {
-    onChange({ accessories: data.accessories.filter((a) => a.id !== id) });
+    onChange({ accessories: data.accessories.filter((accessory) => accessory.id !== id) });
   };
-
 
   const updateAccessory = (id: string, updates: Partial<AccessoryInput>) => {
     onChange({
-      accessories: data.accessories.map((a) =>
-      a.id === id ? { ...a, ...updates } : a
+      accessories: data.accessories.map((accessory) =>
+        accessory.id === id ? { ...accessory, ...updates } : accessory
       )
     });
   };
@@ -244,314 +219,291 @@ const Step2Materials: React.FC<Step2MaterialsProps> = ({ data, onChange }) => {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        
         <Card>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">Vật liệu chính</CardTitle>
+                <CardTitle className="text-lg">{t("mainMaterialsTitle")}</CardTitle>
                 <Tooltip>
                   <TooltipTrigger>
                     <HelpCircle className="w-4 h-4 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>
-                      Chọn vật liệu từ danh mục chuẩn hoặc thêm vật liệu mới nếu
-                      không tìm thấy.
-                    </p>
+                    <p>{t("mainMaterialsTooltip")}</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
               <div className="flex items-center gap-2">
-                {isValidTotal ?
-                <Badge
-                  variant="outline"
-                  className="bg-green-500/10 text-green-600 border-green-500/30">
-                  
+                {isValidTotal ? (
+                  <Badge
+                    variant="outline"
+                    className="bg-green-500/10 text-green-600 border-green-500/30"
+                  >
                     <CheckCircle2 className="w-3 h-3 mr-1" />
-                    Tổng: {totalPercentage}%
-                  </Badge> :
-
-                <Badge
-                  variant="outline"
-                  className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
-                  
-                    <AlertCircle className="w-3 h-3 mr-1" />
-                    Tổng: {totalPercentage}% (cần = 100%)
+                    {t("totalValid", { value: totalPercentage })}
                   </Badge>
-                }
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+                  >
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    {t("totalInvalid", { value: totalPercentage })}
+                  </Badge>
+                )}
               </div>
             </div>
           </CardHeader>
+
           <CardContent className="space-y-4">
             {data.materials.map((material, index) => {
               const extMaterial = material as ExtendedMaterialInput;
               return (
-                <div
-                  key={material.id}
-                  className="p-4 rounded-lg border bg-card space-y-4">
-                  
+                <div key={material.id} className="p-4 rounded-lg border bg-card space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-muted-foreground">
-                        Vật liệu {index + 1}
+                        {t("materialItem", { index: index + 1 })}
                       </span>
                       {getSourceBadge(extMaterial)}
                     </div>
-                    {data.materials.length > 1 &&
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeMaterial(material.id)}
-                      className="text-destructive hover:text-destructive">
-                      
+
+                    {data.materials.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeMaterial(material.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
-                    }
+                    )}
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="space-y-2 md:col-span-2">
-                      <Label>Tìm vật liệu *</Label>
+                      <Label>{t("materialSearchLabel")}</Label>
                       <MaterialCombobox
-                        value={
-                        extMaterial.catalogMaterialId ||
-                        extMaterial.materialType
-                        }
-                        onSelect={(catalogMat) =>
-                        handleCatalogSelect(material.id, catalogMat)
+                        value={extMaterial.catalogMaterialId || extMaterial.materialType}
+                        onSelect={(catalogMaterial) =>
+                          handleCatalogSelect(material.id, catalogMaterial)
                         }
                         onOtherClick={() => handleOtherClick(index)}
                         placeholder={
-                        extMaterial.customName || "Tìm vật liệu..."
-                        } />
-                      
-                      {extMaterial.customName &&
-                      <p className="text-xs text-muted-foreground">
-                          Vật liệu tùy chỉnh: {extMaterial.customName}
+                          extMaterial.customName || t("materialSearchPlaceholder")
+                        }
+                      />
+
+                      {extMaterial.customName && (
+                        <p className="text-xs text-muted-foreground">
+                          {t("customMaterial", { name: extMaterial.customName })}
                         </p>
-                      }
+                      )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Tỷ lệ (%) *</Label>
+                      <Label>{t("percentageLabel")}</Label>
                       <Input
                         type="number"
                         min="0"
                         max="100"
                         value={material.percentage || ""}
-                        onChange={(e) =>
-                        updateMaterial(material.id, {
-                          percentage: Number(e.target.value)
-                        })
+                        onChange={(event) =>
+                          updateMaterial(material.id, {
+                            percentage: Number(event.target.value)
+                          })
                         }
-                        placeholder="0" />
-                      
+                        placeholder="0"
+                      />
                     </div>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Nguồn nguyên liệu</Label>
+                      <Label>{t("sourceLabel")}</Label>
                       <Select
                         value={material.source}
-                        onValueChange={(
-                        v: "domestic" | "imported" | "unknown") =>
-                        updateMaterial(material.id, { source: v })}>
-                        
+                        onValueChange={(value: "domestic" | "imported" | "unknown") =>
+                          updateMaterial(material.id, { source: value })
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {MATERIAL_SOURCES.map((src) =>
-                          <SelectItem key={src.value} value={src.value}>
-                              {src.label}
+                          {MATERIAL_SOURCE_VALUES.map((sourceValue) => (
+                            <SelectItem key={sourceValue} value={sourceValue}>
+                              {t(`materialSources.${sourceValue}`)}
                             </SelectItem>
-                          )}
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
 
                     {extMaterial.confidenceScore !== undefined &&
-                    extMaterial.confidenceScore < 1.0 &&
-                    <div className="space-y-2">
-                          <Label>Độ tin cậy dữ liệu</Label>
-                          <div className="flex items-center gap-2 h-10">
-                            <div className="flex-1 bg-muted rounded-full h-2">
-                              <div
-                            className={`h-2 rounded-full ${
-                            extMaterial.confidenceScore >= 0.7 ?
-                            "bg-green-500" :
-                            extMaterial.confidenceScore >= 0.4 ?
-                            "bg-yellow-500" :
-                            "bg-red-500"}`
-                            }
-                            style={{
-                              width: `${extMaterial.confidenceScore * 100}%`
-                            }} />
-                          
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                              {Math.round(
-                            (extMaterial.confidenceScore || 0) * 100
-                          )}
-                              %
-                            </span>
+                    extMaterial.confidenceScore < 1.0 ? (
+                      <div className="space-y-2">
+                        <Label>{t("confidenceLabel")}</Label>
+                        <div className="flex items-center gap-2 h-10">
+                          <div className="flex-1 bg-muted rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${
+                                extMaterial.confidenceScore >= 0.7
+                                  ? "bg-green-500"
+                                  : extMaterial.confidenceScore >= 0.4
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
+                              }`}
+                              style={{
+                                width: `${extMaterial.confidenceScore * 100}%`
+                              }}
+                            />
                           </div>
+
+                          <span className="text-sm text-muted-foreground">
+                            {Math.round((extMaterial.confidenceScore || 0) * 100)}%
+                          </span>
                         </div>
-                    }
+                      </div>
+                    ) : null}
                   </div>
 
-                  
                   <div className="space-y-2">
-                    <Label className="text-sm">Chứng nhận (nếu có)</Label>
+                    <Label className="text-sm">{t("certificationsLabel")}</Label>
                     <div className="flex flex-wrap gap-2">
-                      {CERTIFICATIONS.map((cert) =>
-                      <Badge
-                        key={cert.value}
-                        variant={
-                        (material.certifications || []).includes(cert.value) ?
-                        "default" :
-                        "outline"
-                        }
-                        className="cursor-pointer"
-                        onClick={() =>
-                        toggleCertification(material.id, cert.value)
-                        }>
-                        
-                          {cert.label}
+                      {CERTIFICATIONS.map((certification) => (
+                        <Badge
+                          key={certification.value}
+                          variant={
+                            (material.certifications || []).includes(
+                              certification.value
+                            )
+                              ? "default"
+                              : "outline"
+                          }
+                          className="cursor-pointer"
+                          onClick={() =>
+                            toggleCertification(material.id, certification.value)
+                          }
+                        >
+                          {certification.label}
                         </Badge>
-                      )}
+                      ))}
                     </div>
                   </div>
-                </div>);
-
+                </div>
+              );
             })}
 
-            <Button
-              variant="outline"
-              onClick={addMaterial}
-              className="w-full border-dashed">
-              
+            <Button variant="outline" onClick={addMaterial} className="w-full border-dashed">
               <Plus className="w-4 h-4 mr-2" />
-              Thêm vật liệu
+              {t("addMaterial")}
             </Button>
           </CardContent>
         </Card>
 
-        
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Phụ liệu (tuỳ chọn)</CardTitle>
+            <CardTitle className="text-lg">{t("accessoriesTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {data.accessories.map((accessory, index) =>
-            <div key={accessory.id} className="p-4 rounded-lg border bg-card">
+            {data.accessories.map((accessory, index) => (
+              <div key={accessory.id} className="p-4 rounded-lg border bg-card">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Phụ liệu {index + 1}
+                    {t("accessoryItem", { index: index + 1 })}
                   </span>
                   <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeAccessory(accessory.id)}
-                  className="text-destructive hover:text-destructive">
-                  
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeAccessory(accessory.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Loại phụ liệu</Label>
+                    <Label>{t("accessoryTypeLabel")}</Label>
                     <Select
-                    value={accessory.type}
-                    onValueChange={(v) =>
-                    updateAccessory(accessory.id, { type: v })
-                    }>
-                    
+                      value={accessory.type}
+                      onValueChange={(value) =>
+                        updateAccessory(accessory.id, { type: value })
+                      }
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Chọn loại" />
+                        <SelectValue placeholder={t("accessoryTypePlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {ACCESSORY_TYPES.map((type) =>
-                      <SelectItem key={type.value} value={type.value}>
-                            {type.label}
+                        {ACCESSORY_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {t.has(`accessoryTypes.${type.value}`)
+                              ? t(`accessoryTypes.${type.value}`)
+                              : type.label}
                           </SelectItem>
-                      )}
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Tên/Mô tả</Label>
+                    <Label>{t("accessoryNameLabel")}</Label>
                     <Input
-                    value={accessory.name}
-                    onChange={(e) =>
-                    updateAccessory(accessory.id, { name: e.target.value })
-                    }
-                    placeholder="VD: Nút nhựa 4 lỗ" />
-                  
+                      value={accessory.name}
+                      onChange={(event) =>
+                        updateAccessory(accessory.id, { name: event.target.value })
+                      }
+                      placeholder={t("accessoryNamePlaceholder")}
+                    />
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Trọng lượng (gram)</Label>
+                    <Label>{t("accessoryWeightLabel")}</Label>
                     <Input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={accessory.weight || ""}
-                    onChange={(e) =>
-                    updateAccessory(accessory.id, {
-                      weight: Number(e.target.value)
-                    })
-                    }
-                    placeholder="0" />
-                  
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={accessory.weight || ""}
+                      onChange={(event) =>
+                        updateAccessory(accessory.id, {
+                          weight: Number(event.target.value)
+                        })
+                      }
+                      placeholder="0"
+                    />
                   </div>
                 </div>
               </div>
-            )}
+            ))}
 
-            <Button
-              variant="outline"
-              onClick={addAccessory}
-              className="w-full border-dashed">
-              
+            <Button variant="outline" onClick={addAccessory} className="w-full border-dashed">
               <Plus className="w-4 h-4 mr-2" />
-              Thêm phụ liệu
+              {t("addAccessory")}
             </Button>
           </CardContent>
         </Card>
 
-        
-        {hasProxySource &&
-        <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+        {hasProxySource ? (
+          <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-yellow-700">
-                  Sử dụng hệ số proxy
-                </p>
-                <p className="text-yellow-600 mt-1">
-                  Một số vật liệu có nguồn &quot;Không xác định&quot; hoặc
-                  &quot;Vật liệu khác&quot;. Hệ thống sẽ sử dụng hệ số phát thải
-                  trung bình ngành để tính toán. Độ tin cậy kết quả sẽ giảm.
-                </p>
+                <p className="font-medium text-yellow-700">{t("proxy.title")}</p>
+                <p className="text-yellow-600 mt-1">{t("proxy.description")}</p>
               </div>
             </div>
           </div>
-        }
+        ) : null}
 
-        
         <OtherMaterialModal
           open={otherModalOpen}
           onOpenChange={setOtherModalOpen}
-          onSelectMaterial={handleOtherMaterialSelect} />
-        
+          onSelectMaterial={handleOtherMaterialSelect}
+        />
       </div>
-    </TooltipProvider>);
-
+    </TooltipProvider>
+  );
 };
 
 export default Step2Materials;

@@ -1,13 +1,12 @@
+﻿"use client";
 
-"use client";
-
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Badge } from "@/components/ui/badge";
 import type { SupplyChainNode, SupplyChainRoute } from "./SupplyChainMap";
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+import { configureMapboxRuntime, hasMapboxPublicToken } from "@/lib/mapbox";
 
 interface SupplyChainMap3DProps {
   nodes: SupplyChainNode[];
@@ -38,17 +37,17 @@ const getRouteColor = (mode: string, status: string) => {
 const getTypeEmoji = (type: string) => {
   switch (type) {
     case "factory":
-      return "🏭";
+      return "F";
     case "warehouse":
-      return "📦";
+      return "W";
     case "port":
-      return "⚓";
+      return "P";
     case "airport":
-      return "✈️";
+      return "A";
     case "destination":
-      return "📍";
+      return "D";
     default:
-      return "📌";
+      return "N";
   }
 };
 
@@ -67,12 +66,16 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
   onNodeClick,
   onRouteClick
 }) => {
+  const t = useTranslations("logistics.supplyChainMap3D");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const getNodeTypeLabel = useCallback((nodeType: SupplyChainNode["type"]) =>
+  t.has(`popup.nodeTypes.${nodeType}`) ?
+  t(`popup.nodeTypes.${nodeType}`) :
+  nodeType, [t]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -80,13 +83,16 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
     let isMounted = true;
 
     try {
-      mapboxgl.accessToken = MAPBOX_TOKEN;
+      if (!hasMapboxPublicToken()) {
+        throw new Error(t("errors.loadFailed"));
+      }
+      configureMapboxRuntime(mapboxgl);
 
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
         style: "mapbox://styles/mapbox/satellite-streets-v12",
-        center: center,
-        zoom: zoom,
+        center,
+        zoom,
         pitch: 45,
         bearing: -17.6,
         antialias: true
@@ -102,10 +108,9 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
         }
       });
 
-      map.on("error", (e) => {
+      map.on("error", () => {
         if (isMounted) {
-          console.error("Map error:", e);
-          setError("Failed to load map");
+          setError(t("errors.loadFailed"));
           setIsLoading(false);
         }
       });
@@ -119,15 +124,13 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
           mapRef.current = null;
         }
       };
-    } catch (err) {
+    } catch {
       if (isMounted) {
-        console.error("Map initialization error:", err);
-        setError("Failed to load map");
+        setError(t("errors.loadFailed"));
         setIsLoading(false);
       }
     }
-  }, [center, zoom]);
-
+  }, [center, zoom, t]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -135,7 +138,6 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
     const map = mapRef.current;
 
     const addRoutesAndMarkers = () => {
-
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
 
@@ -195,6 +197,7 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
       });
 
       nodes.forEach((node) => {
+        const nodeTypeLabel = getNodeTypeLabel(node.type);
         const el = document.createElement("div");
         el.className = "custom-3d-marker";
         el.innerHTML = `
@@ -222,9 +225,9 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
         }).setHTML(`
           <div style="padding: 12px; min-width: 220px; font-family: system-ui;">
             <h3 style="font-weight: bold; margin-bottom: 8px;">${node.name}</h3>
-            <p style="margin: 4px 0;">🏭 <strong>Type:</strong> ${node.type}</p>
-            <p style="margin: 4px 0;">🌍 <strong>Country:</strong> ${node.country}</p>
-            ${node.co2 !== undefined ? `<p style="margin: 4px 0;">♻️ <strong>CO₂:</strong> ${node.co2} tCO₂</p>` : ""}
+            <p style="margin: 4px 0;"><strong>${t("popup.type")}:</strong> ${nodeTypeLabel}</p>
+            <p style="margin: 4px 0;"><strong>${t("popup.country")}:</strong> ${node.country}</p>
+            ${node.co2 !== undefined ? `<p style="margin: 4px 0;"><strong>${t("popup.co2")}:</strong> ${node.co2} tCO2</p>` : ""}
           </div>
         `);
 
@@ -255,17 +258,17 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
     } else {
       map.on("load", addRoutesAndMarkers);
     }
-  }, [nodes, routes, onNodeClick, onRouteClick]);
+  }, [nodes, routes, onNodeClick, onRouteClick, t, getNodeTypeLabel]);
 
   if (isLoading) {
     return (
       <div
         style={{ height }}
         className="flex items-center justify-center bg-muted rounded-lg border">
-        
+
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-sm text-muted-foreground">Loading 3D map...</p>
+          <p className="text-sm text-muted-foreground">{t("loading")}</p>
         </div>
       </div>);
 
@@ -276,10 +279,10 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
       <div
         style={{ height }}
         className="flex items-center justify-center bg-muted rounded-lg border">
-        
+
         <div className="text-center">
           <p className="text-destructive mb-2">{error}</p>
-          <Badge variant="secondary">Replace token in code</Badge>
+          <Badge variant="secondary">{t("replaceTokenHint")}</Badge>
         </div>
       </div>);
 
@@ -291,27 +294,27 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
 
       <div className="absolute top-4 left-4 z-10">
         <Badge variant="secondary" className="bg-background/90 backdrop-blur">
-          🌍 3D Satellite View
+          {t("titleBadge")}
         </Badge>
       </div>
 
       <div className="absolute bottom-4 left-4 bg-background/95 backdrop-blur rounded-lg p-3 shadow-lg border z-10">
-        <p className="text-xs font-semibold mb-2">Legend</p>
+        <p className="text-xs font-semibold mb-2">{t("legend.title")}</p>
         <div className="space-y-1 text-xs">
           <div className="flex items-center gap-2">
             <div className="w-4 h-1 bg-blue-500 rounded" />
-            <span>Sea Route</span>
+            <span>{t("legend.seaRoute")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-1 bg-amber-500 rounded" />
-            <span>Road Route</span>
+            <span>{t("legend.roadRoute")}</span>
           </div>
         </div>
       </div>
 
       <div className="absolute bottom-4 right-4 bg-background/95 backdrop-blur rounded-lg p-2 shadow-lg border z-10">
         <p className="text-xs text-muted-foreground">
-          🖱️ Drag to rotate • Scroll to zoom
+          {t("controlsHint")}
         </p>
       </div>
     </div>);
@@ -319,3 +322,4 @@ const SupplyChainMap3D: React.FC<SupplyChainMap3DProps> = ({
 };
 
 export default SupplyChainMap3D;
+

@@ -26,6 +26,7 @@ const PROCESS_FACTORS: Record<string, number> = {
   knitting: 0.8,
   weaving: 1.0,
   cutting: 0.3,
+  cutting_sewing: 0.3,
   dyeing: 1.5,
   printing: 0.6,
   finishing: 0.4

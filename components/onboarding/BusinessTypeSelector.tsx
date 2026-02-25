@@ -3,6 +3,7 @@
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Store, Building2, Factory } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface BusinessTypeSelectorProps {
   value: string;
@@ -11,9 +12,9 @@ interface BusinessTypeSelectorProps {
 }
 
 const businessTypes = [
-{ value: "shop_online", label: "Online Shop", icon: Store },
-{ value: "brand", label: "Brand", icon: Building2 },
-{ value: "factory", label: "Factory", icon: Factory }];
+{ value: "shop_online", key: "shopOnline", icon: Store },
+{ value: "brand", key: "brand", icon: Building2 },
+{ value: "factory", key: "factory", icon: Factory }];
 
 
 const BusinessTypeSelector: React.FC<BusinessTypeSelectorProps> = ({
@@ -21,11 +22,13 @@ const BusinessTypeSelector: React.FC<BusinessTypeSelectorProps> = ({
   onChange,
   disabled
 }) => {
+  const t = useTranslations("onboarding");
+
   return (
     <div className="space-y-2">
-      <Label>Business Type *</Label>
+      <Label>{t("businessType")} *</Label>
       <div className="grid grid-cols-3 gap-3">
-        {businessTypes.map(({ value: typeValue, label, icon: Icon }) =>
+        {businessTypes.map(({ value: typeValue, key, icon: Icon }) =>
         <button
           key={typeValue}
           type="button"
@@ -40,7 +43,7 @@ const BusinessTypeSelector: React.FC<BusinessTypeSelectorProps> = ({
             <Icon
             className={`w-6 h-6 ${value === typeValue ? "text-primary" : "text-muted-foreground"}`} />
           
-            <span className="text-sm font-medium">{label}</span>
+            <span className="text-sm font-medium">{t(key)}</span>
           </button>
         )}
       </div>

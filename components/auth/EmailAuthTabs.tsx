@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,6 +40,8 @@ interface EmailAuthTabsProps {
   isLoading: boolean;
   onLogin: (e: React.FormEvent) => void;
   onSignUp: (e: React.FormEvent) => void;
+  rememberMe: boolean;
+  setRememberMe: (value: boolean) => void;
 }
 
 export default function EmailAuthTabs({
@@ -58,7 +61,9 @@ export default function EmailAuthTabs({
   errors,
   isLoading,
   onLogin,
-  onSignUp
+  onSignUp,
+  rememberMe,
+  setRememberMe
 }: EmailAuthTabsProps) {
   const t = useTranslations("auth");
   const tOnboarding = useTranslations("onboarding");
@@ -70,14 +75,16 @@ export default function EmailAuthTabs({
       </TabsList>
 
       <TabsContent value="login" className="mt-4">
-        <form onSubmit={onLogin} className="space-y-4">
+        <form onSubmit={onLogin} className="space-y-4" autoComplete="on">
           <div className="space-y-2">
             <Label htmlFor="login-email">{t("email")}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="login-email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 placeholder="email@example.com"
                 className="pl-10"
                 value={email}
@@ -96,7 +103,9 @@ export default function EmailAuthTabs({
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="login-password"
+                name="password"
                 type="password"
+                autoComplete="current-password"
                 placeholder="••••••••"
                 className="pl-10"
                 value={password}
@@ -109,6 +118,19 @@ export default function EmailAuthTabs({
             }
           </div>
 
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="remember-me"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked === true)}
+              disabled={isLoading} />
+            <Label
+              htmlFor="remember-me"
+              className="cursor-pointer text-sm font-normal text-muted-foreground">
+              {t("rememberMe")}
+            </Label>
+          </div>
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? t("loading") : t("loginButton")}
           </Button>
@@ -116,14 +138,16 @@ export default function EmailAuthTabs({
       </TabsContent>
 
       <TabsContent value="signup" className="mt-4">
-        <form onSubmit={onSignUp} className="space-y-4">
+        <form onSubmit={onSignUp} className="space-y-4" autoComplete="on">
           <div className="space-y-2">
             <Label htmlFor="signup-name">{t("fullName")}</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="signup-name"
+                name="fullName"
                 type="text"
+                autoComplete="name"
                 placeholder={t("fullNamePlaceholder")}
                 className="pl-10"
                 value={fullName}
@@ -144,7 +168,9 @@ export default function EmailAuthTabs({
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                   id="signup-company"
+                  name="companyName"
                   type="text"
+                  autoComplete="organization"
                   placeholder={tOnboarding("companyNamePlaceholder")}
                   className="pl-10"
                   value={companyName}
@@ -196,7 +222,9 @@ export default function EmailAuthTabs({
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="signup-email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 placeholder="email@example.com"
                 className="pl-10"
                 value={email}
@@ -215,7 +243,9 @@ export default function EmailAuthTabs({
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="signup-password"
+                name="password"
                 type="password"
+                autoComplete="new-password"
                 placeholder="••••••••"
                 className="pl-10"
                 value={password}

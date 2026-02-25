@@ -27,7 +27,14 @@ import {
   toTransportLegs,
   type LogisticsShipmentDetail } from
 "@/lib/logisticsApi";
-import { fetchProductById, type ProductRecord } from "@/lib/productsApi";
+import { toast } from "sonner";
+import {
+  fetchProductById,
+  formatApiErrorMessage,
+  updateProduct,
+  type ProductRecord } from
+"@/lib/productsApi";
+import type { ProductAssessmentData } from "@/components/dashboard/assessment/steps/types";
 
 export interface AddressData {
   streetAddress: string;
@@ -58,7 +65,7 @@ const createEmptyAddress = (): AddressData => ({
   city: "",
   state: "",
   zipPostcode: "",
-  country: "VN",
+  country: "Vietnam",
   lat: "",
   lng: ""
 });
@@ -97,11 +104,86 @@ const toRouteType = (mode: LegInput["mode"]): TransportLeg["routeType"] => {
   return "road";
 };
 
+const toProductTransportMode = (
+mode: LegInput["mode"])
+: "road" | "sea" | "air" | "rail" => {
+  if (mode === "ship") return "sea";
+  if (mode === "air") return "air";
+  if (mode === "rail") return "rail";
+  return "road";
+};
+
+const parseOptionalCoordinate = (value?: string) => {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const hasUsefulAddressInput = (address: AddressData) =>
+[
+address.streetAddress,
+address.aptSuite,
+address.city,
+address.state,
+address.zipPostcode,
+address.country]
+.
+some((value) => value.trim().length > 0);
+
+const toAddressInput = (address: AddressData) => {
+  const aptSuiteParts = address.aptSuite.
+  split(",").
+  map((part) => part.trim()).
+  filter(Boolean);
+  const [ward, ...districtParts] = aptSuiteParts;
+
+  return {
+    streetNumber: "",
+    street: address.streetAddress.trim(),
+    ward: ward || "",
+    district: districtParts.join(", "),
+    city: address.city.trim(),
+    stateRegion: address.state.trim(),
+    country: address.country.trim(),
+    postalCode: address.zipPostcode.trim(),
+    lat: parseOptionalCoordinate(address.lat),
+    lng: parseOptionalCoordinate(address.lng)
+  };
+};
+
+const toProductPayload = (
+product: ProductRecord,
+updates: Partial<ProductAssessmentData>)
+: ProductAssessmentData => ({
+  productCode: product.productCode,
+  productName: product.productName,
+  productType: product.productType,
+  weightPerUnit: product.weightPerUnit,
+  quantity: product.quantity,
+  materials: product.materials,
+  accessories: product.accessories,
+  productionProcesses: product.productionProcesses,
+  energySources: product.energySources,
+  manufacturingLocation: product.manufacturingLocation,
+  wasteRecovery: product.wasteRecovery,
+  destinationMarket: product.destinationMarket,
+  originAddress: product.originAddress,
+  destinationAddress: product.destinationAddress,
+  transportLegs: product.transportLegs,
+  estimatedTotalDistance: product.estimatedTotalDistance,
+  carbonResults: product.carbonResults,
+  status: product.status === "published" ? "published" : "draft",
+  version: Math.max(1, product.version || 1),
+  createdAt: product.createdAt,
+  updatedAt: product.updatedAt,
+  ...updates
+});
+
 const addressToLabel = (address: AddressData) => {
   const parts = [address.city, address.state, address.country].
   map((part) => part.trim()).
   filter(Boolean);
-  return parts.length > 0 ? parts.join(", ") : "Unknown";
+  return parts.length > 0 ? parts.join(", ") : "";
 };
 
 const locationToAddress = (
@@ -113,7 +195,7 @@ location: TransportLeg["origin"] | TransportLeg["destination"])
   filter(Boolean);
 
   const city = parts[0] || "";
-  const country = parts.length > 1 ? parts[parts.length - 1] : "VN";
+  const country = parts.length > 1 ? parts[parts.length - 1] : "Vietnam";
 
   return {
     ...createEmptyAddress(),
@@ -162,7 +244,7 @@ const toProductAddress = (address?: ProductRecord["originAddress"]): AddressData
     city: (address?.city || "").trim(),
     state: (address?.stateRegion || "").trim(),
     zipPostcode: (address?.postalCode || "").trim(),
-    country: (address?.country || "VN").trim() || "VN",
+    country: (address?.country || "Vietnam").trim() || "Vietnam",
     lat:
     typeof address?.lat === "number" && Number.isFinite(address.lat) ?
     String(address.lat) :
@@ -178,7 +260,7 @@ const toShipmentLocationAddress = (location: LogisticsLocation): AddressData => 
   ...createEmptyAddress(),
   streetAddress: location.address.trim(),
   city: location.city.trim(),
-  country: location.country.trim() || "VN",
+  country: location.country.trim() || "Vietnam",
   lat:
   typeof location.lat === "number" && Number.isFinite(location.lat) ?
   String(location.lat) :
@@ -205,7 +287,7 @@ fallback: AddressData)
     city: pick(current.city, fallback.city),
     state: pick(current.state, fallback.state),
     zipPostcode: pick(current.zipPostcode, fallback.zipPostcode),
-    country: pick(current.country, fallback.country) || "VN",
+    country: pick(current.country, fallback.country) || "Vietnam",
     lat: pick(current.lat, fallback.lat),
     lng: pick(current.lng, fallback.lng)
   };
@@ -477,6 +559,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
   );
   const [shipmentError, setShipmentError] = useState<string | null>(null);
   const [reloadCounter, setReloadCounter] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setPageTitle(
@@ -563,7 +646,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
         const message =
         error instanceof Error && error.message.trim().length > 0 ?
         error.message :
-        "Khong the tai du lieu logistics.";
+        t("errors.loadLogisticsFailed");
         setShipmentError(message);
         setShipmentLoadState("error");
         setLegs([createInitialLeg()]);
@@ -575,7 +658,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [hasLookupInput, shipmentId, productId, productCode, productName, reloadCounter]);
+  }, [hasLookupInput, shipmentId, productId, productCode, productName, reloadCounter, t]);
 
   const handleAddLeg = () => {
     setLegs((current) => [...current, createDraftLeg(transportScope)]);
@@ -657,13 +740,13 @@ const TransportClient: React.FC<TransportClientProps> = ({
         type: leg.type,
         mode: leg.mode,
         origin: {
-          name: addressToLabel(leg.origin),
+          name: addressToLabel(leg.origin) || t("unknownLocation"),
           lat: originLat,
           lng: originLng,
           type: "address"
         },
         destination: {
-          name: addressToLabel(leg.destination),
+          name: addressToLabel(leg.destination) || t("unknownLocation"),
           lat: destinationLat,
           lng: destinationLng,
           type: "address"
@@ -675,15 +758,139 @@ const TransportClient: React.FC<TransportClientProps> = ({
       } as TransportLeg;
     }).
     filter((leg): leg is TransportLeg => leg !== null),
-    [legs]
+    [legs, t]
   );
 
-  const handleSubmit = () => {
-    if (productId) {
-      router.push(`/calculation-history?productId=${encodeURIComponent(productId)}`);
+  const handleSubmit = async () => {
+    if (!productId) {
+      router.push("/calculation-history");
       return;
     }
-    router.push("/calculation-history");
+
+    setIsSaving(true);
+
+    try {
+      const product = await fetchProductById(productId);
+      const quantity = Math.max(1, Number(product.quantity) || 1);
+      const nextTransportLegs = legs.map((leg) => {
+        const distance = Number.parseFloat(leg.distanceKm);
+        const normalizedDistance =
+        Number.isFinite(distance) && distance > 0 ? distance : undefined;
+        const co2Kg = Math.max(0, calculateLegCO2(leg));
+        const emissionFactor =
+        normalizedDistance && normalizedDistance > 0 ?
+        co2Kg / normalizedDistance :
+        EMISSION_FACTORS[leg.mode];
+
+        return {
+          id: leg.id,
+          mode: toProductTransportMode(leg.mode),
+          estimatedDistance: normalizedDistance,
+          emissionFactor: Number.isFinite(emissionFactor) ? emissionFactor : undefined,
+          co2Kg: co2Kg > 0 ? co2Kg : undefined
+        };
+      });
+
+      const currentPerProduct = product.carbonResults?.perProduct as {
+        materials?: number;
+        production?: number;
+        energy?: number;
+        transport?: number;
+        packaging?: number;
+        total?: number;
+      } | undefined;
+      const currentTotalBatch = product.carbonResults?.totalBatch as {
+        materials?: number;
+        production?: number;
+        energy?: number;
+        transport?: number;
+        packaging?: number;
+        total?: number;
+      } | undefined;
+
+      const materials = Number(currentPerProduct?.materials) || 0;
+      const production = Number(currentPerProduct?.production) || 0;
+      const energy = Number(currentPerProduct?.energy) || 0;
+      const packaging = Number(currentPerProduct?.packaging) || (
+      Number(currentTotalBatch?.packaging) > 0 ?
+      Number(currentTotalBatch?.packaging) / quantity :
+      0);
+      const transport = Math.max(0, totalCO2);
+      const perProductTotal =
+      materials +
+      production +
+      energy +
+      transport +
+      packaging;
+
+      const batchMaterials =
+      Number(currentTotalBatch?.materials) > 0 ?
+      Number(currentTotalBatch?.materials) :
+      materials * quantity;
+      const batchProduction =
+      Number(currentTotalBatch?.production) > 0 ?
+      Number(currentTotalBatch?.production) :
+      production * quantity;
+      const batchEnergy =
+      Number(currentTotalBatch?.energy) > 0 ?
+      Number(currentTotalBatch?.energy) :
+      energy * quantity;
+      const batchPackaging =
+      Number(currentTotalBatch?.packaging) > 0 ?
+      Number(currentTotalBatch?.packaging) :
+      packaging * quantity;
+      const batchTransport = transport * quantity;
+
+      const nextCarbonResults = {
+        confidenceLevel: product.carbonResults?.confidenceLevel || "medium",
+        proxyUsed: Boolean(product.carbonResults?.proxyUsed),
+        proxyNotes: product.carbonResults?.proxyNotes || [],
+        scope1: Number(product.carbonResults?.scope1) || 0,
+        scope2: Number(product.carbonResults?.scope2) || 0,
+        scope3: Number(product.carbonResults?.scope3) || 0,
+        perProduct: {
+          materials,
+          production,
+          energy,
+          transport,
+          packaging,
+          total: perProductTotal
+        },
+        totalBatch: {
+          materials: batchMaterials,
+          production: batchProduction,
+          energy: batchEnergy,
+          transport: batchTransport,
+          packaging: batchPackaging,
+          total: batchMaterials + batchProduction + batchEnergy + batchTransport + batchPackaging
+        }
+      };
+
+      const firstLegOrigin = legs[0]?.origin;
+      const lastLegDestination = legs[legs.length - 1]?.destination;
+      const payload = toProductPayload(product, {
+        transportLegs: nextTransportLegs,
+        estimatedTotalDistance:
+        totalDistance > 0 ? totalDistance : product.estimatedTotalDistance,
+        originAddress:
+        firstLegOrigin && hasUsefulAddressInput(firstLegOrigin) ?
+        toAddressInput(firstLegOrigin) :
+        product.originAddress,
+        destinationAddress:
+        lastLegDestination && hasUsefulAddressInput(lastLegDestination) ?
+        toAddressInput(lastLegDestination) :
+        product.destinationAddress,
+        carbonResults: nextCarbonResults,
+        updatedAt: new Date().toISOString()
+      });
+
+      await updateProduct(productId, payload);
+      router.push(`/calculation-history?productId=${encodeURIComponent(productId)}`);
+    } catch (error) {
+      toast.error(formatApiErrorMessage(error, t("errors.loadLogisticsFailed")));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleLocationPermission = async () => {
@@ -692,6 +899,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
   };
 
   const isShipmentLoading = hasLookupInput && shipmentLoadState === "loading";
+  const isBusy = isShipmentLoading || isSaving;
   const canRetryShipment =
   hasLookupInput && (
   shipmentLoadState === "error" || shipmentLoadState === "not_found");
@@ -703,10 +911,10 @@ const TransportClient: React.FC<TransportClientProps> = ({
 
     if (name) return name;
     if (code) return code;
-    if (shipment) return `shipment ${shipment.slice(0, 8)}`;
-    if (product) return `sản phẩm ${product.slice(0, 8)}`;
+    if (shipment) return t("mapSubject.shipment", { id: shipment.slice(0, 8) });
+    if (product) return t("mapSubject.product", { id: product.slice(0, 8) });
     return undefined;
-  }, [productName, productCode, shipmentId, productId]);
+  }, [productName, productCode, shipmentId, productId, t]);
   const mapSubjectMeta = useMemo(() => {
     const name = (productName || "").trim();
     const code = (productCode || "").trim();
@@ -732,21 +940,21 @@ const TransportClient: React.FC<TransportClientProps> = ({
                 {shipmentLoadState === "loading" &&
               <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    Dang tai du lieu logistics...
+                    {t("status.loadingLogisticsData")}
                   </p>
               }
 
                 {shipmentLoadState === "not_found" &&
               <p className="text-xs text-amber-700 inline-flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />
-                    Khong tim thay shipment phu hop voi du lieu dang mo.
+                    {t("status.notFoundShipment")}
                   </p>
               }
 
                 {shipmentLoadState === "error" &&
               <p className="text-xs text-destructive inline-flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />
-                    Loi tai du lieu: {shipmentError || "Unknown error"}
+                    {t("status.loadErrorPrefix")} {shipmentError || t("status.unknownError")}
                   </p>
               }
               </div>
@@ -758,7 +966,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
               onClick={() => setReloadCounter((current) => current + 1)}>
 
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  Tai lai du lieu
+                  {t("status.retryLoadData")}
                 </Button>
             }
             </CardContent>
@@ -769,7 +977,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
         <Card className="border-dashed">
             <CardContent className="p-6 text-sm text-muted-foreground inline-flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Dang tai lo trinh van chuyen...
+              {t("status.loadingRoute")}
             </CardContent>
           </Card>
         }
@@ -785,8 +993,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
         {hasLookupInput && !isShipmentLoading && displayLegs.length === 0 &&
         <Card className="border-dashed border-amber-300 bg-amber-50/40">
             <CardContent className="p-4 text-sm text-amber-700">
-              Chua co du lieu ban do cho san pham nay. Ban co the nhap thong tin
-              van chuyen thu cong ben duoi.
+              {t("status.noMapDataHint")}
             </CardContent>
           </Card>
         }
@@ -815,7 +1022,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
               variant="outline"
               onClick={handleAddLeg}
               className="w-full"
-              disabled={isShipmentLoading}>
+              disabled={isBusy}>
 
               <Plus className="w-4 h-4 mr-2" />
               {t("addLeg")}
@@ -829,7 +1036,7 @@ const TransportClient: React.FC<TransportClientProps> = ({
             hasLocationPermission={hasLocationPermission}
             calculateLegCO2={calculateLegCO2}
             onSubmit={handleSubmit}
-            isLoading={isShipmentLoading} />
+            isLoading={isBusy} />
 
         </div>
       </div>

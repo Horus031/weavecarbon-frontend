@@ -1,4 +1,5 @@
-import React from "react";
+﻿import React from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,14 +14,14 @@ import {
   Leaf,
   Factory,
   Truck,
-  AlertCircle } from
-"lucide-react";
+  AlertCircle
+} from "lucide-react";
 import {
   ProductAssessmentData,
   DraftVersion,
   PRODUCT_TYPES,
-  DESTINATION_MARKETS } from
-"./types";
+  DESTINATION_MARKETS
+} from "./types";
 
 interface Step6SaveHistoryProps {
   data: ProductAssessmentData;
@@ -37,29 +38,35 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
   onPublish,
   isSubmitting = false
 }) => {
+  const t = useTranslations("assessment.step6");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
 
+  const productType = PRODUCT_TYPES.find((type) => type.value === data.productType);
   const productTypeLabel =
-  PRODUCT_TYPES.find((t) => t.value === data.productType)?.label ||
-  data.productType;
+    productType && t.has(`productTypes.${productType.value}`)
+      ? t(`productTypes.${productType.value}`)
+      : productType?.label || data.productType;
 
-
+  const market = DESTINATION_MARKETS.find(
+    (destination) => destination.value === data.destinationMarket
+  );
   const marketLabel =
-  DESTINATION_MARKETS.find((m) => m.value === data.destinationMarket)?.
-  label || data.destinationMarket;
-
+    market && t.has(`markets.${market.value}`)
+      ? t(`markets.${market.value}`)
+      : market?.label || data.destinationMarket;
 
   const canPublish =
-  data.carbonResults &&
-  data.productCode &&
-  data.productName &&
-  data.quantity > 0 &&
-  data.materials.length > 0;
+    Boolean(data.carbonResults) &&
+    Boolean(data.productCode) &&
+    Boolean(data.productName) &&
+    data.quantity > 0 &&
+    data.materials.length > 0;
 
   const isHighConfidence = data.carbonResults?.confidenceLevel === "high";
 
   return (
     <div className="space-y-6">
-      
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
@@ -67,232 +74,217 @@ const Step6Content: React.FC<Step6SaveHistoryProps> = ({
               <FileText className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Tóm tắt sản phẩm</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Xác nhận thông tin trước khi lưu
-              </p>
+              <CardTitle className="text-lg">{t("summary.title")}</CardTitle>
+              <p className="text-sm text-muted-foreground">{t("summary.subtitle")}</p>
             </div>
           </div>
         </CardHeader>
+
         <CardContent className="space-y-4">
-          
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Mã sản phẩm</p>
+              <p className="text-xs text-muted-foreground">{t("summary.productCode")}</p>
               <p className="font-semibold">{data.productCode || "—"}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Tên sản phẩm</p>
+              <p className="text-xs text-muted-foreground">{t("summary.productName")}</p>
               <p className="font-semibold">{data.productName || "—"}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Loại sản phẩm</p>
+              <p className="text-xs text-muted-foreground">{t("summary.productType")}</p>
               <p className="font-medium">{productTypeLabel}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Số lượng sản xuất</p>
+              <p className="text-xs text-muted-foreground">{t("summary.quantity")}</p>
               <p className="font-medium">
-                {data.quantity?.toLocaleString()} sản phẩm
+                {t("summary.quantityValue", {
+                  value: data.quantity?.toLocaleString(displayLocale) || "0"
+                })}
               </p>
             </div>
           </div>
 
           <Separator />
 
-          
           <div className="grid grid-cols-4 gap-4">
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <Leaf className="w-5 h-5 mx-auto text-green-600 mb-1" />
-              <p className="text-xs text-muted-foreground">Vật liệu</p>
+              <p className="text-xs text-muted-foreground">{t("stats.materials")}</p>
               <p className="font-semibold">{data.materials.length}</p>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <Factory className="w-5 h-5 mx-auto text-blue-600 mb-1" />
-              <p className="text-xs text-muted-foreground">Quy trình</p>
-              <p className="font-semibold">
-                {data.productionProcesses?.length || 0}
-              </p>
+              <p className="text-xs text-muted-foreground">{t("stats.processes")}</p>
+              <p className="font-semibold">{data.productionProcesses?.length || 0}</p>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <Truck className="w-5 h-5 mx-auto text-purple-600 mb-1" />
-              <p className="text-xs text-muted-foreground">Chặng VC</p>
+              <p className="text-xs text-muted-foreground">{t("stats.transportLegs")}</p>
               <p className="font-semibold">{data.transportLegs?.length || 0}</p>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <Package className="w-5 h-5 mx-auto text-primary mb-1" />
-              <p className="text-xs text-muted-foreground">Thị trường</p>
+              <p className="text-xs text-muted-foreground">{t("stats.market")}</p>
               <p className="font-semibold text-xs">{marketLabel || "—"}</p>
             </div>
           </div>
 
           <Separator />
 
-          
-          {data.carbonResults &&
-          <div className="p-4 rounded-lg border-2 border-primary/30 bg-primary/5">
+          {data.carbonResults ? (
+            <div className="p-4 rounded-lg border-2 border-primary/30 bg-primary/5">
               <div className="flex items-center justify-between mb-3">
-                <p className="font-semibold">Kết quả đánh giá Carbon</p>
+                <p className="font-semibold">{t("result.title")}</p>
                 <Badge
-                variant="outline"
-                className={
-                data.carbonResults.confidenceLevel === "high" ?
-                "bg-green-500/10 text-green-600 border-green-500/30" :
-                data.carbonResults.confidenceLevel === "medium" ?
-                "bg-yellow-500/10 text-yellow-600 border-yellow-500/30" :
-                "bg-red-500/10 text-red-600 border-red-500/30"
-                }>
-                
-                  Độ tin cậy:{" "}
-                  {data.carbonResults.confidenceLevel === "high" ?
-                "Cao" :
-                data.carbonResults.confidenceLevel === "medium" ?
-                "Trung bình" :
-                "Thấp"}
+                  variant="outline"
+                  className={
+                    data.carbonResults.confidenceLevel === "high"
+                      ? "bg-green-500/10 text-green-600 border-green-500/30"
+                      : data.carbonResults.confidenceLevel === "medium"
+                        ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+                        : "bg-red-500/10 text-red-600 border-red-500/30"
+                  }
+                >
+                  {t("result.confidenceLabel")}: {" "}
+                  {data.carbonResults.confidenceLevel === "high"
+                    ? t("result.confidence.high")
+                    : data.carbonResults.confidenceLevel === "medium"
+                      ? t("result.confidence.medium")
+                      : t("result.confidence.low")}
                 </Badge>
               </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">
-                    CO₂e / Sản phẩm
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t("result.co2PerProduct")}</p>
                   <p className="text-2xl font-bold text-primary">
-                    {data.carbonResults.perProduct.total.toFixed(3)} kg
+                    {data.carbonResults.perProduct.total.toFixed(3)} {t("result.unitKg")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Tổng lô hàng</p>
+                  <p className="text-xs text-muted-foreground">{t("result.totalBatch")}</p>
                   <p className="text-2xl font-bold text-primary">
-                    {data.carbonResults.totalBatch.total.toFixed(2)} kg
+                    {data.carbonResults.totalBatch.total.toFixed(2)} {t("result.unitKg")}
                   </p>
                 </div>
               </div>
             </div>
-          }
+          ) : null}
         </CardContent>
       </Card>
 
-      
       <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Hành động</CardTitle>
+          <CardTitle className="text-lg">{t("actions.title")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          
-          {!canPublish &&
-          <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+          {!canPublish ? (
+            <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium text-yellow-700">
-                    Chưa đủ điều kiện xuất bản
-                  </p>
+                  <p className="font-medium text-yellow-700">{t("actions.notReady")}</p>
                   <ul className="text-yellow-600 mt-1 space-y-1">
-                    {!data.productCode && <li>• Thiếu mã sản phẩm</li>}
-                    {!data.productName && <li>• Thiếu tên sản phẩm</li>}
-                    {!data.quantity && <li>• Thiếu số lượng sản xuất</li>}
-                    {data.materials.length === 0 &&
-                  <li>• Chưa có thông tin vật liệu</li>
-                  }
+                    {!data.productCode ? <li>• {t("actions.missing.productCode")}</li> : null}
+                    {!data.productName ? <li>• {t("actions.missing.productName")}</li> : null}
+                    {!data.quantity ? <li>• {t("actions.missing.quantity")}</li> : null}
+                    {data.materials.length === 0 ? (
+                      <li>• {t("actions.missing.materials")}</li>
+                    ) : null}
                   </ul>
                 </div>
               </div>
             </div>
-          }
+          ) : null}
 
-          
           <div className="flex flex-col sm:flex-row gap-4">
             <Button
               variant="outline"
               size="lg"
               onClick={onSaveDraft}
               disabled={isSubmitting}
-              className="flex-1">
-              
+              className="flex-1"
+            >
               <Save className="w-5 h-5 mr-2" />
-              Lưu nháp (Draft)
+              {t("actions.saveDraft")}
             </Button>
             <Button
               size="lg"
               onClick={onPublish}
               disabled={!canPublish || isSubmitting}
-              className="flex-1">
-              
-              {isSubmitting ?
-              <>
+              className="flex-1"
+            >
+              {isSubmitting ? (
+                <>
                   <span className="animate-spin mr-2">⏳</span>
-                  Đang xử lý...
-                </> :
-
-              <>
-                  <Send className="w-5 h-5 mr-2" />
-                  Xuất bản (Publish)
+                  {t("actions.processing")}
                 </>
-              }
+              ) : (
+                <>
+                  <Send className="w-5 h-5 mr-2" />
+                  {t("actions.publish")}
+                </>
+              )}
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            {isHighConfidence ?
-            "✓ Sản phẩm đủ điều kiện báo cáo carbon" :
-            "* Sản phẩm cần bổ sung dữ liệu để đạt điều kiện báo cáo đầy đủ"}
+            {isHighConfidence ? t("actions.readyNote") : t("actions.needMoreDataNote")}
           </p>
         </CardContent>
       </Card>
 
-      
-      {draftHistory.length > 0 &&
-      <Card>
+      {draftHistory.length > 0 ? (
+        <Card>
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-muted-foreground" />
-              <CardTitle className="text-lg">Lịch sử phiên bản</CardTitle>
+              <CardTitle className="text-lg">{t("history.title")}</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {draftHistory.map((draft, index) =>
-            <div
-              key={draft.id}
-              className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-              
+              {draftHistory.map((draft, index) => (
+                <div
+                  key={draft.id}
+                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                >
                   <div className="flex items-center gap-3">
                     <Badge variant="outline">v{draft.version}</Badge>
                     <div>
                       <p className="text-sm font-medium">
-                        {new Date(draft.timestamp).toLocaleDateString("vi-VN", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit"
-                    })}
+                        {new Date(draft.timestamp).toLocaleDateString(displayLocale, {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })}
                       </p>
-                      {draft.note &&
-                  <p className="text-xs text-muted-foreground">
-                          {draft.note}
-                        </p>
-                  }
+                      {draft.note ? (
+                        <p className="text-xs text-muted-foreground">{draft.note}</p>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {index === 0 &&
-                <Badge className="bg-primary/10 text-primary border-0">
+                    {index === 0 ? (
+                      <Badge className="bg-primary/10 text-primary border-0">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Hiện tại
+                        {t("history.current")}
                       </Badge>
-                }
+                    ) : null}
                     <Button variant="ghost" size="sm">
-                      Xem
+                      {t("history.view")}
                     </Button>
                   </div>
                 </div>
-            )}
+              ))}
             </div>
           </CardContent>
         </Card>
-      }
-    </div>);
-
+      ) : null}
+    </div>
+  );
 };
 
 export default Step6Content;

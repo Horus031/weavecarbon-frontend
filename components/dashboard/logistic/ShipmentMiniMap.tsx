@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN?.trim();
+import { configureMapboxRuntime, hasMapboxPublicToken } from "@/lib/mapbox";
 interface ShipmentMiniMapProps {
   currentLocation: {lat: number;lng: number;name: string;};
   height?: string;
@@ -16,6 +16,7 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
   height = "150px",
   status = "in_transit"
 }) => {
+  const t = useTranslations("logistics.shipmentMiniMap");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
@@ -39,11 +40,11 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
     const getStatusEmoji = () => {
       switch (status) {
         case "delivered":
-          return "📦";
+          return "D";
         case "pending":
-          return "⏳";
+          return "P";
         default:
-          return "🚢";
+          return "T";
       }
     };
 
@@ -53,18 +54,17 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
       if (!mapContainerRef.current) return;
 
       try {
-        if (!MAPBOX_TOKEN || !MAPBOX_TOKEN.startsWith("pk.")) {
-          setError("Mapbox token is missing or invalid.");
+        if (!hasMapboxPublicToken()) {
+          setError(t("errors.invalidToken"));
           setIsLoading(false);
           return;
         }
 
-        mapboxgl.accessToken = MAPBOX_TOKEN;
-
+        configureMapboxRuntime(mapboxgl);
 
         const map = new mapboxgl.Map({
           container: mapContainerRef.current,
-          style: 'mapbox://styles/mapbox/satellite-streets-v12',
+          style: "mapbox://styles/mapbox/satellite-streets-v12",
           center: [currentLocation.lng, currentLocation.lat],
           zoom: 5,
           pitch: 45,
@@ -76,7 +76,6 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
 
         map.on("load", () => {
           if (!isMounted) return;
-
 
           const markerEl = document.createElement("div");
           markerEl.innerHTML = `
@@ -115,7 +114,6 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
             </div>
           `;
 
-
           const style = document.createElement("style");
           style.textContent = `
             @keyframes pulse {
@@ -136,14 +134,13 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
 
         map.on("error", () => {
           if (isMounted) {
-            setError("Map failed to load");
+            setError(t("errors.mapFailed"));
             setIsLoading(false);
           }
         });
-      } catch (err) {
+      } catch {
         if (isMounted) {
-          console.error("Mini map initialization error:", err);
-          setError("Failed to load map");
+          setError(t("errors.loadFailed"));
           setIsLoading(false);
         }
       }
@@ -158,14 +155,14 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
         mapRef.current = null;
       }
     };
-  }, [currentLocation.lat, currentLocation.lng, status]);
+  }, [currentLocation.lat, currentLocation.lng, status, t]);
 
   if (error) {
     return (
       <div
         className="rounded-lg bg-muted flex items-center justify-center"
         style={{ height }}>
-        
+
         <p className="text-xs text-muted-foreground">{error}</p>
       </div>);
 
@@ -179,7 +176,7 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
         </div>
       }
       <div ref={mapContainerRef} className="w-full h-full" />
-      
+
       <div className="absolute bottom-1 left-1 right-1 bg-background/80 backdrop-blur rounded px-2 py-1">
         <p className="text-xs text-center truncate font-medium">
           {currentLocation.name}
@@ -190,3 +187,4 @@ const ShipmentMiniMap: React.FC<ShipmentMiniMapProps> = ({
 };
 
 export default ShipmentMiniMap;
+

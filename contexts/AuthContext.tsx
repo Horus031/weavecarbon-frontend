@@ -12,8 +12,10 @@ import {
   API_BASE_URL,
   authTokenStore,
   AuthTokens,
-  ensureAccessToken } from
+  ensureAccessToken,
+  isApiError } from
 "@/lib/apiClient";
+import { resolveCompanyRole, type CompanyRole } from "@/lib/permissions";
 
 interface User {
   id: string;
@@ -21,10 +23,16 @@ interface User {
   full_name?: string;
   company_id?: string | null;
   user_type?: "b2b" | "b2c" | "admin";
+  company_role?: CompanyRole;
+  is_root?: boolean;
   avatar_url?: string | null;
 }
 
 type GoogleAuthIntent = "signin" | "signup";
+
+interface SignInOptions {
+  rememberMe?: boolean;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -39,11 +47,13 @@ interface AuthContextType {
   signIn: (
   email: string,
   password: string,
-  userType?: "b2b" | "b2c")
-  => Promise<{error: Error | null;}>;
+  userType?: "b2b" | "b2c",
+  options?: SignInOptions)
+  => Promise<{error: Error | null;needsConfirmation?: boolean;}>;
   signInWithGoogle: (
   userType?: "b2b" | "b2c",
-  intent?: GoogleAuthIntent)
+  intent?: GoogleAuthIntent,
+  options?: SignInOptions)
   => Promise<{error: Error | null;}>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -69,6 +79,25 @@ interface BackendCompany {
   id: string;
 }
 
+interface BackendCompanyMembership {
+  company_id?: string | null;
+  role?: string | null;
+  status?: string | null;
+  is_root?: boolean | null;
+  isRoot?: boolean | null;
+}
+
+interface BackendCompanyMember {
+  id?: string;
+  user_id?: string;
+  email?: string | null;
+  role?: string | null;
+  status?: string | null;
+  company_id?: string | null;
+  is_root?: boolean | null;
+  isRoot?: boolean | null;
+}
+
 interface SignUpOptions {
   companyName?: string;
   businessType?: "shop_online" | "brand" | "factory";
@@ -81,6 +110,7 @@ interface SignUpPayload {
   profile?: BackendProfile | null;
   role?: "b2b" | "b2c" | "admin";
   company?: BackendCompany | null;
+  company_membership?: BackendCompanyMembership | null;
   requires_email_verification?: boolean;
   needsConfirmation?: boolean;
   tokens?: AuthTokens;
@@ -91,18 +121,22 @@ interface SignInPayload {
   profile?: BackendProfile | null;
   roles?: Array<"b2b" | "b2c" | "admin">;
   company?: BackendCompany | null;
+  company_membership?: BackendCompanyMembership | null;
   tokens?: AuthTokens;
 }
 
 interface AccountPayload {
   profile?: BackendProfile | null;
   company?: BackendCompany | null;
+  roles?: Array<"b2b" | "b2c" | "admin">;
+  company_membership?: BackendCompanyMembership | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = "weavecarbon_user";
 const GOOGLE_OAUTH_INFLIGHT_KEY = "google_oauth_inflight";
+const GOOGLE_OAUTH_REMEMBER_ME_KEY = "google_oauth_remember_me";
 const TOKEN_STORAGE_KEYS = [
 "weavecarbon_access_token",
 "weavecarbon_refresh_token",
@@ -114,11 +148,53 @@ const AUTH_DISABLED = process.env.NEXT_PUBLIC_AUTH_DISABLED === "1";
 const ACCOUNT_ENDPOINT_ENABLED =
 process.env.NEXT_PUBLIC_ACCOUNT_ENDPOINT !== "0";
 
+const getDefaultCompanyRole = (
+userType?: User["user_type"])
+: CompanyRole =>
+userType === "admin" ? "root" : "member";
+
+const normalizeCompanyMembership = (
+membership?: BackendCompanyMembership | null,
+fallbackRole: CompanyRole = "member") => {
+  const isRoot = Boolean(membership?.is_root ?? membership?.isRoot);
+  const companyRole = resolveCompanyRole(
+    {
+      role: membership?.role,
+      isRoot
+    },
+    fallbackRole
+  );
+
+  return {
+    company_role: companyRole,
+    is_root: isRoot || companyRole === "root"
+  };
+};
+
+const normalizeStoredUser = (user: User | null): User | null => {
+  if (!user) return null;
+  const fallbackRole = getDefaultCompanyRole(user.user_type);
+
+  const normalizedRole = resolveCompanyRole(
+    {
+      role: user.company_role,
+      isRoot: user.is_root
+    },
+    fallbackRole
+  );
+
+  return {
+    ...user,
+    company_role: normalizedRole,
+    is_root: Boolean(user.is_root || normalizedRole === "root")
+  };
+};
+
 const loadStoredUser = (): User | null => {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) as User : null;
+    return raw ? normalizeStoredUser(JSON.parse(raw) as User) : null;
   } catch {
     return null;
   }
@@ -132,7 +208,7 @@ const persistUser = (user: User | null) => {
     return;
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeStoredUser(user)));
 };
 
 const normalizeRole = (
@@ -146,12 +222,18 @@ role?: string | null)
 
 const buildUserFromSignIn = (payload: SignInPayload): User => {
   const role = normalizeRole(payload.roles?.[0]);
+  const membership = normalizeCompanyMembership(
+    payload.company_membership,
+    getDefaultCompanyRole(role)
+  );
   return {
     id: payload.user.id,
     email: payload.user.email,
     full_name: payload.user.full_name || payload.profile?.full_name || undefined,
     company_id: payload.company?.id || payload.profile?.company_id || null,
     user_type: role,
+    company_role: membership.company_role,
+    is_root: membership.is_root,
     avatar_url: payload.user.avatar_url || null
   };
 };
@@ -161,12 +243,19 @@ payload: SignUpPayload,
 fallbackRole: "b2b" | "b2c")
 : User | null => {
   if (!payload.user) return null;
+  const normalizedUserType = normalizeRole(payload.role) || fallbackRole;
+  const membership = normalizeCompanyMembership(
+    payload.company_membership,
+    getDefaultCompanyRole(normalizedUserType)
+  );
   return {
     id: payload.user.id,
     email: payload.user.email,
     full_name: payload.user.full_name || payload.profile?.full_name || undefined,
     company_id: payload.company?.id || payload.profile?.company_id || null,
-    user_type: normalizeRole(payload.role) || fallbackRole,
+    user_type: normalizedUserType,
+    company_role: membership.company_role,
+    is_root: membership.is_root,
     avatar_url: payload.user.avatar_url || null
   };
 };
@@ -175,24 +264,33 @@ const buildUserFromAccount = (
 payload: AccountPayload,
 fallbackUser: User | null)
 : User | null => {
+  const normalizedFallback = normalizeStoredUser(fallbackUser);
+  const accountUserType =
+  normalizeRole(payload.roles?.[0]) || normalizedFallback?.user_type;
   const profile = payload.profile;
-  if (!profile && !fallbackUser) return null;
+  const membership = normalizeCompanyMembership(
+    payload.company_membership,
+    getDefaultCompanyRole(accountUserType)
+  );
+  if (!profile && !normalizedFallback) return null;
 
-  const nextId = profile?.user_id || fallbackUser?.id;
-  const nextEmail = profile?.email || fallbackUser?.email;
+  const nextId = profile?.user_id || normalizedFallback?.id;
+  const nextEmail = profile?.email || normalizedFallback?.email;
 
   if (!nextId || !nextEmail) {
-    return fallbackUser;
+    return normalizedFallback;
   }
 
   return {
     id: nextId,
     email: nextEmail,
-    full_name: profile?.full_name || fallbackUser?.full_name,
+    full_name: profile?.full_name || normalizedFallback?.full_name,
     company_id:
-    payload.company?.id || profile?.company_id || fallbackUser?.company_id || null,
-    user_type: fallbackUser?.user_type,
-    avatar_url: fallbackUser?.avatar_url || null
+    payload.company?.id || profile?.company_id || normalizedFallback?.company_id || null,
+    user_type: accountUserType,
+    company_role: membership.company_role,
+    is_root: membership.is_root,
+    avatar_url: normalizedFallback?.avatar_url || null
   };
 };
 
@@ -255,6 +353,108 @@ const getAccountSafely = async (): Promise<AccountPayload | null> => {
   }
 };
 
+const isEmailNotVerifiedError = (error: unknown) => {
+  if (!isApiError(error)) return false;
+  if (error.status !== 403) return false;
+  if (error.code === "EMAIL_NOT_VERIFIED") return true;
+  return error.message.toLowerCase().includes("not verified");
+};
+
+const toCompanyMemberList = (payload: unknown): BackendCompanyMember[] => {
+  if (Array.isArray(payload)) {
+    return payload as BackendCompanyMember[];
+  }
+
+  if (payload && typeof payload === "object") {
+    const candidate = payload as {
+      data?: unknown;
+      members?: unknown;
+      items?: unknown;
+    };
+
+    if (Array.isArray(candidate.data)) {
+      return candidate.data as BackendCompanyMember[];
+    }
+
+    if (Array.isArray(candidate.members)) {
+      return candidate.members as BackendCompanyMember[];
+    }
+
+    if (Array.isArray(candidate.items)) {
+      return candidate.items as BackendCompanyMember[];
+    }
+  }
+
+  return [];
+};
+
+const syncUserCompanyRole = async (baseUser: User | null): Promise<User | null> => {
+  const normalizedBaseUser = normalizeStoredUser(baseUser);
+  if (!normalizedBaseUser) return null;
+
+  if (AUTH_DISABLED) {
+    return normalizedBaseUser;
+  }
+
+  const hasAuthToken = Boolean(
+    authTokenStore.getAccessToken() || authTokenStore.getRefreshToken()
+  );
+  if (!hasAuthToken) {
+    return normalizedBaseUser;
+  }
+
+  const userType = normalizedBaseUser.user_type;
+  if (userType && userType !== "b2b" && userType !== "admin") {
+    return normalizedBaseUser;
+  }
+
+  try {
+    const payload = await api.get<unknown>("/company/members");
+    const memberList = toCompanyMemberList(payload);
+    if (memberList.length === 0) {
+      return normalizedBaseUser;
+    }
+
+    const matchedMember = memberList.find((member) => {
+      const memberUserId =
+      typeof member.user_id === "string" ? member.user_id : null;
+      const memberId = typeof member.id === "string" ? member.id : null;
+      return (
+        memberUserId === normalizedBaseUser.id ||
+        memberId === normalizedBaseUser.id
+      );
+    });
+
+    if (!matchedMember) {
+      return normalizedBaseUser;
+    }
+
+    const membership = normalizeCompanyMembership(
+      {
+        role: matchedMember.role,
+        is_root: matchedMember.is_root,
+        isRoot: matchedMember.isRoot,
+        company_id: matchedMember.company_id,
+        status: matchedMember.status
+      },
+      getDefaultCompanyRole(normalizedBaseUser.user_type)
+    );
+
+    return normalizeStoredUser({
+      ...normalizedBaseUser,
+      company_id: matchedMember.company_id ?? normalizedBaseUser.company_id ?? null,
+      company_role: membership.company_role,
+      is_root: membership.is_root
+    });
+  } catch (error) {
+    if (isNotFoundError(error) || isUnauthorizedError(error)) {
+      return normalizedBaseUser;
+    }
+
+    return normalizedBaseUser;
+  }
+};
+
 export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
   children
 }) => {
@@ -290,7 +490,15 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
       try {
         const account = await getAccountSafely();
         if (account) {
-          const nextUser = buildUserFromAccount(account, stored);
+          const nextUser = await syncUserCompanyRole(
+            buildUserFromAccount(account, stored)
+          );
+          persistUser(nextUser);
+          if (!cancelled) {
+            setUser(nextUser);
+          }
+        } else if (hasAuthToken && stored) {
+          const nextUser = await syncUserCompanyRole(stored);
           persistUser(nextUser);
           if (!cancelled) {
             setUser(nextUser);
@@ -364,7 +572,9 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
     try {
       const account = await getAccountSafely();
       if (account) {
-        const nextUser = buildUserFromAccount(account, user);
+        const nextUser = await syncUserCompanyRole(
+          buildUserFromAccount(account, user)
+        );
         persistUser(nextUser);
         setUser(nextUser);
       } else {
@@ -375,7 +585,9 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
           persistUser(null);
         }
         const stored = hasAuthToken ? loadStoredUser() : null;
-        setUser(stored);
+        const nextUser = await syncUserCompanyRole(stored);
+        persistUser(nextUser);
+        setUser(nextUser);
       }
     } catch {
       const hasAuthToken = Boolean(
@@ -385,7 +597,9 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
         persistUser(null);
       }
       const stored = hasAuthToken ? loadStoredUser() : null;
-      setUser(stored);
+      const nextUser = await syncUserCompanyRole(stored);
+      persistUser(nextUser);
+      setUser(nextUser);
     } finally {
       setLoading(false);
     }
@@ -450,8 +664,9 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
 
       const nextUser = buildUserFromSignUp(payload, role);
       if (nextUser && hasAccessToken && !needsConfirmation) {
-        persistUser(nextUser);
-        setUser(nextUser);
+        const syncedUser = await syncUserCompanyRole(nextUser);
+        persistUser(syncedUser);
+        setUser(syncedUser);
       }
 
       return {
@@ -468,11 +683,14 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
   const signIn = async (
   email: string,
   password: string,
-  userType?: "b2b" | "b2c")
-  : Promise<{error: Error | null;}> => {
+  userType?: "b2b" | "b2c",
+  options?: SignInOptions)
+  : Promise<{error: Error | null;needsConfirmation?: boolean;}> => {
     if (AUTH_DISABLED) {
       return { error: new Error("Authentication is disabled.") };
     }
+
+    const rememberMe = options?.rememberMe ?? true;
 
     try {
       const payload = await postWithFallback<SignInPayload>(
@@ -480,7 +698,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
         {
           email,
           password,
-          remember_me: true
+          remember_me: rememberMe
         }
       );
 
@@ -499,11 +717,18 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
         };
       }
 
-      authTokenStore.setTokens(payload.tokens);
-      persistUser(nextUser);
-      setUser(nextUser);
+      authTokenStore.setTokens(payload.tokens, { persist: rememberMe });
+      const syncedUser = await syncUserCompanyRole(nextUser);
+      persistUser(syncedUser);
+      setUser(syncedUser);
       return { error: null };
     } catch (error) {
+      if (isEmailNotVerifiedError(error)) {
+        authTokenStore.clear();
+        persistUser(null);
+        setUser(null);
+        return { error: null, needsConfirmation: true };
+      }
       return {
         error: error instanceof Error ? error : new Error("Sign in failed.")
       };
@@ -512,7 +737,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
 
   const signInWithGoogle = async (
   userType?: "b2b" | "b2c",
-  intent: GoogleAuthIntent = "signin")
+  intent: GoogleAuthIntent = "signin",
+  options?: SignInOptions)
   : Promise<{error: Error | null;}> => {
     if (AUTH_DISABLED) {
       return { error: new Error("Authentication is disabled.") };
@@ -529,6 +755,10 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
       }
 
       sessionStorage.setItem(GOOGLE_OAUTH_INFLIGHT_KEY, "1");
+      sessionStorage.setItem(
+        GOOGLE_OAUTH_REMEMBER_ME_KEY,
+        options?.rememberMe === false ? "0" : "1"
+      );
       const role = userType ?? "b2b";
       if (intent === "signup") {
         window.location.assign(`${API_BASE_URL}/auth/google?intent=signup`);
@@ -544,6 +774,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode;}> = ({
     } catch (error) {
       if (typeof window !== "undefined") {
         sessionStorage.removeItem(GOOGLE_OAUTH_INFLIGHT_KEY);
+        sessionStorage.removeItem(GOOGLE_OAUTH_REMEMBER_ME_KEY);
       }
       return {
         error:

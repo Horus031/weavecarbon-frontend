@@ -187,7 +187,7 @@ export interface PublishBatchResult {
 
 const inflightProductListRequests = new Map<string, Promise<ProductListResult>>();
 const PRODUCT_ID_REGEX =
-/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type PublishStatusApiMode = "unknown" | "published" | "active";
 const PRODUCT_STATUS_API_MODE_STORAGE_KEY = "weavecarbon_products_status_api_mode";
 
@@ -262,6 +262,43 @@ const asNumber = (value: unknown, fallback = 0) => {
 
 const asArray = <T = unknown,>(value: unknown): T[] =>
 Array.isArray(value) ? value as T[] : [];
+
+const toFiniteNumber = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+};
+
+const firstFiniteNumber = (...candidates: unknown[]): number | undefined => {
+  for (const candidate of candidates) {
+    const parsed = toFiniteNumber(candidate);
+    if (parsed !== undefined) {
+      return parsed;
+    }
+  }
+  return undefined;
+};
+
+const resolveMetricValue = (
+primary?: number,
+fallback?: number)
+: number => {
+  const primaryFinite = typeof primary === "number" && Number.isFinite(primary);
+  const fallbackFinite = typeof fallback === "number" && Number.isFinite(fallback);
+
+  if (primaryFinite && primary! > 0) return primary!;
+  if (fallbackFinite && fallback! > 0) return fallback!;
+  if (primaryFinite) return Math.max(0, primary!);
+  if (fallbackFinite) return Math.max(0, fallback!);
+  return 0;
+};
 
 const DESTINATION_MARKET_ALIASES: Record<string, string> = {
   eu: "eu",
@@ -437,13 +474,24 @@ const normalizeAddress = (value: unknown): AddressInput => {
 
   const next: AddressInput = {
     streetNumber: asString(value.streetNumber ?? value.street_number),
-    street: asString(value.street),
-    ward: asString(value.ward),
-    district: asString(value.district),
-    city: asString(value.city),
-    stateRegion: asString(value.stateRegion ?? value.state_region),
+    street: asString(value.street ?? value.address),
+    ward: asString(value.ward ?? value.commune),
+    district: asString(value.district ?? value.county),
+    city: asString(value.city ?? value.province ?? value.state ?? value.region),
+    stateRegion: asString(
+      value.stateRegion ??
+      value.state_region ??
+      value.state ??
+      value.province ??
+      value.region
+    ),
     country: asString(value.country),
-    postalCode: asString(value.postalCode ?? value.postal_code)
+    postalCode: asString(
+      value.postalCode ??
+      value.postal_code ??
+      value.zip ??
+      value.zipcode
+    )
   };
 
   if (latValue !== undefined && latValue !== null && latValue !== "") {
@@ -488,43 +536,203 @@ map((item, index) => ({
 })).
 filter((item) => item.name.length > 0 || item.type.length > 0);
 
+const toCompactKey = (value: unknown) =>
+asString(value).
+trim().
+toLowerCase().
+normalize("NFD").
+replace(/[\u0300-\u036f]/g, "").
+replace(/[^a-z0-9]+/g, "");
+
+const PRODUCTION_PROCESS_ALIASES: Record<string, string> = {
+  knitting: "knitting",
+  detkim: "knitting",
+  knit: "knitting",
+  weaving: "weaving",
+  detthoi: "weaving",
+  weave: "weaving",
+  cuttingsewing: "cutting_sewing",
+  cutsew: "cutting_sewing",
+  catmay: "cutting_sewing",
+  sewing: "cutting_sewing",
+  dyeing: "dyeing",
+  dye: "dyeing",
+  nhuom: "dyeing",
+  printing: "printing",
+  print: "printing",
+  in: "printing",
+  finishing: "finishing",
+  finish: "finishing",
+  hoantat: "finishing"
+};
+
+const ENERGY_SOURCE_ALIASES: Record<string, string> = {
+  grid: "grid",
+  dienluoi: "grid",
+  electricitygrid: "grid",
+  solar: "solar",
+  dienmattroi: "solar",
+  solarpower: "solar",
+  wind: "wind",
+  diengio: "wind",
+  windpower: "wind",
+  coal: "coal",
+  thanda: "coal",
+  gas: "gas",
+  khidot: "gas",
+  mixed: "mixed",
+  honhop: "mixed"
+};
+
+const normalizeProductionProcesses = (value: unknown): string[] => {
+  const normalized = asArray(value).
+  map((item) => PRODUCTION_PROCESS_ALIASES[toCompactKey(item)]).
+  filter((item): item is string => Boolean(item));
+
+  return Array.from(new Set(normalized));
+};
+
+const TRANSPORT_MODE_ALIASES: Record<string, TransportLeg["mode"]> = {
+  road: "road",
+  truck: "road",
+  trucklight: "road",
+  truckheavy: "road",
+  xetainhe: "road",
+  xetainang: "road",
+  sea: "sea",
+  ship: "sea",
+  ocean: "sea",
+  taubien: "sea",
+  air: "air",
+  airplane: "air",
+  aviation: "air",
+  hangkhong: "air",
+  rail: "rail",
+  train: "rail",
+  duongsat: "rail"
+};
+
 const normalizeEnergySources = (value: unknown): EnergySourceInput[] =>
 asArray(value).
 filter(isObject).
-map((item, index) => ({
-  id: asString(item.id, `energy-${index + 1}`),
-  source: asString(item.source),
-  percentage: asNumber(item.percentage)
-})).
+map((item, index) => {
+  const source = ENERGY_SOURCE_ALIASES[
+  toCompactKey(item.source ?? item.energySource ?? item.energy_source ?? item.type ?? item.name)];
+  return {
+    id: asString(item.id, `energy-${index + 1}`),
+    source: source || "",
+    percentage: asNumber(item.percentage ?? item.ratio ?? item.share ?? item.percent)
+  };
+}).
 filter((item) => item.source.length > 0);
 
+const resolveTransportLegArray = (value: unknown): unknown[] => {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (!isObject(value)) {
+    return [];
+  }
+
+  return asArray(
+    value.legs ??
+    value.transportLegs ??
+    value.transport_legs ??
+    value.routeLegs ??
+    value.route_legs ??
+    value.routes
+  );
+};
+
 const normalizeTransportLegs = (value: unknown): TransportLeg[] =>
-asArray(value).
-filter(isObject).
+resolveTransportLegArray(value).
 map((item, index) => {
-  const mode = asString(item.mode).toLowerCase();
-  const normalizedMode =
-  mode === "road" || mode === "sea" || mode === "air" || mode === "rail" ?
-  mode :
+  if (!isObject(item)) {
+    const mode =
+    TRANSPORT_MODE_ALIASES[toCompactKey(item)] ??
+    "road";
+    return {
+      id: `leg-${index + 1}`,
+      mode,
+      estimatedDistance: undefined
+    } as TransportLeg;
+  }
+
+  const mode =
+  TRANSPORT_MODE_ALIASES[
+  toCompactKey(
+    item.mode ??
+    item.transport_mode ??
+    item.transportMode ??
+    item.route_type ??
+    item.routeType ??
+    item.method ??
+    item.type)
+  ] ??
   "road";
 
+  const estimatedDistanceRaw =
+  item.estimatedDistance ??
+  item.estimated_distance ??
+  item.distanceKm ??
+  item.distance_km ??
+  item.distance ??
+  item.km;
+  const normalizedDistance =
+  estimatedDistanceRaw === undefined || estimatedDistanceRaw === null ?
+  undefined :
+  asNumber(estimatedDistanceRaw);
+  const emissionFactorRaw =
+  item.emissionFactor ??
+  item.emission_factor ??
+  item.emission_factor_used ??
+  item.co2Factor ??
+  item.co2_factor ??
+  item.factor;
+  const normalizedEmissionFactor =
+  emissionFactorRaw === undefined || emissionFactorRaw === null ?
+  undefined :
+  asNumber(emissionFactorRaw);
+  const co2KgRaw =
+  item.co2Kg ??
+  item.co2_kg ??
+  item.co2e ??
+  item.co2 ??
+  item.emission_kg;
+  const normalizedCo2Kg =
+  co2KgRaw === undefined || co2KgRaw === null ?
+  undefined :
+  asNumber(co2KgRaw);
+
   return {
-    id: asString(item.id, `leg-${index + 1}`),
-    mode: normalizedMode,
+    id: asString(item.id ?? item.leg_id ?? item.legId, `leg-${index + 1}`),
+    mode,
     estimatedDistance:
-    item.estimatedDistance !== undefined ?
-    asNumber(item.estimatedDistance) :
-    item.estimated_distance !== undefined ?
-    asNumber(item.estimated_distance) :
+    normalizedDistance !== undefined && Number.isFinite(normalizedDistance) ?
+    normalizedDistance :
+    undefined,
+    emissionFactor:
+    normalizedEmissionFactor !== undefined && Number.isFinite(normalizedEmissionFactor) ?
+    Math.max(0, normalizedEmissionFactor) :
+    undefined,
+    co2Kg:
+    normalizedCo2Kg !== undefined && Number.isFinite(normalizedCo2Kg) ?
+    Math.max(0, normalizedCo2Kg) :
     undefined
   } as TransportLeg;
 });
 
-const normalizeCarbonResults = (value: unknown): CarbonAssessmentResult | undefined => {
-  if (!isObject(value)) return undefined;
+const normalizeCarbonResults = (
+value: unknown,
+fallbackSource?: Record<string, unknown>,
+quantityFallback = 1)
+: CarbonAssessmentResult | undefined => {
+  const structured = isObject(value) ? value : null;
+  const source = isObject(fallbackSource) ? fallbackSource : {};
 
-  const perProductCandidate = value.perProduct ?? value.per_product;
-  const totalBatchCandidate = value.totalBatch ?? value.total_batch;
+  const perProductCandidate = structured ? structured.perProduct ?? structured.per_product : undefined;
+  const totalBatchCandidate = structured ? structured.totalBatch ?? structured.total_batch : undefined;
   const perProductRaw: Record<string, unknown> = isObject(perProductCandidate) ?
   perProductCandidate :
   {};
@@ -532,7 +740,158 @@ const normalizeCarbonResults = (value: unknown): CarbonAssessmentResult | undefi
   totalBatchCandidate :
   {};
 
-  const confidence = asString(value.confidenceLevel ?? value.confidence_level).toLowerCase();
+  const sourceMaterials = firstFiniteNumber(
+    source.materials_co2e,
+    source.materialsCO2e,
+    source.materials_co2,
+    source.materialsCO2
+  );
+  const sourceProduction = firstFiniteNumber(
+    source.production_co2e,
+    source.productionCO2e,
+    source.production_co2,
+    source.productionCO2
+  );
+  const sourceEnergy = firstFiniteNumber(
+    source.energy_co2e,
+    source.energyCO2e,
+    source.energy_co2,
+    source.energyCO2
+  );
+  const sourceTransport = firstFiniteNumber(
+    source.transport_co2e,
+    source.transportCO2e,
+    source.transport_co2,
+    source.transportCO2
+  );
+  const sourcePackaging = firstFiniteNumber(
+    source.packaging_co2e,
+    source.packagingCO2e,
+    source.packaging_co2,
+    source.packagingCO2
+  );
+  const sourceTotal = firstFiniteNumber(
+    source.total_co2e,
+    source.totalCO2e,
+    source.co2_per_unit,
+    source.co2PerUnit,
+    source.unit_co2e
+  );
+  const hasSourceMetrics =
+  sourceMaterials !== undefined ||
+  sourceProduction !== undefined ||
+  sourceEnergy !== undefined ||
+  sourceTransport !== undefined ||
+  sourcePackaging !== undefined ||
+  sourceTotal !== undefined;
+
+  if (!structured && !hasSourceMetrics) {
+    return undefined;
+  }
+
+  const perProductMaterials = resolveMetricValue(
+    firstFiniteNumber(
+      perProductRaw.materials,
+      perProductRaw.materials_co2e,
+      perProductRaw.materials_co2
+    ),
+    sourceMaterials
+  );
+  const perProductProduction = resolveMetricValue(
+    firstFiniteNumber(
+      perProductRaw.production,
+      perProductRaw.production_co2e,
+      perProductRaw.production_co2
+    ),
+    sourceProduction
+  );
+  const perProductEnergy = resolveMetricValue(
+    firstFiniteNumber(
+      perProductRaw.energy,
+      perProductRaw.energy_co2e,
+      perProductRaw.energy_co2
+    ),
+    sourceEnergy
+  );
+  const perProductTransport = resolveMetricValue(
+    firstFiniteNumber(
+      perProductRaw.transport,
+      perProductRaw.transport_co2e,
+      perProductRaw.transport_co2
+    ),
+    sourceTransport
+  );
+  const perProductPackaging = resolveMetricValue(
+    firstFiniteNumber(
+      perProductRaw.packaging,
+      perProductRaw.packaging_co2e,
+      perProductRaw.packaging_co2
+    ),
+    sourcePackaging
+  );
+  const inferredPerProductTotal =
+  perProductMaterials +
+  perProductProduction +
+  perProductEnergy +
+  perProductTransport +
+  perProductPackaging;
+  const perProductTotal = (() => {
+    const explicitTotal = resolveMetricValue(
+      firstFiniteNumber(
+        perProductRaw.total,
+        perProductRaw.total_co2e,
+        perProductRaw.total_co2
+      ),
+      sourceTotal
+    );
+    return explicitTotal > 0 ? explicitTotal : inferredPerProductTotal;
+  })();
+
+  const safeQuantity =
+  typeof quantityFallback === "number" && Number.isFinite(quantityFallback) && quantityFallback > 0 ?
+  quantityFallback :
+  1;
+
+  const totalBatchMaterials = resolveMetricValue(
+    firstFiniteNumber(totalBatchRaw.materials, totalBatchRaw.materials_co2e, totalBatchRaw.materials_co2),
+    perProductMaterials * safeQuantity
+  );
+  const totalBatchProduction = resolveMetricValue(
+    firstFiniteNumber(totalBatchRaw.production, totalBatchRaw.production_co2e, totalBatchRaw.production_co2),
+    perProductProduction * safeQuantity
+  );
+  const totalBatchEnergy = resolveMetricValue(
+    firstFiniteNumber(totalBatchRaw.energy, totalBatchRaw.energy_co2e, totalBatchRaw.energy_co2),
+    perProductEnergy * safeQuantity
+  );
+  const totalBatchTransport = resolveMetricValue(
+    firstFiniteNumber(totalBatchRaw.transport, totalBatchRaw.transport_co2e, totalBatchRaw.transport_co2),
+    perProductTransport * safeQuantity
+  );
+  const totalBatchPackaging = resolveMetricValue(
+    firstFiniteNumber(totalBatchRaw.packaging, totalBatchRaw.packaging_co2e, totalBatchRaw.packaging_co2),
+    perProductPackaging * safeQuantity
+  );
+  const inferredTotalBatch =
+  totalBatchMaterials +
+  totalBatchProduction +
+  totalBatchEnergy +
+  totalBatchTransport +
+  totalBatchPackaging;
+  const totalBatchTotal = (() => {
+    const explicitTotal = resolveMetricValue(
+      firstFiniteNumber(totalBatchRaw.total, totalBatchRaw.total_co2e, totalBatchRaw.total_co2),
+      perProductTotal * safeQuantity
+    );
+    return explicitTotal > 0 ? explicitTotal : inferredTotalBatch;
+  })();
+
+  const confidence = asString(
+    structured?.confidenceLevel ??
+    structured?.confidence_level ??
+    source.confidenceLevel ??
+    source.confidence_level
+  ).toLowerCase();
   const confidenceLevel: CarbonAssessmentResult["confidenceLevel"] =
   confidence === "high" || confidence === "medium" || confidence === "low" ?
   confidence :
@@ -540,27 +899,37 @@ const normalizeCarbonResults = (value: unknown): CarbonAssessmentResult | undefi
 
   return {
     perProduct: {
-      materials: asNumber(perProductRaw.materials),
-      production: asNumber(perProductRaw.production),
-      energy: asNumber(perProductRaw.energy),
-      transport: asNumber(perProductRaw.transport),
-      total: asNumber(perProductRaw.total)
+      materials: perProductMaterials,
+      production: perProductProduction,
+      energy: perProductEnergy,
+      transport: perProductTransport,
+      packaging: perProductPackaging,
+      total: perProductTotal
     },
     totalBatch: {
-      materials: asNumber(totalBatchRaw.materials),
-      production: asNumber(totalBatchRaw.production),
-      energy: asNumber(totalBatchRaw.energy),
-      transport: asNumber(totalBatchRaw.transport),
-      total: asNumber(totalBatchRaw.total)
+      materials: totalBatchMaterials,
+      production: totalBatchProduction,
+      energy: totalBatchEnergy,
+      transport: totalBatchTransport,
+      packaging: totalBatchPackaging,
+      total: totalBatchTotal
     },
     confidenceLevel,
-    proxyUsed: Boolean(value.proxyUsed ?? value.proxy_used),
-    proxyNotes: asArray(value.proxyNotes ?? value.proxy_notes).map((note) =>
-    asString(note)
+    proxyUsed: Boolean(
+      structured?.proxyUsed ??
+      structured?.proxy_used ??
+      source.proxyUsed ??
+      source.proxy_used
     ),
-    scope1: asNumber(value.scope1),
-    scope2: asNumber(value.scope2),
-    scope3: asNumber(value.scope3)
+    proxyNotes: asArray(
+      structured?.proxyNotes ??
+      structured?.proxy_notes ??
+      source.proxyNotes ??
+      source.proxy_notes
+    ).map((note) => asString(note)),
+    scope1: asNumber(structured?.scope1 ?? source.scope1),
+    scope2: asNumber(structured?.scope2 ?? source.scope2),
+    scope3: asNumber(structured?.scope3 ?? source.scope3)
   };
 };
 
@@ -569,6 +938,10 @@ const normalizeProductFromUnknown = (value: unknown): ProductRecord | null => {
 
   const payload = isObject(value.payload) ? value.payload : {};
   const source: Record<string, unknown> = { ...payload, ...value };
+  const payloadShipment = isObject(payload.shipment) ? payload.shipment : {};
+  const sourceShipment = isObject(source.shipment) ? source.shipment : {};
+  const payloadDestination = isObject(payload.destination) ? payload.destination : {};
+  const sourceDestination = isObject(source.destination) ? source.destination : {};
 
   const idCandidates = [
   value.id,
@@ -622,6 +995,12 @@ const normalizeProductFromUnknown = (value: unknown): ProductRecord | null => {
     payload.market ??
     payload.destinationMarkets ??
     payload.destination_markets ??
+    payload.destinationCountry ??
+    payload.destination_country ??
+    payloadDestination.market ??
+    payloadDestination.country ??
+    payloadShipment.destination_market ??
+    (isObject(payloadShipment.destination) ? payloadShipment.destination.country : undefined) ??
     source.destinationMarketCode ??
     source.destination_market_code ??
     source.marketCode ??
@@ -632,8 +1011,73 @@ const normalizeProductFromUnknown = (value: unknown): ProductRecord | null => {
     source.target_market ??
     source.market ??
     source.destinationMarkets ??
-    source.destination_markets
+    source.destination_markets ??
+    source.destinationCountry ??
+    source.destination_country ??
+    sourceDestination.market ??
+    sourceDestination.country ??
+    sourceShipment.destination_market ??
+    (isObject(sourceShipment.destination) ? sourceShipment.destination.country : undefined)
   );
+
+  const estimatedTotalDistance = asNumber(
+    payload.estimatedTotalDistance ??
+    payload.estimated_total_distance ??
+    payload.totalDistanceKm ??
+    payload.total_distance_km ??
+    payload.distance_km ??
+    payloadShipment.total_distance_km ??
+    source.estimatedTotalDistance ??
+    source.estimated_total_distance ??
+    source.totalDistanceKm ??
+    source.total_distance_km ??
+    source.distance_km ??
+    sourceShipment.total_distance_km
+  );
+
+  const transportLegs = normalizeTransportLegs(
+    payload.transportLegs ??
+    payload.transport_legs ??
+    payload.legs ??
+    payload.routeLegs ??
+    payload.route_legs ??
+    payload.routes ??
+    payloadShipment.legs ??
+    source.transportLegs ??
+    source.transport_legs ??
+    source.legs ??
+    source.routeLegs ??
+    source.route_legs ??
+    source.routes ??
+    sourceShipment.legs
+  );
+
+  if (transportLegs.length === 0) {
+    const fallbackMode =
+    TRANSPORT_MODE_ALIASES[
+    toCompactKey(
+      payload.transportMode ??
+      payload.transport_mode ??
+      payload.shippingMode ??
+      payload.shipping_mode ??
+      payload.mode ??
+      payloadShipment.transport_mode ??
+      source.transportMode ??
+      source.transport_mode ??
+      source.shippingMode ??
+      source.shipping_mode ??
+      source.mode ??
+      sourceShipment.transport_mode)
+    ];
+
+    if (fallbackMode || estimatedTotalDistance > 0) {
+      transportLegs.push({
+        id: "leg-1",
+        mode: fallbackMode ?? "road",
+        estimatedDistance: estimatedTotalDistance > 0 ? estimatedTotalDistance : undefined
+      });
+    }
+  }
 
   return {
     id,
@@ -644,12 +1088,14 @@ const normalizeProductFromUnknown = (value: unknown): ProductRecord | null => {
     quantity: asNumber(source.quantity),
     materials: normalizeMaterials(payload.materials ?? source.materials),
     accessories: normalizeAccessories(payload.accessories ?? source.accessories),
-    productionProcesses: asArray(
+    productionProcesses: normalizeProductionProcesses(
       payload.productionProcesses ??
       payload.production_processes ??
+      payload.processes ??
       source.productionProcesses ??
-      source.production_processes
-    ).map((process) => asString(process)),
+      source.production_processes ??
+      source.processes
+    ),
     energySources: normalizeEnergySources(
       payload.energySources ??
       payload.energy_sources ??
@@ -672,32 +1118,40 @@ const normalizeProductFromUnknown = (value: unknown): ProductRecord | null => {
     originAddress: normalizeAddress(
       payload.originAddress ??
       payload.origin_address ??
+      payload.origin ??
+      payload.originLocation ??
+      payload.origin_location ??
+      payloadShipment.origin ??
       source.originAddress ??
-      source.origin_address
+      source.origin_address ??
+      source.origin ??
+      source.originLocation ??
+      source.origin_location ??
+      sourceShipment.origin
     ),
     destinationAddress: normalizeAddress(
       payload.destinationAddress ??
       payload.destination_address ??
+      payload.destination ??
+      payload.destinationLocation ??
+      payload.destination_location ??
+      payloadShipment.destination ??
       source.destinationAddress ??
-      source.destination_address
+      source.destination_address ??
+      source.destination ??
+      source.destinationLocation ??
+      source.destination_location ??
+      sourceShipment.destination
     ),
-    transportLegs: normalizeTransportLegs(
-      payload.transportLegs ??
-      payload.transport_legs ??
-      source.transportLegs ??
-      source.transport_legs
-    ),
-    estimatedTotalDistance: asNumber(
-      payload.estimatedTotalDistance ??
-      payload.estimated_total_distance ??
-      source.estimatedTotalDistance ??
-      source.estimated_total_distance
-    ),
+    transportLegs,
+    estimatedTotalDistance,
     carbonResults: normalizeCarbonResults(
       payload.carbonResults ??
       payload.carbon_results ??
       source.carbonResults ??
-      source.carbon_results
+      source.carbon_results,
+      source,
+      asNumber(source.quantity, 1)
     ),
     status,
     shipmentId: asNonEmptyString(source.shipmentId ?? source.shipment_id),
@@ -846,6 +1300,9 @@ publishStatusApiMode === "active" ? "active" : "published";
 const isEmptyProductListResult = (result: ProductListResult) =>
 result.items.length === 0 && result.pagination.total === 0;
 
+const isRecoverablePublishedStatusError = (error: unknown) =>
+isApiError(error) && (error.status === 400 || error.status === 422);
+
 export const fetchProducts = async (
 query: ProductListQuery = {})
 : Promise<ProductListResult> => {
@@ -911,8 +1368,7 @@ query: ProductListQuery = {})
       if (
       requestedStatus === "published" &&
       effectiveStatus !== "active" &&
-      isApiError(error) &&
-      error.status === 400)
+      isRecoverablePublishedStatusError(error))
       {
         writePublishStatusApiMode("active");
         const fallbackQueryString = buildQueryString("active");
@@ -923,8 +1379,7 @@ query: ProductListQuery = {})
       if (
       requestedStatus === "published" &&
       effectiveStatus === "active" &&
-      isApiError(error) &&
-      error.status === 400)
+      isRecoverablePublishedStatusError(error))
       {
         writePublishStatusApiMode("published");
         const fallbackQueryString = buildQueryString("published");
@@ -1020,8 +1475,7 @@ status: ProductStatus)
     if (
     status === "published" &&
     statusForApi !== "active" &&
-    isApiError(error) &&
-    error.status === 400)
+    isRecoverablePublishedStatusError(error))
     {
       writePublishStatusApiMode("active");
       const payload = await api.patch<unknown>(`/products/${productId}/status`, {
@@ -1033,8 +1487,7 @@ status: ProductStatus)
     if (
     status === "published" &&
     statusForApi === "active" &&
-    isApiError(error) &&
-    error.status === 400)
+    isRecoverablePublishedStatusError(error))
     {
       writePublishStatusApiMode("published");
       const payload = await api.patch<unknown>(`/products/${productId}/status`, {

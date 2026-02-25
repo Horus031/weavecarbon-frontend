@@ -5,16 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Gift, Recycle } from "lucide-react";
 import { Activity } from "@/hooks/useRecentActivity";
+import { useTranslations } from "next-intl";
 
 interface B2CRecentActivityProps {
   activities: Activity[];
 }
 
 const B2CRecentActivity: React.FC<B2CRecentActivityProps> = ({ activities }) => {
+  const t = useTranslations("b2c");
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Recent Activity</CardTitle>
+        <CardTitle className="text-lg">{t("recentActivity.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {activities.map((activity) =>
@@ -38,7 +41,7 @@ const B2CRecentActivity: React.FC<B2CRecentActivityProps> = ({ activities }) => 
               <p className="text-xs text-muted-foreground">{activity.date}</p>
             </div>
             <Badge variant="secondary" className="text-yellow-600">
-              +{activity.points} pts
+              +{activity.points} {t("pointsAbbrev")}
             </Badge>
           </div>
         )}

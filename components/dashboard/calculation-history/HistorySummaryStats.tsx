@@ -23,6 +23,12 @@ const HistorySummaryStats: React.FC<HistorySummaryStatsProps> = ({
     0
   );
   const totalTransport = history.reduce((sum, h) => sum + h.transportCO2, 0);
+  const formatSummaryValue = (value: number) => {
+    if (value > 0 && value < 0.1) {
+      return value.toFixed(2);
+    }
+    return value.toFixed(1);
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -47,7 +53,7 @@ const HistorySummaryStats: React.FC<HistorySummaryStatsProps> = ({
               <Leaf className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-emerald-700">{totalMaterials.toFixed(1)}</p>
+              <p className="text-2xl font-bold text-emerald-700">{formatSummaryValue(totalMaterials)}</p>
               <p className="text-sm text-slate-600">
                 {t("materialsLabel")}
               </p>
@@ -63,7 +69,7 @@ const HistorySummaryStats: React.FC<HistorySummaryStatsProps> = ({
               <Factory className="w-5 h-5 text-sky-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-sky-700">{totalManufacturing.toFixed(1)}</p>
+              <p className="text-2xl font-bold text-sky-700">{formatSummaryValue(totalManufacturing)}</p>
               <p className="text-sm text-slate-600">
                 {t("manufacturingLabel")}
               </p>
@@ -79,7 +85,7 @@ const HistorySummaryStats: React.FC<HistorySummaryStatsProps> = ({
               <Truck className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-orange-700">{totalTransport.toFixed(1)}</p>
+              <p className="text-2xl font-bold text-orange-700">{formatSummaryValue(totalTransport)}</p>
               <p className="text-sm text-slate-600">
                 {t("transportLabel")}
               </p>

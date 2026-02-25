@@ -196,7 +196,7 @@ const toPriority = (value: unknown): Priority => {
 };
 
 const UUID_LIKE_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const OBJECT_ID_LIKE_REGEX = /^[0-9a-f]{24}$/i;
 const ULID_LIKE_REGEX = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -870,6 +870,10 @@ const normalizeMarketCompliance = (value: unknown): MarketCompliance | null => {
       legalReference: asString(
         regulationRecord.legal_reference ?? regulationRecord.legalReference,
         MARKET_REGULATIONS[marketCode].legalReference
+      ),
+      guideUrl: asString(
+        regulationRecord.guide_url ?? regulationRecord.guideUrl,
+        MARKET_REGULATIONS[marketCode].guideUrl
       ),
       reportingScope: asString(
         regulationRecord.reporting_scope ?? regulationRecord.reportingScope,

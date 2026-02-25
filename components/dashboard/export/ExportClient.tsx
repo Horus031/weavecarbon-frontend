@@ -26,6 +26,8 @@ import {
   removeComplianceDocument,
   uploadComplianceDocument
 } from "@/lib/exportComplianceApi";
+import { showNoPermissionToast } from "@/lib/noPermissionToast";
+import { usePermissions } from "@/hooks/usePermissions";
 import type { DocumentStatus, MarketCode, MarketCompliance } from "./types";
 import ComplianceDetailModal from "./ComplianceDetailModal";
 
@@ -50,23 +52,6 @@ interface UploadTarget {
 type UploadMarketFilter = "ALL" | MarketCode;
 
 const getUploadTargetKey = (market: MarketCode, documentId: string) => `${market}::${documentId}`;
-
-const getMarketRegulation = (code: MarketCode) => {
-  switch (code) {
-    case "EU":
-      return "CBAM, EU Green Deal";
-    case "US":
-      return "California Climate";
-    case "JP":
-      return "JIS Standards";
-    case "KR":
-      return "K-ETS";
-    case "VN":
-      return "Vietnam GHG / MRV";
-    default:
-      return "";
-  }
-};
 
 const getReadinessColor = (score: number): string => {
   if (score >= 80) {
@@ -135,6 +120,7 @@ const computeMarketReadinessScore = (marketData: MarketCompliance) => {
 const ExportPage: React.FC = () => {
   const t = useTranslations("export");
   const { setPageTitle } = useDashboardTitle();
+  const { canMutate } = usePermissions();
 
   const [selectedMarket, setSelectedMarket] = useState<MarketCode | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -163,11 +149,11 @@ const ExportPage: React.FC = () => {
     } catch (loadError) {
       console.error("Failed to load export compliance data:", loadError);
       setComplianceData(null);
-      setError(loadError instanceof Error ? loadError.message : "Unable to load compliance data.");
+      setError(loadError instanceof Error ? loadError.message : t("errors.loadComplianceData"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadComplianceData();
@@ -286,6 +272,10 @@ const ExportPage: React.FC = () => {
   };
 
   const handleUploadFromManager = () => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     if (uploadingDocument) return;
     if (!effectiveUploadTargetKey) {
       toast.info(t("documents.uploadManagerSelectPlaceholder"));
@@ -296,6 +286,13 @@ const ExportPage: React.FC = () => {
   };
 
   const handleUploadFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      event.target.value = "";
+      setPendingUploadTargetKey(null);
+      return;
+    }
+
     const file = event.target.files?.[0];
     event.target.value = "";
 
@@ -306,7 +303,7 @@ const ExportPage: React.FC = () => {
 
     const target = uploadTargets.find((item) => item.key === targetKey);
     if (!target) {
-      toast.error("Document target is invalid.");
+      toast.error(t("documents.invalidTarget"));
       return;
     }
 
@@ -314,11 +311,13 @@ const ExportPage: React.FC = () => {
       setUploadingDocument(true);
       try {
         await uploadComplianceDocument(target.market, target.documentId, file);
-        toast.success(`Uploaded to ${target.marketName} - ${target.documentName}.`);
+        toast.success(
+          t("documents.uploadSuccess", { market: target.marketName, document: target.documentName })
+        );
         await loadComplianceData();
       } catch (uploadError) {
         console.error("Failed to upload compliance document:", uploadError);
-        toast.error(uploadError instanceof Error ? uploadError.message : "Upload failed.");
+        toast.error(uploadError instanceof Error ? uploadError.message : t("documents.uploadFailed"));
       } finally {
         setUploadingDocument(false);
       }
@@ -326,19 +325,23 @@ const ExportPage: React.FC = () => {
   };
 
   const handleRemoveFromManager = (document: SummaryDocument) => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     if (removingDocumentKey || uploadingDocument) return;
-    const confirmed = window.confirm("Bạn có chắc muốn xóa tài liệu này?");
+    const confirmed = window.confirm(t("documents.removeConfirm"));
     if (!confirmed) return;
 
     void (async () => {
       setRemovingDocumentKey(document.id);
       try {
         await removeComplianceDocument(document.market, document.documentId);
-        toast.success("Đã xóa tài liệu.");
+        toast.success(t("documents.removeSuccess"));
         await loadComplianceData();
       } catch (removeError) {
         console.error("Failed to remove compliance document:", removeError);
-        toast.error(removeError instanceof Error ? removeError.message : "Xóa tài liệu thất bại.");
+        toast.error(removeError instanceof Error ? removeError.message : t("documents.removeFailed"));
       } finally {
         setRemovingDocumentKey(null);
       }
@@ -366,9 +369,9 @@ const ExportPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {loading && (
-              <Card className="md:col-span-2 border border-slate-200 bg-white shadow-sm">
+              <Card className="md:col-span-2 lg:col-span-3 border border-slate-200 bg-white shadow-sm">
                 <CardContent className="space-y-3 p-6">
                   <div className="h-5 w-1/3 animate-pulse rounded bg-slate-200" />
                   <div className="h-4 w-1/2 animate-pulse rounded bg-slate-200" />
@@ -378,11 +381,11 @@ const ExportPage: React.FC = () => {
             )}
 
             {!loading && error && (
-              <Card className="md:col-span-2 border border-red-200 bg-red-50/60 shadow-sm">
+              <Card className="md:col-span-2 lg:col-span-3 border border-red-200 bg-red-50/60 shadow-sm">
                 <CardContent className="space-y-3 py-6 text-center">
                   <p className="text-sm font-medium text-red-700">{error}</p>
                   <Button size="sm" onClick={() => void loadComplianceData()}>
-                    Retry
+                    {t("retry")}
                   </Button>
                 </CardContent>
               </Card>
@@ -414,7 +417,7 @@ const ExportPage: React.FC = () => {
                             <Badge className={getReadinessColor(readinessScore)}>{readinessScore}%</Badge>
                           </div>
                           <p className="mb-2 truncate text-xs text-muted-foreground">
-                            {getMarketRegulation(market)}
+                            {t(`regulations.${market}`)}
                           </p>
                           <Progress value={readinessScore} className="h-2" />
                         </div>
@@ -485,7 +488,7 @@ const ExportPage: React.FC = () => {
 
               <div className="flex flex-col gap-2 md:flex-row md:items-end">
                 <div className="w-full">
-                  <div className="mb-2 grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                     <div>
                       <label
                         htmlFor="export-upload-manager-market-filter"
@@ -529,6 +532,7 @@ const ExportPage: React.FC = () => {
 
                 <Button
                   type="button"
+                  size="sm"
                   className="w-full md:w-auto"
                   disabled={!effectiveUploadTargetKey || uploadingDocument}
                   onClick={handleUploadFromManager}
@@ -544,7 +548,7 @@ const ExportPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {filteredDocuments.map((document) => (
               <Card
                 key={document.id}
@@ -589,7 +593,7 @@ const ExportPage: React.FC = () => {
                           event.stopPropagation();
                           handleRemoveFromManager(document);
                         }}
-                        aria-label="Remove document"
+                        aria-label={t("documents.remove")}
                       >
                         {removingDocumentKey === document.id ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -604,7 +608,7 @@ const ExportPage: React.FC = () => {
               </Card>
             ))}
             {filteredDocuments.length === 0 && (
-              <Card className="md:col-span-2 border border-slate-200 bg-slate-50/60 shadow-sm">
+              <Card className="md:col-span-2 lg:col-span-3 border border-slate-200 bg-slate-50/60 shadow-sm">
                 <CardContent className="py-8 text-center">
                   <p className="text-sm font-medium text-slate-700">
                     {t("documents.uploadManagerNoResults")}

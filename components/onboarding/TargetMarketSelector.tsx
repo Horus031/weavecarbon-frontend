@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
 
 interface TargetMarketSelectorProps {
   selectedMarkets: string[];
@@ -16,9 +17,11 @@ const TargetMarketSelector: React.FC<TargetMarketSelectorProps> = ({
   onToggle,
   disabled
 }) => {
+  const t = useTranslations("onboarding");
+
   return (
     <div className="space-y-2">
-      <Label>Target Markets (optional)</Label>
+      <Label>{t("targetMarkets")} ({t("optional")})</Label>
       <div className="flex flex-wrap gap-2">
         {markets.map((market) =>
         <button

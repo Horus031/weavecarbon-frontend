@@ -1,4 +1,6 @@
-const DEFAULT_API_BASE_URL = "http://localhost:4000";
+import { canMutateData, NO_PERMISSION_MESSAGE, resolveCompanyRole } from "@/lib/permissions";
+
+const DEFAULT_API_BASE_URL = "/api";
 
 const normalizeBaseUrl = (baseUrl: string) => {
   const trimmed = baseUrl.trim().replace(/\/+$/, "");
@@ -11,6 +13,7 @@ export const API_BASE_URL = normalizeBaseUrl(
 
 const ACCESS_TOKEN_STORAGE_KEY = "weavecarbon_access_token";
 const REFRESH_TOKEN_STORAGE_KEY = "weavecarbon_refresh_token";
+const TOKEN_STORAGE_MODE_KEY = "weavecarbon_token_storage_mode";
 const LEGACY_ACCESS_TOKEN_STORAGE_KEYS = ["token", "access_token"];
 const LEGACY_REFRESH_TOKEN_STORAGE_KEYS = ["refresh_token"];
 const ALL_LEGACY_TOKEN_STORAGE_KEYS = [
@@ -20,6 +23,11 @@ const ALL_LEGACY_TOKEN_STORAGE_KEYS = [
 )];
 
 const ACCESS_TOKEN_EXPIRY_SKEW_MS = 30 * 1000;
+const USER_STORAGE_KEY = "weavecarbon_user";
+const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const CLIENT_ROLE_GUARD_ENABLED =
+process.env.NEXT_PUBLIC_ENFORCE_CLIENT_ROLE_GUARD === "1";
+type TokenStorageMode = "local" | "session";
 
 export interface AuthTokens {
   access_token?: string;
@@ -52,9 +60,103 @@ const normalizeToken = (token: string | null | undefined) => {
   return normalized.length > 0 ? normalized : null;
 };
 
+const getTokenStorageMode = (): TokenStorageMode => {
+  if (typeof window === "undefined") return "local";
+
+  const explicitLocalMode = readFromStorage(localStorage, TOKEN_STORAGE_MODE_KEY);
+  if (explicitLocalMode === "local" || explicitLocalMode === "session") {
+    return explicitLocalMode;
+  }
+
+  const explicitSessionMode = readFromStorage(sessionStorage, TOKEN_STORAGE_MODE_KEY);
+  if (explicitSessionMode === "local" || explicitSessionMode === "session") {
+    return explicitSessionMode;
+  }
+
+  const hasLocalToken = Boolean(
+    normalizeToken(readFromStorage(localStorage, ACCESS_TOKEN_STORAGE_KEY)) ||
+    normalizeToken(readFromStorage(localStorage, REFRESH_TOKEN_STORAGE_KEY))
+  );
+  if (hasLocalToken) return "local";
+
+  const hasSessionToken = Boolean(
+    normalizeToken(readFromStorage(sessionStorage, ACCESS_TOKEN_STORAGE_KEY)) ||
+    normalizeToken(readFromStorage(sessionStorage, REFRESH_TOKEN_STORAGE_KEY))
+  );
+  if (hasSessionToken) return "session";
+
+  return "local";
+};
+
+const setTokenStorageMode = (mode: TokenStorageMode) => {
+  if (typeof window === "undefined") return;
+
+  writeToStorage(localStorage, TOKEN_STORAGE_MODE_KEY, mode === "local" ? mode : null);
+  writeToStorage(sessionStorage, TOKEN_STORAGE_MODE_KEY, mode === "session" ? mode : null);
+};
+
+const getStoredCompanyRole = () => {
+  if (typeof window === "undefined") return null;
+  const rawUser = readFromStorage(localStorage, USER_STORAGE_KEY);
+  if (!rawUser) return null;
+
+  try {
+    const parsedUser = JSON.parse(rawUser) as Record<string, unknown>;
+    const userTypeRaw = parsedUser.user_type ?? parsedUser.userType;
+    const fallbackRole =
+    userTypeRaw === "admin" ? "root" : "member";
+    const membership =
+    typeof parsedUser.company_membership === "object" &&
+    parsedUser.company_membership !== null ?
+    parsedUser.company_membership as Record<string, unknown> :
+    null;
+
+    const resolvedRole = resolveCompanyRole(
+      {
+        role:
+        parsedUser.company_role ??
+        parsedUser.companyRole ??
+        parsedUser.role ??
+        membership?.role,
+        isRoot:
+        parsedUser.is_root ??
+        parsedUser.isRoot ??
+        membership?.is_root ??
+        membership?.isRoot
+      },
+      fallbackRole
+    );
+
+    return resolvedRole;
+  } catch {
+    return null;
+  }
+};
+
+const isAuthPath = (path: string) => path.toLowerCase().includes("/auth/");
+
+const shouldBlockViewerMutation = (path: string, method: string) => {
+  if (typeof window === "undefined") return false;
+  if (!CLIENT_ROLE_GUARD_ENABLED) return false;
+  if (!MUTATION_METHODS.has(method)) return false;
+  if (isAuthPath(path)) return false;
+
+  const companyRole = getStoredCompanyRole();
+  if (!companyRole) return false;
+
+  return !canMutateData(companyRole);
+};
+
 const readStorage = (key: string) => {
   if (typeof window === "undefined") return null;
-  return normalizeToken(readFromStorage(localStorage, key));
+  const mode = getTokenStorageMode();
+  const primaryStorage = mode === "local" ? localStorage : sessionStorage;
+  const secondaryStorage = mode === "local" ? sessionStorage : localStorage;
+
+  return (
+  normalizeToken(readFromStorage(primaryStorage, key)) ||
+  normalizeToken(readFromStorage(secondaryStorage, key))
+  );
 };
 
 const readLegacyStorage = (keys: string[]) => {
@@ -80,9 +182,14 @@ const clearFromAllStorages = (keys: string[]) => {
   }
 };
 
-const writeStorage = (key: string, value: string | null) => {
+const writeStorage = (key: string, value: string | null, mode: TokenStorageMode) => {
   if (typeof window === "undefined") return;
-  writeToStorage(localStorage, key, normalizeToken(value));
+  const normalized = normalizeToken(value);
+  const targetStorage = mode === "local" ? localStorage : sessionStorage;
+  const fallbackStorage = mode === "local" ? sessionStorage : localStorage;
+
+  writeToStorage(targetStorage, key, normalized);
+  writeToStorage(fallbackStorage, key, null);
 };
 
 const getJwtExpMs = (token: string) => {
@@ -121,7 +228,7 @@ export const authTokenStore = {
     }
 
     if (accessToken) {
-      writeStorage(ACCESS_TOKEN_STORAGE_KEY, null);
+      clearFromAllStorages([ACCESS_TOKEN_STORAGE_KEY]);
     }
 
     const legacyAccessToken = readLegacyStorage(LEGACY_ACCESS_TOKEN_STORAGE_KEYS);
@@ -134,7 +241,7 @@ export const authTokenStore = {
       return null;
     }
 
-    writeStorage(ACCESS_TOKEN_STORAGE_KEY, legacyAccessToken);
+    writeStorage(ACCESS_TOKEN_STORAGE_KEY, legacyAccessToken, getTokenStorageMode());
     clearFromAllStorages(LEGACY_ACCESS_TOKEN_STORAGE_KEYS);
     return legacyAccessToken;
   },
@@ -145,7 +252,7 @@ export const authTokenStore = {
     }
 
     if (refreshToken) {
-      writeStorage(REFRESH_TOKEN_STORAGE_KEY, null);
+      clearFromAllStorages([REFRESH_TOKEN_STORAGE_KEY]);
     }
 
     const legacyRefreshToken = readLegacyStorage(LEGACY_REFRESH_TOKEN_STORAGE_KEYS);
@@ -158,24 +265,35 @@ export const authTokenStore = {
       return null;
     }
 
-    writeStorage(REFRESH_TOKEN_STORAGE_KEY, legacyRefreshToken);
+    writeStorage(REFRESH_TOKEN_STORAGE_KEY, legacyRefreshToken, getTokenStorageMode());
     clearFromAllStorages(LEGACY_REFRESH_TOKEN_STORAGE_KEYS);
     return legacyRefreshToken;
   },
-  setTokens: (tokens: AuthTokens | null | undefined) => {
+  setTokens: (
+  tokens: AuthTokens | null | undefined,
+  options?: {persist?: boolean;}) => {
     if (!tokens) {
-      writeStorage(ACCESS_TOKEN_STORAGE_KEY, null);
-      writeStorage(REFRESH_TOKEN_STORAGE_KEY, null);
+      clearFromAllStorages([ACCESS_TOKEN_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY]);
+      clearFromAllStorages([TOKEN_STORAGE_MODE_KEY]);
       clearFromAllStorages(ALL_LEGACY_TOKEN_STORAGE_KEYS);
       return;
     }
-    writeStorage(ACCESS_TOKEN_STORAGE_KEY, tokens.access_token || null);
-    writeStorage(REFRESH_TOKEN_STORAGE_KEY, tokens.refresh_token || null);
+
+    const mode: TokenStorageMode =
+    typeof options?.persist === "boolean" ?
+    options.persist ?
+    "local" :
+    "session" :
+    getTokenStorageMode();
+
+    setTokenStorageMode(mode);
+    writeStorage(ACCESS_TOKEN_STORAGE_KEY, tokens.access_token || null, mode);
+    writeStorage(REFRESH_TOKEN_STORAGE_KEY, tokens.refresh_token || null, mode);
     clearFromAllStorages(ALL_LEGACY_TOKEN_STORAGE_KEYS);
   },
   clear: () => {
-    writeStorage(ACCESS_TOKEN_STORAGE_KEY, null);
-    writeStorage(REFRESH_TOKEN_STORAGE_KEY, null);
+    clearFromAllStorages([ACCESS_TOKEN_STORAGE_KEY, REFRESH_TOKEN_STORAGE_KEY]);
+    clearFromAllStorages([TOKEN_STORAGE_MODE_KEY]);
     clearFromAllStorages(ALL_LEGACY_TOKEN_STORAGE_KEYS);
   }
 };
@@ -397,7 +515,7 @@ export const ensureAccessToken = async (): Promise<string | null> => {
   }
 
   if (accessToken) {
-    writeStorage(ACCESS_TOKEN_STORAGE_KEY, null);
+    clearFromAllStorages([ACCESS_TOKEN_STORAGE_KEY]);
   }
 
   if (!authTokenStore.getRefreshToken()) {
@@ -520,6 +638,14 @@ options: ApiOptions = {})
   const url = buildUrl(path);
   const headers = new Headers(options.headers || {});
   const hasExplicitAuthorization = headers.has("Authorization");
+  const method = (options.method || "GET").toUpperCase();
+
+  if (shouldBlockViewerMutation(path, method)) {
+    throw new ApiError(NO_PERMISSION_MESSAGE, {
+      status: 403,
+      code: "VIEWER_READ_ONLY"
+    });
+  }
 
   if (!hasExplicitAuthorization) {
     const accessToken = isNonRefreshableAuthPath(path) ?
@@ -531,7 +657,6 @@ options: ApiOptions = {})
   }
 
   const body = serializeRequestBody(options.body, headers);
-  const method = (options.method || "GET").toUpperCase();
   const dedupeKey =
   method === "GET" ?
   `${url}|auth=${headers.get("Authorization") || ""}` :

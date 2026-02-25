@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,8 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
   onRemoveProduct
 }) => {
   const t = useTranslations("export.productScope");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
   const totalVolume = products.reduce((sum, p) => sum + p.exportVolume, 0);
 
   if (products.length === 0) {
@@ -106,7 +108,7 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
                     {product.productionSite}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {product.exportVolume.toLocaleString()} {product.unit}
+                    {product.exportVolume.toLocaleString(displayLocale)} {product.unit}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 justify-end">
@@ -138,7 +140,7 @@ const ComplianceProductScope: React.FC<ComplianceProductScopeProps> = ({
             {t("totalExportVolume")}
           </span>
           <span className="text-lg font-bold">
-            {totalVolume.toLocaleString()} units
+            {totalVolume.toLocaleString(displayLocale)} {t("units")}
           </span>
         </div>
       </CardContent>

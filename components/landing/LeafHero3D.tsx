@@ -496,6 +496,8 @@ const LeafHero3D = () => {
                 mat instanceof THREE.MeshStandardMaterial ||
                 mat instanceof THREE.MeshPhysicalMaterial)
                 {
+                  // Leaf geometry is very thin; render both sides to avoid culling flicker.
+                  mat.side = THREE.DoubleSide;
 
                   mat.transparent = true;
                   mat.opacity = hasAnimatedRef.current && !isTransitioningRef.current ? 1 : 0;
@@ -841,6 +843,7 @@ const LeafHero3D = () => {
     };
 
     animate(0);
+    const glowPlaneAtCleanup = glowPlaneRef.current;
 
 
     return () => {
@@ -887,10 +890,9 @@ const LeafHero3D = () => {
       }
 
 
-      const glowPlane = glowPlaneRef.current;
-      if (glowPlane) {
-        glowPlane.geometry.dispose();
-        const material = glowPlane.material;
+      if (glowPlaneAtCleanup) {
+        glowPlaneAtCleanup.geometry.dispose();
+        const material = glowPlaneAtCleanup.material;
         if (!Array.isArray(material)) {
           if (
           "map" in material &&

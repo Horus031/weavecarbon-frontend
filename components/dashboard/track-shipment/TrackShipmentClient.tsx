@@ -34,7 +34,8 @@ const buildContainerNo = (referenceNumber: string, fallbackId: string) => {
 };
 
 const mapShipmentToTrackShipment = (
-shipment: LogisticsShipmentDetail)
+shipment: LogisticsShipmentDetail,
+fallbacks: {unknownCarrier: string;shipmentName: string;})
 : TrackShipment => {
   const firstProduct = shipment.products[0];
   const originLabel = formatShipmentLocation(shipment.origin);
@@ -44,7 +45,7 @@ shipment: LogisticsShipmentDetail)
   const status = toTrackShipmentStatus(shipment.status);
   const carrier =
   shipment.legs.find((leg) => leg.carrier_name.trim().length > 0)?.carrier_name ||
-  "Unknown carrier";
+  fallbacks.unknownCarrier;
 
   const estimatedArrival =
   normalizeDateOnly(shipment.actual_arrival || shipment.estimated_arrival) ||
@@ -54,7 +55,10 @@ shipment: LogisticsShipmentDetail)
     id: shipment.reference_number || shipment.id,
     shipmentId: shipment.id,
     productId: firstProduct?.product_id || null,
-    productName: firstProduct?.product_name || shipment.reference_number || "Shipment",
+    productName:
+    firstProduct?.product_name ||
+    shipment.reference_number ||
+    fallbacks.shipmentName,
     sku: firstProduct?.sku || shipment.reference_number || shipment.id,
     status,
     progress,
@@ -92,7 +96,10 @@ const TrackShipmentClient: React.FC = () => {
     try {
       const shipmentDetails = await fetchAllLogisticsShipmentDetails();
       const nextShipments = shipmentDetails.map((shipment) =>
-      mapShipmentToTrackShipment(shipment)
+      mapShipmentToTrackShipment(shipment, {
+        unknownCarrier: t("fallbacks.unknownCarrier"),
+        shipmentName: t("fallbacks.shipment")
+      })
       );
 
       setAllShipments(nextShipments);
@@ -108,7 +115,7 @@ const TrackShipmentClient: React.FC = () => {
       setAllShipments([]);
       setSelectedShipment(null);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

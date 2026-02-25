@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -41,6 +41,8 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
   isLoading = false
 }) => {
   const t = useTranslations("transport");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
   const getModeIcon = (mode: string) => {
     switch (mode) {
       case "ship":
@@ -69,10 +71,10 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
               {isLoading ?
               <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  Dang tai
+                  {t("status.loadingShort")}
                 </span> :
 
-              `${totalDistance.toLocaleString("en-US")} km`
+              `${totalDistance.toLocaleString(displayLocale)} km`
               }
             </span>
           </div>
@@ -91,7 +93,7 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
           </div>
           <p className="text-3xl font-bold text-primary">
             {isLoading ? "..." : totalCO2.toFixed(2)}
-            <span className="text-lg font-normal ml-1">kg CO2e</span>
+            <span className="text-lg font-normal ml-1">{t("units.kgCO2e")}</span>
           </p>
         </div>
 
@@ -107,7 +109,7 @@ const TransportResultsSidebar: React.FC<TransportResultsSidebarProps> = ({
                   {getModeIcon(leg.mode)}
                   {t("legLabel")} {index + 1}
                 </span>
-                <span>{calculateLegCO2(leg).toFixed(2)} kg</span>
+                <span>{calculateLegCO2(leg).toFixed(2)} {t("units.kg")}</span>
               </div>
           )}
           </div>

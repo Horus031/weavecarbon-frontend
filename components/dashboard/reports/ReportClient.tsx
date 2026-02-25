@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useDashboardTitle } from "@/contexts/DashboardContext";
 import {
   API_BASE_URL,
@@ -10,6 +10,7 @@ import {
   ensureAccessToken,
   resolveApiUrl } from
 "@/lib/apiClient";
+import { showNoPermissionToast } from "@/lib/noPermissionToast";
 import {
   Card,
   CardContent } from
@@ -18,7 +19,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -62,6 +62,8 @@ import {
   type ReportDatasetType } from
 "@/lib/reportsApi";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { usePermissions } from "@/hooks/usePermissions";
+import { cn } from "@/lib/utils";
 import MobileFilterSheet from "./mobile/MobileFilterSheet";
 import MobileDataCard from "./mobile/MobileDataCard";
 
@@ -551,17 +553,17 @@ fallback?: ReportItem)
 const getTypeLabel = (type: ReportType, t: ReturnType<typeof useTranslations>) => {
   switch (type) {
     case "carbon_footprint":
-      return "Carbon Footprint";
+      return t("typeLabels.carbonFootprint");
     case "market_analysis":
-      return "Market Analysis";
+      return t("typeLabels.marketAnalysis");
     case "carbon_audit":
-      return "Carbon Audit";
+      return t("typeLabels.carbonAudit");
     case "compliance":
-      return "Compliance";
+      return t("typeLabels.compliance");
     case "export_declaration":
-      return "Export Declaration";
+      return t("typeLabels.exportDeclaration");
     case "sustainability":
-      return "Sustainability";
+      return t("typeLabels.sustainability");
     case "product":
     case "products":
       return t("filterOptions.product");
@@ -685,7 +687,10 @@ const EXPORT_DATASET_TYPES = new Set<ReportType>([
 
 const ReportsPage: React.FC = () => {
   const t = useTranslations("reports");
+  const locale = useLocale();
+  const displayLocale = locale === "vi" ? "vi-VN" : "en-US";
   const { setPageTitle } = useDashboardTitle();
+  const { canMutate } = usePermissions();
 
 
   const REPORT_TYPES = [
@@ -734,7 +739,6 @@ const ReportsPage: React.FC = () => {
 
   const isMobile = useIsMobile();
 
-  const [activeTab, setActiveTab] = useState<"report" | "export">("report");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
@@ -798,7 +802,7 @@ const ReportsPage: React.FC = () => {
         setReportsError(
           error instanceof Error ?
           error.message :
-          "Unable to load reports from server."
+          t("errors.loadReportsFromServer")
         );
         return [];
       } finally {
@@ -829,14 +833,13 @@ const ReportsPage: React.FC = () => {
   }, [loadReports]);
 
   useEffect(() => {
-    if (activeTab !== "export" || exportSourcesLoaded) {
+    if (exportSourcesLoaded) {
       return;
     }
     void loadExportSources();
-  }, [activeTab, exportSourcesLoaded, loadExportSources]);
+  }, [exportSourcesLoaded, loadExportSources]);
 
   useEffect(() => {
-    if (activeTab !== "report") return;
     const hasProcessingReport = reports.some((report) => report.status === "processing");
     if (!hasProcessingReport) return;
 
@@ -847,7 +850,7 @@ const ReportsPage: React.FC = () => {
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [activeTab, reports, loadReports]);
+  }, [reports, loadReports]);
 
   const downloadFileFromPath = useCallback(
     async (targetPath: string, fallbackFileName: string) => {
@@ -857,11 +860,11 @@ const ReportsPage: React.FC = () => {
       ): Promise<void> => {
         const normalizedPath = path.trim();
         if (!normalizedPath) {
-          throw new Error("Report file path is empty.");
+          throw new Error(t("errors.downloadPathEmpty"));
         }
 
         if (visitedPaths.has(normalizedPath)) {
-          throw new Error("Download endpoint returned metadata instead of file.");
+          throw new Error(t("errors.downloadMetadataLoop"));
         }
         visitedPaths.add(normalizedPath);
 
@@ -901,7 +904,7 @@ const ReportsPage: React.FC = () => {
           try {
             payload = await response.json();
           } catch {
-            throw new Error("Download endpoint returned invalid JSON payload.");
+            throw new Error(t("errors.downloadInvalidJson"));
           }
 
           const nestedPath = extractDownloadPathFromPayload(payload);
@@ -922,13 +925,13 @@ const ReportsPage: React.FC = () => {
             typeof payload.error.message === "string" &&
             payload.error.message.trim().length > 0 ?
             payload.error.message :
-            "Download endpoint returned metadata instead of binary file.";
+            t("errors.downloadMetadataAsJson");
           throw new Error(payloadMessage);
         }
 
         const blob = await response.blob();
         if (blob.size <= 0) {
-          throw new Error("Downloaded report is empty.");
+          throw new Error(t("errors.downloadedEmptyReport"));
         }
 
         let filename =
@@ -974,16 +977,12 @@ const ReportsPage: React.FC = () => {
             );
             filename = withXlsxExtension(filename);
           } else {
-            throw new Error(
-              "File XLSX khong hop le. Vui long thu tao lai bao cao."
-            );
+            throw new Error(t("errors.invalidXlsxFile"));
           }
         }
 
         if (expectPdf && !(await hasPdfSignature(downloadBlob))) {
-          throw new Error(
-            "File PDF khong hop le. Backend chua sinh file PDF that, vui long thu dinh dang khac."
-          );
+          throw new Error(t("errors.invalidPdfFile"));
         }
 
         const href = URL.createObjectURL(downloadBlob);
@@ -1000,7 +999,7 @@ const ReportsPage: React.FC = () => {
 
       await fetchFileFromPath(targetPath);
     },
-    []
+    [t]
   );
 
   const runDatasetExport = useCallback(
@@ -1022,7 +1021,7 @@ const ReportsPage: React.FC = () => {
         );
       } catch (error) {
         console.error("Failed to export dataset:", error);
-        toast.error(error instanceof Error ? error.message : "Unable to export dataset.");
+        toast.error(error instanceof Error ? error.message : t("errors.exportDatasetFailed"));
       } finally {
         setExportingDataset(null);
       }
@@ -1031,6 +1030,10 @@ const ReportsPage: React.FC = () => {
   );
 
   const handleQuickExport = (type: ReportDatasetType, label: string) => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     void runDatasetExport(type, "xlsx", label);
   };
 
@@ -1044,10 +1047,14 @@ const ReportsPage: React.FC = () => {
   };
 
   const handleCreateReport = async () => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     const title = createForm.title.trim();
 
     if (!title) {
-      const message = "Please enter report title.";
+      const message = t("errors.reportTitleRequired");
       setCreateError(message);
       toast.error(message);
       return;
@@ -1071,13 +1078,13 @@ const ReportsPage: React.FC = () => {
         await loadReports(false);
       }
 
-      toast.success("Report has been created.");
+      toast.success(t("toasts.createReportSuccess"));
       setCreateDialogOpen(false);
       resetCreateForm();
     } catch (error) {
       console.error("Failed to create report:", error);
       const message =
-      error instanceof Error ? error.message : "Unable to create report.";
+      error instanceof Error ? error.message : t("errors.createReportFailed");
       setCreateError(message);
       toast.error(message);
     } finally {
@@ -1104,7 +1111,7 @@ const ReportsPage: React.FC = () => {
       toast.error(
         error instanceof Error ?
         error.message :
-        "Unable to load report details."
+        t("errors.loadReportDetailsFailed")
       );
     } finally {
       setDetailsLoading(false);
@@ -1112,8 +1119,12 @@ const ReportsPage: React.FC = () => {
   };
 
   const handleDownloadReport = async (report: ReportItem) => {
+    if (!canMutate) {
+      showNoPermissionToast();
+      return;
+    }
     if (report.status !== "completed") {
-      toast.info(`Report file is not ready yet. Current status: ${report.status}`);
+      toast.info(t("errors.reportFileNotReady", { status: report.status }));
       await loadReports(false);
       return;
     }
@@ -1126,7 +1137,7 @@ const ReportsPage: React.FC = () => {
       )
     );
     if (candidatePaths.length === 0) {
-      toast.error("Report file is not available yet.");
+      toast.error(t("errors.reportFileUnavailable"));
       return;
     }
 
@@ -1148,14 +1159,14 @@ const ReportsPage: React.FC = () => {
       if (lastError instanceof Error) {
         throw lastError;
       }
-      throw new Error("Unable to download report.");
+      throw new Error(t("errors.downloadReportFailed"));
     } catch (error) {
       if (isReportNotReadyError(error)) {
         toast.info((error as Error).message);
         await loadReports(false);
         return;
       }
-      toast.error(error instanceof Error ? error.message : "Unable to download report.");
+      toast.error(error instanceof Error ? error.message : t("errors.downloadReportFailed"));
     } finally {
       setDownloadingReportId(null);
     }
@@ -1177,14 +1188,12 @@ const ReportsPage: React.FC = () => {
   );
 
   useEffect(() => {
-    if (activeTab !== "report") return;
     setCurrentPage(1);
-  }, [activeTab, searchQuery, typeFilter, dateFrom, dateTo, reports.length]);
+  }, [searchQuery, typeFilter, dateFrom, dateTo, reports.length]);
 
   useEffect(() => {
-    if (activeTab !== "report") return;
     setCurrentPage((prev) => Math.min(prev, totalPages));
-  }, [activeTab, totalPages]);
+  }, [totalPages]);
 
   const paginatedReports = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -1198,6 +1207,42 @@ const ReportsPage: React.FC = () => {
     slice(0, 10),
     [reports]
   );
+
+  const processingLabel = locale === "vi" ? "Dang xu ly" : "Processing";
+  const failedLabel = locale === "vi" ? "That bai" : "Failed";
+
+  const getStatusLabel = (status: ReportStatus) => {
+    switch (status) {
+      case "completed":
+        return t("ready");
+      case "processing":
+        return processingLabel;
+      default:
+        return failedLabel;
+    }
+  };
+
+  const getStatusBadgeClassName = (status: ReportStatus) => {
+    switch (status) {
+      case "completed":
+        return "border-emerald-200 bg-emerald-50 text-emerald-700";
+      case "processing":
+        return "border-amber-200 bg-amber-50 text-amber-700";
+      default:
+        return "border-rose-200 bg-rose-50 text-rose-700";
+    }
+  };
+
+  const getStatusCardAccentClassName = (status: ReportStatus) => {
+    switch (status) {
+      case "completed":
+        return "border-l-emerald-400";
+      case "processing":
+        return "border-l-amber-400";
+      default:
+        return "border-l-rose-400";
+    }
+  };
 
   const handleResetFilters = () => {
     setTypeFilter("all");
@@ -1239,47 +1284,47 @@ const ReportsPage: React.FC = () => {
     }
   };
 
+  const reportTypeFilterOptions: Array<{value: string;label: string;}> = [
+  { value: "all", label: t("filterOptions.all") },
+  { value: "carbon_footprint", label: getTypeLabel("carbon_footprint", t) },
+  { value: "market_analysis", label: getTypeLabel("market_analysis", t) },
+  { value: "carbon_audit", label: getTypeLabel("carbon_audit", t) },
+  { value: "compliance", label: getTypeLabel("compliance", t) },
+  { value: "export_declaration", label: getTypeLabel("export_declaration", t) },
+  { value: "sustainability", label: getTypeLabel("sustainability", t) },
+  { value: "product", label: t("filterOptions.product") },
+  { value: "activity", label: t("filterOptions.activity") },
+  { value: "audit", label: t("filterOptions.audit") },
+  { value: "users", label: t("filterOptions.users") },
+  { value: "analytics", label: t("filterOptions.analytics") },
+  { value: "history", label: t("filterOptions.history") },
+  { value: "company", label: t("filterOptions.company") }];
+
   return (
     <div className="space-y-4 md:space-y-6 no-horizontal-scroll" suppressHydrationWarning>
-      
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as "report" | "export")}>
-
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-          <TabsList className="grid h-auto w-full md:w-auto max-w-100 grid-cols-2 gap-2 bg-transparent p-0">
-            <TabsTrigger
-              value="report"
-              className="group gap-2 rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm data-[state=active]:border-primary/40 data-[state=active]:bg-primary/5 data-[state=active]:text-primary">
-
-              <FileText className="w-4 h-4" />
-              <span>{t("tabs.reports")}</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="export"
-              className="group gap-2 rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm data-[state=active]:border-primary/40 data-[state=active]:bg-primary/5 data-[state=active]:text-primary">
-
-              <Download className="w-4 h-4" />
-              <span>{t("tabs.export")}</span>
-            </TabsTrigger>
-          </TabsList>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {activeTab === "report" &&
+      <div className="flex flex-col gap-6">
+        <section className="order-2 space-y-4 rounded-xl border border-slate-300/80 bg-white p-4 shadow-sm md:p-5">
+          <div className="flex flex-col gap-2 border-b border-slate-100 pb-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2 text-slate-800">
+              <FileText className="h-4 w-4" />
+              <h2 className="text-sm font-semibold">{t("tabs.reports")}</h2>
+            </div>
             <Button
               variant="outline"
-              onClick={() => setCreateDialogOpen(true)}
+              onClick={() => {
+                if (!canMutate) {
+                  showNoPermissionToast();
+                  return;
+                }
+                setCreateDialogOpen(true);
+              }}
               className="gap-2 h-10 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
               size={isMobile ? "sm" : "default"}>
 
-                <Plus className="w-4 h-4" />
-                <span>Create report</span>
-              </Button>
-            }
+              <Plus className="w-4 h-4" />
+              <span>{t("createReport")}</span>
+            </Button>
           </div>
-        </div>
-
-        
-        <TabsContent value="report" className="mt-4 space-y-4">
           
           <div className="flex flex-col md:flex-row md:items-end gap-2 md:gap-4">
             <div className="relative flex-1 min-w-0">
@@ -1316,20 +1361,11 @@ const ReportsPage: React.FC = () => {
                       <SelectValue placeholder={t("filterPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent className="border-slate-200 bg-white">
-                      <SelectItem value="all">{t("filterOptions.all")}</SelectItem>
-                      <SelectItem value="carbon_footprint">Carbon Footprint</SelectItem>
-                      <SelectItem value="market_analysis">Market Analysis</SelectItem>
-                      <SelectItem value="carbon_audit">Carbon Audit</SelectItem>
-                      <SelectItem value="compliance">Compliance</SelectItem>
-                      <SelectItem value="export_declaration">Export Declaration</SelectItem>
-                      <SelectItem value="sustainability">Sustainability</SelectItem>
-                      <SelectItem value="product">{t("filterOptions.product")}</SelectItem>
-                      <SelectItem value="activity">{t("filterOptions.activity")}</SelectItem>
-                      <SelectItem value="audit">{t("filterOptions.audit")}</SelectItem>
-                      <SelectItem value="users">{t("filterOptions.users")}</SelectItem>
-                      <SelectItem value="analytics">{t("filterOptions.analytics")}</SelectItem>
-                      <SelectItem value="history">{t("filterOptions.history")}</SelectItem>
-                      <SelectItem value="company">{t("filterOptions.company")}</SelectItem>
+                      {reportTypeFilterOptions.map((option) =>
+                      <SelectItem key={`mobile-${option.value}`} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -1364,20 +1400,11 @@ const ReportsPage: React.FC = () => {
                 <SelectValue placeholder={t("filterType")} />
               </SelectTrigger>
               <SelectContent className="border-slate-200 bg-white">
-                <SelectItem value="all">{t("filterOptions.all")}</SelectItem>
-                <SelectItem value="carbon_footprint">Carbon Footprint</SelectItem>
-                <SelectItem value="market_analysis">Market Analysis</SelectItem>
-                <SelectItem value="carbon_audit">Carbon Audit</SelectItem>
-                <SelectItem value="compliance">Compliance</SelectItem>
-                <SelectItem value="export_declaration">Export Declaration</SelectItem>
-                <SelectItem value="sustainability">Sustainability</SelectItem>
-                <SelectItem value="product">{t("filterOptions.product")}</SelectItem>
-                <SelectItem value="activity">{t("filterOptions.activity")}</SelectItem>
-                <SelectItem value="audit">{t("filterOptions.audit")}</SelectItem>
-                <SelectItem value="users">{t("filterOptions.users")}</SelectItem>
-                <SelectItem value="analytics">{t("filterOptions.analytics")}</SelectItem>
-                <SelectItem value="history">{t("filterOptions.history")}</SelectItem>
-                <SelectItem value="company">{t("filterOptions.company")}</SelectItem>
+                {reportTypeFilterOptions.map((option) =>
+                <SelectItem key={`desktop-${option.value}`} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                )}
               </SelectContent>
             </Select>
 
@@ -1405,10 +1432,9 @@ const ReportsPage: React.FC = () => {
             </div>
           </div>
 
-          
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-3">
             {reportsLoading ?
-            <Card className="border border-slate-200 shadow-sm bg-white">
+            <Card className="border border-slate-300/80 shadow-sm bg-white">
                 <CardContent className="p-8">
                   <div className="h-6 w-2/3 bg-slate-200 rounded animate-pulse mb-3" />
                   <div className="h-4 w-1/2 bg-slate-200 rounded animate-pulse mb-4" />
@@ -1416,11 +1442,11 @@ const ReportsPage: React.FC = () => {
                 </CardContent>
               </Card> :
             filteredReports.length === 0 ?
-            <Card className="border border-slate-200 shadow-sm bg-white">
+            <Card className="border border-slate-300/80 shadow-sm bg-white">
                 <CardContent className="p-8 text-center">
                   <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                   <h3 className="font-medium mb-2">
-                    {reportsError ? "Unable to load reports" : t("notFound")}
+                    {reportsError ? t("errors.unableToLoadReports") : t("notFound")}
                   </h3>
                   <p className="text-sm text-slate-600">
                     {reportsError || t("notFoundDesc")}
@@ -1428,54 +1454,74 @@ const ReportsPage: React.FC = () => {
                 </CardContent>
               </Card> :
 
-            paginatedReports.map((report) =>
-            <MobileDataCard
-              key={report.id}
-              title={report.title}
-              subtitle={`${report.date} | ${t("records", { count: report.records })}`}
-              icon={getTypeIcon(report.type)}
-              tags={[report.typeLabel, report.format]}
-              metrics={
-              report.co2e !== null ?
-              [
-              {
-                value: report.co2e.toFixed(1),
-                unit: "kg COâ‚‚e",
-                className: "text-primary"
-              }] :
+            paginatedReports.map((report) => {
+              const isDownloading = downloadingReportId === report.id;
+              const canDownload = report.status === "completed";
+              const statusLabel = getStatusLabel(report.status);
+              const statusBadgeClassName = getStatusBadgeClassName(report.status);
+              const cardAccentClassName = getStatusCardAccentClassName(report.status);
 
-              []
-              }
-              onClick={undefined}
-              actions={
-              <div className="flex flex-wrap gap-2">
-                  <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  onClick={() => handleViewReportDetails(report)}>
+              return (
+                <MobileDataCard
+                  key={report.id}
+                  className={cn("border-l-4", cardAccentClassName)}
+                  title={report.title}
+                  subtitle={`${report.date} | ${report.size} | ${t("records", { count: report.records })}`}
+                  icon={getTypeIcon(report.type)}
+                  tags={[report.typeLabel, report.format]}
+                  statusBadge={
+                    <Badge
+                      variant="outline"
+                      className={cn("gap-1 text-[11px] font-semibold", statusBadgeClassName)}>
 
-                    <Eye className="w-4 h-4 mr-1" />
-                    Details
-                  </Button>
-                  <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                  onClick={() => handleDownloadReport(report)}
-                  disabled={downloadingReportId === report.id || report.status !== "completed"}>
+                      {report.status === "completed" ?
+                      <CheckCircle2 className="h-3.5 w-3.5" /> :
+                      report.status === "processing" ?
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
+                      <Shield className="h-3.5 w-3.5" />
+                      }
+                      {statusLabel}
+                    </Badge>
+                  }
+                  meta={
+                    report.co2e !== null ?
+                    <span className="font-medium text-slate-700">
+                        {report.co2e.toFixed(1)} kg CO2e
+                      </span> :
+                    undefined
+                  }
+                  metrics={[]}
+                  onClick={undefined}
+                  actionsPlacement="footer"
+                  actions={
+                    <div className="flex w-full flex-wrap items-center gap-1.5 md:justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 border-slate-200 bg-white px-2.5 text-xs text-slate-700 hover:bg-slate-50"
+                        onClick={() => handleViewReportDetails(report)}>
 
-                    {downloadingReportId === report.id ?
-                    <Loader2 className="w-4 h-4 mr-1 animate-spin" /> :
-                    <Download className="w-4 h-4 mr-1" />
-                    }
-                    {t("download")}
-                  </Button>
-                </div>
-              }
-              showChevron={false} />
+                        <Eye className="mr-1 h-3.5 w-3.5" />
+                        {t("details")}
+                      </Button>
+                      <Button
+                        variant={canDownload ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2.5 text-xs"
+                        onClick={() => handleDownloadReport(report)}
+                        disabled={isDownloading || !canDownload}>
 
-            )
+                        {isDownloading ?
+                        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> :
+                        <Download className="mr-1 h-3.5 w-3.5" />
+                        }
+                        {t("download")}
+                      </Button>
+                    </div>
+                  }
+                  showChevron={false} />);
+
+            })
             }
           </div>
 
@@ -1509,11 +1555,27 @@ const ReportsPage: React.FC = () => {
               </Button>
             </div>
           }
-        </TabsContent>
+        </section>
 
-        
-        <TabsContent value="export" className="mt-4 space-y-4">
-          
+        <section className="order-1 space-y-4 rounded-xl border border-slate-300/80 bg-white p-4 shadow-sm md:p-5">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2 text-slate-800">
+              <Download className="h-4 w-4" />
+              <h2 className="text-sm font-semibold">{t("tabs.export")}</h2>
+            </div>
+            {exportHistory.length > 0 &&
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              onClick={() => setShowExportHistory((prev) => !prev)}>
+
+                <Clock className="mr-1 h-3.5 w-3.5" />
+                {t("filterOptions.history")}
+              </Button>
+            }
+          </div>
+
           <div>
             <h3 className="mb-3 text-sm font-semibold text-slate-800">{t("quickExport")}</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1524,7 +1586,7 @@ const ReportsPage: React.FC = () => {
                 return (
                   <Card
                     key={type.id}
-                    className={`touch-target cursor-pointer border border-slate-200 bg-white shadow-sm transition-all hover:border-slate-300 hover:shadow-md ${isExporting ? "opacity-70 pointer-events-none" : ""}`}
+                    className={`touch-target cursor-pointer border border-slate-300/80 bg-white shadow-sm transition-all hover:border-slate-400 hover:shadow-md ${isExporting ? "opacity-70 pointer-events-none" : ""}`}
                     onClick={() => handleQuickExport(type.id, type.label)}>
 
                     <CardContent className="p-4">
@@ -1539,7 +1601,7 @@ const ReportsPage: React.FC = () => {
                           </p>
                           {!exportSourcesLoading && count > 0 && (
                             <p className="text-xs text-emerald-600 font-medium mt-0.5">
-                              {count.toLocaleString()} records
+                              {t("records", { count })}
                             </p>
                           )}
                         </div>
@@ -1551,32 +1613,18 @@ const ReportsPage: React.FC = () => {
             </div>
             {exportSourcesLoading &&
             <p className="mt-2 text-xs text-slate-500">
-                Loading export source metrics...
+                {t("loadingExportSourceMetrics")}
               </p>
             }
           </div>
 
-          {exportHistory.length > 0 &&
-          <div className="flex justify-end">
-              <Button
-              variant="outline"
-              size="sm"
-              className="h-8 border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              onClick={() => setShowExportHistory((prev) => !prev)}>
-
-                <Clock className="mr-1 h-3.5 w-3.5" />
-                {t("filterOptions.history")}
-              </Button>
-            </div>
-          }
-
           {exportHistory.length > 0 && showExportHistory &&
-          <Card className="border border-slate-200 shadow-sm bg-white">
+          <Card className="border border-slate-300/80 shadow-sm bg-white">
               <CardContent className="space-y-2 pt-4">
                 {exportHistory.map((exp) =>
               <div
                 key={exp.id}
-                className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/80 p-2">
+                className="flex items-center justify-between rounded-lg border border-slate-300/80 bg-slate-100/70 p-2">
                 
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       {exp.status === "processing" ?
@@ -1610,7 +1658,8 @@ const ReportsPage: React.FC = () => {
               {t("mobileNote")}
             </p>
           }
-        </TabsContent>
+        </section>
+      </div>
 
         <Dialog
           open={createDialogOpen}
@@ -1623,9 +1672,9 @@ const ReportsPage: React.FC = () => {
 
           <DialogContent className="border border-slate-200 bg-white sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Create report</DialogTitle>
+              <DialogTitle>{t("createReport")}</DialogTitle>
               <DialogDescription>
-                Submit a new report generation request to the API.
+                {t("createReportDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -1633,7 +1682,7 @@ const ReportsPage: React.FC = () => {
               <p className="text-sm text-rose-600">{createError}</p>
               }
               <div className="space-y-2">
-                <Label>Report title</Label>
+                <Label>{t("createForm.titleLabel")}</Label>
                 <Input
                   value={createForm.title}
                   onChange={(e) =>
@@ -1642,13 +1691,13 @@ const ReportsPage: React.FC = () => {
                     title: e.target.value
                   }))
                   }
-                  placeholder="e.g. March 2026 Carbon Summary"
+                  placeholder={t("createForm.titlePlaceholder")}
                   className="border-slate-200 bg-white"
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Type</Label>
+                  <Label>{t("createForm.typeLabel")}</Label>
                   <Select
                     value={createForm.type}
                     onValueChange={(value) =>
@@ -1671,7 +1720,7 @@ const ReportsPage: React.FC = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Format</Label>
+                  <Label>{t("createForm.formatLabel")}</Label>
                   <Select
                     value={createForm.format}
                     onValueChange={(value) =>
@@ -1700,7 +1749,7 @@ const ReportsPage: React.FC = () => {
                 variant="ghost"
                 disabled={createSubmitting}
                 onClick={() => setCreateDialogOpen(false)}>
-                Cancel
+                {t("cancel")}
               </Button>
               <Button
                 className="bg-emerald-600 text-white hover:bg-emerald-700"
@@ -1709,7 +1758,7 @@ const ReportsPage: React.FC = () => {
                 {createSubmitting &&
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 }
-                Create report
+                {t("createReport")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1729,46 +1778,46 @@ const ReportsPage: React.FC = () => {
           <DialogContent className="max-h-[85vh] overflow-y-auto border border-slate-200 bg-white sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                {reportDetails?.title || selectedReport?.title || "Report details"}
+                {reportDetails?.title || selectedReport?.title || t("reportDetailsTitle")}
               </DialogTitle>
               <DialogDescription>
-                API response for `GET /reports/:id`.
+                {t("reportDetailsDesc")}
               </DialogDescription>
             </DialogHeader>
             {detailsLoading ?
             <div className="flex items-center justify-center py-10 text-slate-500">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Loading report details...
+                {t("loadingReportDetails")}
               </div> :
             reportDetails ?
             <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <p className="text-xs text-slate-500">Type</p>
+                    <p className="text-xs text-slate-500">{t("createForm.typeLabel")}</p>
                     <p className="text-sm font-medium text-slate-900">
                       {reportDetails.typeLabel}
                     </p>
                   </div>
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <p className="text-xs text-slate-500">Format</p>
+                    <p className="text-xs text-slate-500">{t("createForm.formatLabel")}</p>
                     <p className="text-sm font-medium text-slate-900">
                       {reportDetails.format}
                     </p>
                   </div>
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <p className="text-xs text-slate-500">Date</p>
+                    <p className="text-xs text-slate-500">{t("detailsFields.date")}</p>
                     <p className="text-sm font-medium text-slate-900">
                       {reportDetails.date}
                     </p>
                   </div>
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <p className="text-xs text-slate-500">Records</p>
+                    <p className="text-xs text-slate-500">{t("detailsFields.records")}</p>
                     <p className="text-sm font-medium text-slate-900">
-                      {reportDetails.records.toLocaleString()}
+                      {reportDetails.records.toLocaleString(displayLocale)}
                     </p>
                   </div>
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <p className="text-xs text-slate-500">File size</p>
+                    <p className="text-xs text-slate-500">{t("detailsFields.fileSize")}</p>
                     <p className="text-sm font-medium text-slate-900">
                       {reportDetails.size}
                     </p>
@@ -1776,26 +1825,26 @@ const ReportsPage: React.FC = () => {
                 </div>
                 {reportDetails.co2e !== null &&
                 <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3">
-                    <p className="text-xs text-slate-600">Total emissions</p>
+                    <p className="text-xs text-slate-600">{t("detailsFields.totalEmissions")}</p>
                     <p className="text-sm font-medium text-emerald-700">
                       {reportDetails.co2e.toFixed(1)} kg CO2e
                     </p>
                   </div>
                 }
                 <div className="space-y-2">
-                  <Label>Raw payload</Label>
+                  <Label>{t("detailsFields.rawPayload")}</Label>
                   <pre className="max-h-64 overflow-auto rounded-md border border-slate-200 bg-slate-950 p-3 text-xs text-slate-100">
                     {JSON.stringify(reportDetails.raw, null, 2)}
                   </pre>
                 </div>
               </div> :
             <p className="py-6 text-sm text-slate-600">
-                No details available for this report.
+                {t("detailsFields.noDetails")}
               </p>
             }
             <DialogFooter>
               <Button variant="ghost" onClick={() => setDetailsOpen(false)}>
-                Close
+                {t("close")}
               </Button>
               {selectedReport &&
               <Button
@@ -1815,10 +1864,8 @@ const ReportsPage: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </Tabs>
     </div>);
 
 };
 
 export default ReportsPage;
-

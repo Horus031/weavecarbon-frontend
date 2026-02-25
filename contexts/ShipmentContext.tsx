@@ -7,6 +7,7 @@ import React, {
   useCallback,
   ReactNode } from
 "react";
+import { useTranslations } from "next-intl";
 import {
   ProductAssessmentData,
   AddressInput } from
@@ -163,6 +164,11 @@ export const SLA_CONFIG: SLAConfig[] = [
 const generateShipmentId = () =>
 `SHIP-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
 
+type ShipmentTranslateFn = (
+  key: string,
+  values?: Record<string, string | number>
+) => string;
+
 const calculateETAFromSLA = (
 market: string,
 transportMode: "road" | "sea" | "air" | "rail",
@@ -206,7 +212,8 @@ distanceKm?: number)
 };
 
 const calculateStatusFromTime = (
-shipment: Shipment)
+shipment: Shipment,
+t: ShipmentTranslateFn)
 : {status: ShipmentStatus;progress: number;statusNote?: string;} => {
   const now = new Date();
   const created = new Date(shipment.createdAt);
@@ -232,7 +239,7 @@ shipment: Shipment)
       return {
         status: "exception",
         progress: 100,
-        statusNote: "Quá hạn theo ước tính SLA"
+        statusNote: t("statusNotes.slaEstimateOverdue")
       };
     }
     return { status: "delivered", progress: 100 };
@@ -366,6 +373,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
 }) => {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [statusLogs, setStatusLogs] = useState<ShipmentStatusLog[]>([]);
+  const t = useTranslations("logistics.shipmentContext");
 
 
   const createShipmentFromProduct = useCallback(
@@ -410,7 +418,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
             type: index === 0 ? "domestic" : "international",
             mode: leg.mode,
             origin: {
-              name: productData.originAddress.city || "Origin",
+              name: productData.originAddress.city || t("defaults.origin"),
               lat: index === 0 ? originCoords.lat : destCoords.lat - 10,
               lng: index === 0 ? originCoords.lng : destCoords.lng - 10,
               type:
@@ -421,7 +429,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
               "address"
             },
             destination: {
-              name: productData.destinationAddress.city || "Destination",
+              name: productData.destinationAddress.city || t("defaults.destination"),
               lat: destCoords.lat,
               lng: destCoords.lng,
               type:
@@ -454,13 +462,13 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
           type: "international",
           mode: primaryMode as "road" | "sea" | "air" | "rail",
           origin: {
-            name: productData.originAddress.city || "Vietnam",
+            name: productData.originAddress.city || t("defaults.vietnam"),
             lat: originCoords.lat,
             lng: originCoords.lng,
             type: "address"
           },
           destination: {
-            name: productData.destinationAddress.city || "Destination",
+            name: productData.destinationAddress.city || t("defaults.destination"),
             lat: destCoords.lat,
             lng: destCoords.lng,
             type: "warehouse"
@@ -495,7 +503,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
         progress: 0,
         destinationMarket: productData.destinationMarket || "other",
         statusNote:
-        "Trạng thái ước tính theo SLA - Không phải trạng thái vận chuyển thực tế"
+        t("statusNotes.slaEstimatedOnly")
       };
 
       setShipments((prev) => [newShipment, ...prev]);
@@ -510,13 +518,13 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
         newStatus: "planned",
         statusSource: "sla_estimate",
         timestamp: now.toISOString(),
-        note: "Tạo vận đơn tự động sau Publish sản phẩm"
+        note: t("statusNotes.autoCreatedAfterPublish")
       }]
       );
 
       return newShipment;
     },
-    []
+    [t]
   );
 
 
@@ -528,7 +536,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
     : Shipment => {
 
       const firstProduct = products[0];
-      if (!firstProduct) throw new Error("No products in batch");
+      if (!firstProduct) throw new Error(t("errors.noProductsInBatch"));
 
       const shipment = createShipmentFromProduct(firstProduct, productIds[0]);
 
@@ -543,7 +551,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
         batchId,
         productIds,
         quantity: totalQuantity,
-        productName: `Lô hàng ${batchId} (${products.length} SKU)`
+        productName: t("defaults.batchName", { batchId, skuCount: products.length })
       } :
       s
       )
@@ -551,7 +559,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
 
       return shipment;
     },
-    [createShipmentFromProduct]
+    [createShipmentFromProduct, t]
   );
 
 
@@ -632,10 +640,10 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
         id,
         "delivered",
         "manual_confirm",
-        "Xác nhận giao hàng thủ công"
+        t("statusNotes.manualDeliveryConfirmed")
       );
     },
-    [updateShipmentStatus]
+    [updateShipmentStatus, t]
   );
 
 
@@ -654,7 +662,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
       if (shipment.status === "archived") return shipment;
 
       const { status, progress, statusNote } =
-      calculateStatusFromTime(shipment);
+      calculateStatusFromTime(shipment, t);
 
 
       if (status !== shipment.status || progress !== shipment.progress) {
@@ -674,7 +682,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
       return shipment;
     })
     );
-  }, []);
+  }, [t]);
 
 
   const getShipment = useCallback(
