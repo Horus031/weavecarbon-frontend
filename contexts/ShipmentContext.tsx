@@ -402,6 +402,7 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
 
 
       let totalCO2 = 0;
+      const totalLegs = productData.transportLegs?.length || 0;
       const legs: ShipmentLeg[] = (productData.transportLegs || []).map(
         (leg, index) => {
           const emissionFactor = EMISSION_FACTORS[leg.mode] || 0.05;
@@ -412,15 +413,24 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
           productData.weightPerUnit * productData.quantity / 1000);
           totalCO2 += co2Kg;
 
+          // Interpolate coordinates for multi-leg journeys
+          const progress = totalLegs > 1 ? index / totalLegs : 0;
+          const nextProgress = totalLegs > 1 ? (index + 1) / totalLegs : 1;
+          
+          const legOriginLat = originCoords.lat + (destCoords.lat - originCoords.lat) * progress;
+          const legOriginLng = originCoords.lng + (destCoords.lng - originCoords.lng) * progress;
+          const legDestLat = originCoords.lat + (destCoords.lat - originCoords.lat) * nextProgress;
+          const legDestLng = originCoords.lng + (destCoords.lng - originCoords.lng) * nextProgress;
+
           return {
             id: `leg-${Date.now()}-${index}`,
             legNumber: index + 1,
             type: index === 0 ? "domestic" : "international",
             mode: leg.mode,
             origin: {
-              name: productData.originAddress.city || t("defaults.origin"),
-              lat: index === 0 ? originCoords.lat : destCoords.lat - 10,
-              lng: index === 0 ? originCoords.lng : destCoords.lng - 10,
+              name: index === 0 ? (productData.originAddress.city || t("defaults.origin")) : `Transit ${index}`,
+              lat: legOriginLat,
+              lng: legOriginLng,
               type:
               leg.mode === "sea" ?
               "port" :
@@ -429,9 +439,9 @@ export const ShipmentProvider: React.FC<{children: ReactNode;}> = ({
               "address"
             },
             destination: {
-              name: productData.destinationAddress.city || t("defaults.destination"),
-              lat: destCoords.lat,
-              lng: destCoords.lng,
+              name: index === totalLegs - 1 ? (productData.destinationAddress.city || t("defaults.destination")) : `Transit ${index + 1}`,
+              lat: legDestLat,
+              lng: legDestLng,
               type:
               leg.mode === "sea" ?
               "port" :

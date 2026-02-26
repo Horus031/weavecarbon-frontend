@@ -787,7 +787,7 @@ const ShippingOverviewMap: React.FC = () => {
         }}>
 
         {detailShipment &&
-        <DialogContent className="max-w-[68rem] w-[96vw] max-h-[90vh] overflow-y-auto overflow-x-hidden [&>button]:top-2 [&>button]:right-2">
+        <DialogContent className="max-w-272 w-[96vw] max-h-[90vh] overflow-y-auto overflow-x-hidden [&>button]:top-2 [&>button]:right-2">
             <DialogHeader className="sr-only">
               <DialogTitle>
                 {t("routeDetails")}: {detailShipment.productName}

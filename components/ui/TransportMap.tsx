@@ -14,7 +14,7 @@ import {
   Plane,
   RefreshCw,
   Ship,
-  Truck
+  Truck,
 } from "lucide-react";
 import type { TransportLeg } from "@/types/transport";
 import { configureMapboxRuntime } from "@/lib/mapbox";
@@ -38,7 +38,7 @@ const TransportMap: React.FC<TransportMapProps> = ({
   legs,
   onRefresh,
   mapSubject,
-  mapSubjectMeta
+  mapSubjectMeta,
 }) => {
   const tTrack = useTranslations("trackShipment");
   const tMap = useTranslations("trackShipment.map");
@@ -53,9 +53,9 @@ const TransportMap: React.FC<TransportMapProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
   const formatDistanceKm = (value: number) =>
-  value.toLocaleString(displayLocale, { maximumFractionDigits: 3 });
+    value.toLocaleString(displayLocale, { maximumFractionDigits: 3 });
   const formatExactValue = (value: number) =>
-  value.toLocaleString(displayLocale, { maximumFractionDigits: 3 });
+    value.toLocaleString(displayLocale, { maximumFractionDigits: 3 });
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -117,7 +117,7 @@ const TransportMap: React.FC<TransportMapProps> = ({
         projection: "mercator",
         bearing: 0,
         pitch: 0,
-        maxPitch: 0
+        maxPitch: 0,
       });
 
       mapRef.current = map;
@@ -189,7 +189,7 @@ const TransportMap: React.FC<TransportMapProps> = ({
     const end = [leg.destination.lng, leg.destination.lat];
 
     const distance = Math.sqrt(
-      Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2)
+      Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2),
     );
     const totalSteps = Math.max(100, Math.min(300, distance * 20));
     let currentStep = 0;
@@ -212,7 +212,7 @@ const TransportMap: React.FC<TransportMapProps> = ({
     map.fitBounds(bounds, {
       padding: { top: 80, bottom: 80, left: 80, right: 80 },
       duration: 1000,
-      maxZoom
+      maxZoom,
     });
 
     const lineId = `route-line-${legIndex}`;
@@ -233,9 +233,9 @@ const TransportMap: React.FC<TransportMapProps> = ({
 
       const progress = currentStep / totalSteps;
       const easeProgress =
-      progress < 0.5 ?
-      2 * progress * progress :
-      1 - Math.pow(-2 * progress + 2, 2) / 2;
+        progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
       const currentLng = start[0] + (end[0] - start[0]) * easeProgress;
       const currentLat = start[1] + (end[1] - start[1]) * easeProgress;
@@ -286,13 +286,13 @@ const TransportMap: React.FC<TransportMapProps> = ({
             allPoints.push({
               ...leg.origin,
               isOrigin: true,
-              isDestination: false
+              isDestination: false,
             });
           }
           allPoints.push({
             ...leg.destination,
             isOrigin: false,
-            isDestination: index === legs.length - 1
+            isDestination: index === legs.length - 1,
           });
         });
 
@@ -301,7 +301,7 @@ const TransportMap: React.FC<TransportMapProps> = ({
         mapRef.current.fitBounds(bounds, {
           padding: { top: 80, bottom: 80, left: 80, right: 80 },
           maxZoom: 10,
-          duration: 1000
+          duration: 1000,
         });
       }
     } else {
@@ -359,11 +359,11 @@ const TransportMap: React.FC<TransportMapProps> = ({
               geometry: {
                 type: "LineString",
                 coordinates: [
-                [leg.origin.lng, leg.origin.lat],
-                [leg.destination.lng, leg.destination.lat]]
-
-              }
-            } as GeoJSON.Feature
+                  [leg.origin.lng, leg.origin.lat],
+                  [leg.destination.lng, leg.destination.lat],
+                ],
+              },
+            } as GeoJSON.Feature,
           });
 
           map.addLayer({
@@ -372,14 +372,14 @@ const TransportMap: React.FC<TransportMapProps> = ({
             source: sourceId,
             layout: {
               "line-join": "round",
-              "line-cap": "round"
+              "line-cap": "round",
             },
             paint: {
               "line-color": getModeColor(leg.mode),
               "line-width": 8,
               "line-opacity": 0.3,
-              "line-blur": 4
-            }
+              "line-blur": 4,
+            },
           });
 
           map.addLayer({
@@ -388,16 +388,16 @@ const TransportMap: React.FC<TransportMapProps> = ({
             source: sourceId,
             layout: {
               "line-join": "round",
-              "line-cap": "round"
+              "line-cap": "round",
             },
             paint: {
               "line-color": getModeColor(leg.mode),
               "line-width": 3,
               "line-opacity": 0.8,
               ...(leg.mode === "air" && {
-                "line-dasharray": [2, 2]
-              })
-            }
+                "line-dasharray": [2, 2],
+              }),
+            },
           });
         });
 
@@ -407,13 +407,13 @@ const TransportMap: React.FC<TransportMapProps> = ({
             allPoints.push({
               ...leg.origin,
               isOrigin: true,
-              isDestination: false
+              isDestination: false,
             });
           }
           allPoints.push({
             ...leg.destination,
             isOrigin: false,
-            isDestination: index === legs.length - 1
+            isDestination: index === legs.length - 1,
           });
         });
 
@@ -439,11 +439,11 @@ const TransportMap: React.FC<TransportMapProps> = ({
             </div>
           `;
 
-          const pointTypeLabel = point.isOrigin ?
-          tMap("point.origin") :
-          point.isDestination ?
-          tMap("point.destination") :
-          tMap("point.transit");
+          const pointTypeLabel = point.isOrigin
+            ? tMap("point.origin")
+            : point.isDestination
+              ? tMap("point.destination")
+              : tMap("point.transit");
 
           const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
             <div style="padding: 8px;">
@@ -454,10 +454,10 @@ const TransportMap: React.FC<TransportMapProps> = ({
             </div>
           `);
 
-          const marker = new mapboxgl.Marker(el).
-          setLngLat([point.lng, point.lat]).
-          setPopup(popup).
-          addTo(map);
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat([point.lng, point.lat])
+            .setPopup(popup)
+            .addTo(map);
 
           markersRef.current.push(marker);
         });
@@ -468,12 +468,10 @@ const TransportMap: React.FC<TransportMapProps> = ({
           map.fitBounds(bounds, {
             padding: { top: 80, bottom: 80, left: 80, right: 80 },
             maxZoom: 10,
-            duration: 1000
+            duration: 1000,
           });
         }
-      } catch {
-
-      }
+      } catch {}
     };
 
     if (map.loaded() && map.isStyleLoaded()) {
@@ -496,7 +494,8 @@ const TransportMap: React.FC<TransportMapProps> = ({
     const distanceKm = Math.max(0, leg.distanceKm);
     if (leg.mode === "air") return days + 1;
     if (leg.mode === "ship") {
-      if (distanceKm > 0) return days + Math.max(1, Math.ceil(distanceKm / 500));
+      if (distanceKm > 0)
+        return days + Math.max(1, Math.ceil(distanceKm / 500));
       return days + (leg.co2Kg > 0 ? 1 : 0);
     }
     if (distanceKm > 0) return days + Math.max(1, Math.ceil(distanceKm / 800));
@@ -523,33 +522,35 @@ const TransportMap: React.FC<TransportMapProps> = ({
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Globe className="w-5 h-5 text-primary" />
-              {mapSubject ?
-              tMap("title.withSubject", { subject: mapSubject }) :
-              tMap("title.default")}
+              {mapSubject
+                ? tMap("title.withSubject", { subject: mapSubject })
+                : tMap("title.default")}
             </CardTitle>
-            {mapSubjectMeta &&
-            <p className="pl-7 text-xs text-muted-foreground">{mapSubjectMeta}</p>
-            }
+            {mapSubjectMeta && (
+              <p className="pl-7 text-xs text-muted-foreground">
+                {mapSubjectMeta}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
-            {isAnimating &&
-            <Badge variant="outline" className="animate-pulse">
+            {isAnimating && (
+              <Badge variant="outline" className="animate-pulse">
                 {tMap("animating")}
               </Badge>
-            }
-              {onRefresh &&
-            <Button variant="outline" size="sm" onClick={onRefresh}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  {tTrack("refresh")}
-                </Button>
-            }
+            )}
+            {onRefresh && (
+              <Button variant="outline" size="sm" onClick={onRefresh}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                {tTrack("refresh")}
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
       <CardContent className="bg-white p-0">
         <div className="relative h-100 border-b border-slate-200 bg-slate-100/60">
-          {isLoading &&
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-100/90">
+          {isLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-100/90">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
                 <p className="text-sm text-muted-foreground">
@@ -557,7 +558,7 @@ const TransportMap: React.FC<TransportMapProps> = ({
                 </p>
               </div>
             </div>
-          }
+          )}
           <div ref={mapContainerRef} className="w-full h-full" />
         </div>
 
@@ -575,17 +576,23 @@ const TransportMap: React.FC<TransportMapProps> = ({
               <p className="text-2xl font-bold text-orange-600">
                 {formatExactValue(totalCO2)}
               </p>
-              <p className="text-xs text-muted-foreground">{tMap("stats.totalEmissions")}</p>
+              <p className="text-xs text-muted-foreground">
+                {tMap("stats.totalEmissions")}
+              </p>
             </div>
             <div className="rounded-lg border border-sky-200 bg-sky-50/70 p-3 text-center">
               <p className="text-2xl font-bold text-sky-600">{legs.length}</p>
-              <p className="text-xs text-muted-foreground">{tMap("stats.totalLegs")}</p>
+              <p className="text-xs text-muted-foreground">
+                {tMap("stats.totalLegs")}
+              </p>
             </div>
             <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 text-center">
               <p className="text-2xl font-bold text-emerald-600">
                 ~{estimatedDays}
               </p>
-              <p className="text-xs text-muted-foreground">{tMap("stats.estimatedDays")}</p>
+              <p className="text-xs text-muted-foreground">
+                {tMap("stats.estimatedDays")}
+              </p>
             </div>
           </div>
 
@@ -604,12 +611,12 @@ const TransportMap: React.FC<TransportMapProps> = ({
                   key={leg.id}
                   className={`flex items-center gap-3 p-3 rounded-lg transition-all cursor-pointer
                     ${selectedLeg === index ? "border border-sky-300 bg-sky-50/70 shadow-sm" : "border border-slate-200 bg-white hover:bg-slate-50"}`}
-                  onClick={() => handleLegClick(index)}>
-
+                  onClick={() => handleLegClick(index)}
+                >
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white transition-transform hover:scale-110"
-                    style={{ backgroundColor: getModeColor(leg.mode) }}>
-
+                    style={{ backgroundColor: getModeColor(leg.mode) }}
+                  >
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -623,7 +630,9 @@ const TransportMap: React.FC<TransportMapProps> = ({
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span>{formatDistanceKm(leg.distanceKm)} {tTrack("units.km")}</span>
+                      <span>
+                        {formatDistanceKm(leg.distanceKm)} {tTrack("units.km")}
+                      </span>
                       <span>•</span>
                       <span>{getRouteTypeLabel(leg.routeType)}</span>
                       <span>•</span>
@@ -634,21 +643,22 @@ const TransportMap: React.FC<TransportMapProps> = ({
                   </div>
                   <Badge
                     variant={
-                    leg.type === "international" ? "default" : "secondary"
+                      leg.type === "international" ? "default" : "secondary"
                     }
-                    className="text-xs">
-
-                    {leg.type === "international" ? tTrack("international") : tTrack("domestic")}
+                    className="text-xs"
+                  >
+                    {leg.type === "international"
+                      ? tTrack("international")
+                      : tTrack("domestic")}
                   </Badge>
-                </div>);
-
+                </div>
+              );
             })}
           </div>
         </div>
       </CardContent>
-    </Card>);
-
+    </Card>
+  );
 };
 
 export default TransportMap;
-

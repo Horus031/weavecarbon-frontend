@@ -8,8 +8,8 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue } from
-"@/components/ui/select";
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Package } from "lucide-react";
 import { ProductAssessmentData, PRODUCT_TYPES } from "./types";
@@ -29,21 +29,21 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
 
     const storageKey = "assessment_quantity_notice_shown";
     const hasShownInSession =
-    typeof window !== "undefined" &&
-    window.sessionStorage.getItem(storageKey) === "1";
+      typeof window !== "undefined" &&
+      window.sessionStorage.getItem(storageKey) === "1";
 
     if (hasShownInSession) return;
 
     toast.warning(t("quantityNotice.title"), {
       id: "assessment-quantity-note",
       duration: 12000,
-      description:
-      <ul className="list-disc pl-4 space-y-1 text-sm">
+      description: (
+        <ul className="list-disc pl-4 space-y-1 text-sm">
           <li>{t("quantityNotice.item1")}</li>
           <li>{t("quantityNotice.item2")}</li>
           <li>{t("quantityNotice.item3")}</li>
         </ul>
-
+      ),
     });
 
     if (typeof window !== "undefined") {
@@ -51,13 +51,12 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
     }
   }, [t]);
 
-
   const generateSKUPreview = () => {
     if (!data.productCode || !data.quantity || data.quantity <= 0) return [];
     const count = Math.min(data.quantity, 5);
     return Array.from(
       { length: count },
-      (_, i) => `${data.productCode}-${String(i + 1).padStart(2, "0")}`
+      (_, i) => `${data.productCode}-${String(i + 1).padStart(2, "0")}`,
     );
   };
 
@@ -65,7 +64,6 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
 
   return (
     <div className="space-y-6">
-      
       <div className="grid md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label htmlFor="productCode">{t("productCodeLabel")}</Label>
@@ -73,10 +71,11 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
             id="productCode"
             value={data.productCode}
             onChange={(e) =>
-            onChange({ productCode: e.target.value.toUpperCase() })
+              onChange({ productCode: e.target.value.toUpperCase() })
             }
-            placeholder={t("productCodePlaceholder")} />
-          
+            placeholder={t("productCodePlaceholder")}
+          />
+
           <p className="text-xs text-muted-foreground">
             {t("productCodeHelp")}
           </p>
@@ -87,8 +86,8 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
             id="productName"
             value={data.productName}
             onChange={(e) => onChange({ productName: e.target.value })}
-            placeholder={t("productNamePlaceholder")} />
-          
+            placeholder={t("productNamePlaceholder")}
+          />
         </div>
       </div>
 
@@ -97,26 +96,24 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
           <Label>{t("productTypeLabel")}</Label>
           <Select
             value={data.productType}
-            onValueChange={(v) => onChange({ productType: v })}>
-            
+            onValueChange={(v) => onChange({ productType: v })}
+          >
             <SelectTrigger>
               <SelectValue placeholder={t("productTypePlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              {PRODUCT_TYPES.map((type) =>
-              <SelectItem key={type.value} value={type.value}>
-                  {t.has(`productTypes.${type.value}`) ?
-                t(`productTypes.${type.value}`) :
-                type.label}
+              {PRODUCT_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {t.has(`productTypes.${type.value}`)
+                    ? t(`productTypes.${type.value}`)
+                    : type.label}
                 </SelectItem>
-              )}
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="weightPerUnit">
-            {t("weightPerUnitLabel")}
-          </Label>
+          <Label htmlFor="weightPerUnit">{t("weightPerUnitLabel")}</Label>
           <Input
             id="weightPerUnit"
             type="number"
@@ -124,17 +121,17 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
             step="1"
             value={data.weightPerUnit || ""}
             onChange={(e) =>
-            onChange({ weightPerUnit: Number(e.target.value) })
+              onChange({ weightPerUnit: Number(e.target.value) })
             }
-            placeholder={t("weightPerUnitPlaceholder")} />
-          
+            placeholder={t("weightPerUnitPlaceholder")}
+          />
+
           <p className="text-xs text-muted-foreground">
             {t("weightPerUnitHelp")}
           </p>
         </div>
       </div>
 
-      
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="pt-6">
           <div className="flex items-start gap-4">
@@ -158,42 +155,41 @@ const Step1SKUInfo: React.FC<Step1SKUInfoProps> = ({ data, onChange }) => {
                   max="100000"
                   value={data.quantity || ""}
                   onChange={(e) =>
-                  onChange({ quantity: Number(e.target.value) })
+                    onChange({ quantity: Number(e.target.value) })
                   }
                   placeholder={t("quantityPlaceholder")}
-                  className="text-lg font-medium" />
-                
+                  className="text-lg font-medium"
+                />
               </div>
 
-              
-              {skuPreviews.length > 0 &&
-              <div className="pt-2">
+              {skuPreviews.length > 0 && (
+                <div className="pt-2">
                   <p className="text-sm font-medium mb-2">
                     {t("skuPreviewTitle")}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {skuPreviews.map((sku, i) =>
-                  <span
-                    key={i}
-                    className="px-2 py-1 bg-background rounded border text-xs font-mono">
-                    
+                    {skuPreviews.map((sku, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-1 bg-background rounded border text-xs font-mono"
+                      >
                         {sku}
                       </span>
-                  )}
-                    {data.quantity > 5 &&
-                  <span className="px-2 py-1 text-xs text-muted-foreground">
+                    ))}
+                    {data.quantity > 5 && (
+                      <span className="px-2 py-1 text-xs text-muted-foreground">
                         {t("skuPreviewMore", { count: data.quantity - 5 })}
                       </span>
-                  }
+                    )}
                   </div>
                 </div>
-              }
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
-    </div>);
-
+    </div>
+  );
 };
 
 export default Step1SKUInfo;

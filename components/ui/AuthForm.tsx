@@ -10,7 +10,7 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card";
 import SocialLogin from "@/components/auth/SocialLogin";
 import EmailAuthTabs from "@/components/auth/EmailAuthTabs";
@@ -22,13 +22,13 @@ const REMEMBER_ME_KEY = "weavecarbon_auth_remember_me";
 const AuthForm: React.FC = () => {
   const t = useTranslations("auth");
   const { signUp, signIn, signInWithGoogle, signOut, user, loading } =
-  useAuth();
+    useAuth();
   const authDisabled = process.env.NEXT_PUBLIC_AUTH_DISABLED === "1";
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
-  const userType = searchParams.get("type") as "b2b" | "b2c" || "b2b";
+  const userType = (searchParams.get("type") as "b2b" | "b2c") || "b2b";
   const forceLogin = searchParams.get("forceLogin") === "1";
   const forceSignOutDoneRef = useRef(false);
   const forceLoginCheckedRef = useRef(false);
@@ -43,8 +43,8 @@ const AuthForm: React.FC = () => {
   const [fullName, setFullName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [businessType, setBusinessType] = useState<
-    "" | "shop_online" | "brand" | "factory">(
-    "");
+    "" | "shop_online" | "brand" | "factory"
+  >("");
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
@@ -57,11 +57,15 @@ const AuthForm: React.FC = () => {
     (type: "b2b" | "b2c" | "admin" | undefined) => {
       return type === "b2c" ? "/b2c" : "/overview";
     },
-    []
+    [],
   );
 
   const redirectToCheckEmail = useCallback(
-    (params: {email?: string;source?: "email" | "google";intent?: "signin" | "signup";}) => {
+    (params: {
+      email?: string;
+      source?: "email" | "google";
+      intent?: "signin" | "signup";
+    }) => {
       const nextParams = new URLSearchParams();
       if (params.email?.trim()) {
         nextParams.set("email", params.email.trim());
@@ -75,7 +79,7 @@ const AuthForm: React.FC = () => {
       const query = nextParams.toString();
       router.push(query ? `/auth/check-email?${query}` : "/auth/check-email");
     },
-    [router]
+    [router],
   );
 
   useEffect(() => {
@@ -143,14 +147,14 @@ const AuthForm: React.FC = () => {
       GOOGLE_AUTH_FAILED: t("oauthErrors.googleAuthFailed"),
       MISSING_CODE: t("oauthErrors.missingCode"),
       EMAIL_NOT_VERIFIED: t("oauthErrors.emailNotVerified"),
-      missing_tokens: t("oauthErrors.missingCode")
+      missing_tokens: t("oauthErrors.missingCode"),
     };
 
     if (errorCode === "EMAIL_NOT_VERIFIED") {
       redirectToCheckEmail({
         email: errorDescription || email,
         source: "google",
-        intent: "signin"
+        intent: "signin",
       });
       return;
     }
@@ -160,7 +164,7 @@ const AuthForm: React.FC = () => {
     toast({
       title: t("oauthErrors.title"),
       description: message,
-      variant: "destructive"
+      variant: "destructive",
     });
 
     const params = new URLSearchParams(searchParams.toString());
@@ -172,13 +176,13 @@ const AuthForm: React.FC = () => {
 
   const validateForm = (isSignUp: boolean) => {
     const emailSchema = z.string().email(t("validation.invalidEmail"));
-    const passwordSchema = z.
-    string().
-    min(8, t("validation.passwordMin")).
-    regex(/[A-Z]/, t("validation.passwordUppercase")).
-    regex(/[a-z]/, t("validation.passwordLowercase")).
-    regex(/[0-9]/, t("validation.passwordNumber")).
-    regex(/[^A-Za-z0-9]/, t("validation.passwordSpecial"));
+    const passwordSchema = z
+      .string()
+      .min(8, t("validation.passwordMin"))
+      .regex(/[A-Z]/, t("validation.passwordUppercase"))
+      .regex(/[a-z]/, t("validation.passwordLowercase"))
+      .regex(/[0-9]/, t("validation.passwordNumber"))
+      .regex(/[^A-Za-z0-9]/, t("validation.passwordSpecial"));
 
     const newErrors: {
       email?: string;
@@ -227,16 +231,21 @@ const AuthForm: React.FC = () => {
 
     setIsLoading(true);
 
-    const { error, needsConfirmation } = await signIn(email, password, userType, {
-      rememberMe
-    });
+    const { error, needsConfirmation } = await signIn(
+      email,
+      password,
+      userType,
+      {
+        rememberMe,
+      },
+    );
 
     if (needsConfirmation) {
       setIsLoading(false);
       redirectToCheckEmail({
         email,
         source: "email",
-        intent: "signin"
+        intent: "signin",
       });
       return;
     }
@@ -246,12 +255,15 @@ const AuthForm: React.FC = () => {
       toast({
         title: t("error"),
         description:
-        error.message === "Invalid login credentials" ?
-        t("messages.invalidLoginByType", {
-          accountType: userType === "b2c" ? t("messages.consumer") : t("messages.business")
-        }) :
-        error.message,
-        variant: "destructive"
+          error.message === "Invalid login credentials"
+            ? t("messages.invalidLoginByType", {
+                accountType:
+                  userType === "b2c"
+                    ? t("messages.consumer")
+                    : t("messages.business"),
+              })
+            : error.message,
+        variant: "destructive",
       });
     } else {
       if (typeof window !== "undefined" && rememberMe) {
@@ -269,7 +281,7 @@ const AuthForm: React.FC = () => {
     setIsLoading(true);
     const result = await signUp(email, password, fullName, userType, {
       companyName: userType === "b2b" ? companyName : undefined,
-      businessType: userType === "b2b" ? businessType || undefined : undefined
+      businessType: userType === "b2b" ? businessType || undefined : undefined,
     });
 
     if (result.error) {
@@ -281,7 +293,7 @@ const AuthForm: React.FC = () => {
       toast({
         title: t("error"),
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
     } else {
       setIsLoading(false);
@@ -290,19 +302,19 @@ const AuthForm: React.FC = () => {
         toast({
           title: t("messages.checkEmailTitle"),
           description: t("messages.checkEmailDescription"),
-          duration: 6000
+          duration: 6000,
         });
         setActiveTab("login");
         redirectToCheckEmail({
           email,
           source: "email",
-          intent: "signup"
+          intent: "signup",
         });
       } else {
         toast({
           title: t("messages.signupSuccessTitle"),
           description: t("messages.signupSuccessDescription"),
-          duration: 3000
+          duration: 3000,
         });
         if (userType === "b2c") {
           router.push("/b2c");
@@ -323,7 +335,7 @@ const AuthForm: React.FC = () => {
       toast({
         title: t("error"),
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -332,8 +344,8 @@ const AuthForm: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>);
-
+      </div>
+    );
   }
 
   if (authDisabled) {
@@ -350,25 +362,21 @@ const AuthForm: React.FC = () => {
             {t("messages.authDisabled")}
           </p>
         </CardContent>
-      </Card>);
-
+      </Card>
+    );
   }
 
   return (
     <Card className="border-border/50 shadow-xl">
       <CardHeader className="text-center pb-4">
         <CardTitle className="text-xl">
-          {userType === "b2c" ?
-          t("welcome") :
-          t("welcomeb2b")}
+          {userType === "b2c" ? t("welcome") : t("welcomeb2b")}
         </CardTitle>
         <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <SocialLogin
-          onGoogleLogin={handleGoogleLogin}
-          isLoading={isLoading} />
+        <SocialLogin onGoogleLogin={handleGoogleLogin} isLoading={isLoading} />
 
         <EmailAuthTabs
           userType={userType}
@@ -389,11 +397,11 @@ const AuthForm: React.FC = () => {
           onLogin={handleEmailLogin}
           onSignUp={handleEmailSignUp}
           rememberMe={rememberMe}
-          setRememberMe={setRememberMe} />
-
+          setRememberMe={setRememberMe}
+        />
       </CardContent>
-    </Card>);
-
+    </Card>
+  );
 };
 
 export default AuthForm;

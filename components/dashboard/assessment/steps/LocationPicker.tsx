@@ -1,147 +1,128 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Search, X, Navigation } from "lucide-react";
-import {
-  buildMapboxForwardGeocodingUrl,
-  buildMapboxReverseGeocodingUrl,
-  configureMapboxRuntime
-} from "@/lib/mapbox";
+import { MapPin, Search, X, Navigation, Loader2 } from "lucide-react";
 import { AddressInput } from "./types";
+
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 interface LocationPickerProps {
   address: AddressInput;
   onChange: (address: AddressInput) => void;
   label: string;
-  defaultCenter?: [number, number];
+  defaultCenter?: [number, number]; // [lng, lat]
+  autoDetectLocation?: boolean; // Auto-detect current location on mount
 }
 
-interface GeocodingResult {
-  place_name: string;
-  center: [number, number];
-  context?: Array<{
-    id: string;
-    text: string;
-  }>;
-  address?: string;
-  text?: string;
+// Nominatim search result type
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address?: {
+    house_number?: string;
+    road?: string;
+    suburb?: string;
+    quarter?: string;
+    neighbourhood?: string;
+    city_district?: string;
+    district?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    state?: string;
+    region?: string;
+    country?: string;
+    postcode?: string;
+  };
+  type?: string;
 }
+
+// Parse Nominatim result into AddressInput components
+const parseNominatimResult = (
+  result: NominatimResult,
+): Partial<AddressInput> => {
+  const addr = result.address;
+  if (!addr) return {};
+
+  return {
+    streetNumber: addr.house_number || "",
+    street: addr.road || "",
+    ward: addr.suburb || addr.quarter || addr.neighbourhood || "",
+    district: addr.city_district || addr.district || "",
+    city: addr.city || addr.town || addr.village || "",
+    stateRegion: addr.state || addr.region || "",
+    country: addr.country || "",
+    postalCode: addr.postcode || "",
+  };
+};
 
 const LocationPicker: React.FC<LocationPickerProps> = ({
   address,
   onChange,
   label,
-  defaultCenter = [106.6297, 10.8231]
+  defaultCenter = [106.6297, 10.8231], // Default to Ho Chi Minh City
+  autoDetectLocation = false,
 }) => {
   const t = useTranslations("assessment.locationPicker");
-  const tAddress = useTranslations("addressSelection");
-  const locale = useLocale();
-  const mapLanguage = locale === "vi" ? "vi" : "en";
-
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
+  const [searchResults, setSearchResults] = useState<NominatimResult[]>([]);
   const [showResults, setShowResults] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const autoDetectDone = useRef(false);
 
+  // Store refs for callbacks to avoid stale closures
   const initialAddressRef = useRef({ lat: address.lat, lng: address.lng });
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
-
   const addressRef = useRef(address);
   addressRef.current = address;
 
-  const parseGeocodingResult = useCallback(
-    (feature: GeocodingResult): Partial<AddressInput> => {
-      const result: Partial<AddressInput> = {};
+  // Reverse geocode using Nominatim
+  const reverseGeocode = useCallback(async (lng: number, lat: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=vi`,
+        { headers: { "User-Agent": "WeaveCarbon/1.0" } },
+      );
+      const data: NominatimResult = await response.json();
 
-      if (feature.address) {
-        result.streetNumber = feature.address;
-      }
-      if (feature.text) {
-        result.street = feature.text;
-      }
-
-      if (feature.context) {
-        feature.context.forEach((ctx) => {
-          if (ctx.id.startsWith("locality") || ctx.id.startsWith("neighborhood")) {
-            result.ward = ctx.text;
-          } else if (ctx.id.startsWith("district")) {
-            result.district = ctx.text;
-          } else if (ctx.id.startsWith("place")) {
-            result.city = ctx.text;
-          } else if (ctx.id.startsWith("region")) {
-            result.stateRegion = ctx.text;
-          } else if (ctx.id.startsWith("country")) {
-            result.country = ctx.text;
-          } else if (ctx.id.startsWith("postcode")) {
-            result.postalCode = ctx.text;
-          }
+      if (data && data.address) {
+        const addressParts = parseNominatimResult(data);
+        onChangeRef.current({
+          ...addressRef.current,
+          ...addressParts,
+          lat,
+          lng,
         });
-      }
-
-      return result;
-    },
-    []
-  );
-
-  const reverseGeocode = useCallback(
-    async (lng: number, lat: number) => {
-      try {
-        const reverseGeocodingUrl = buildMapboxReverseGeocodingUrl(lng, lat, {
-          language: mapLanguage
-        });
-        if (!reverseGeocodingUrl) {
-          onChangeRef.current({
-            ...addressRef.current,
-            lat,
-            lng
-          });
-          return;
-        }
-
-        const response = await fetch(reverseGeocodingUrl);
-        const data = await response.json();
-
-        if (data.features && data.features.length > 0) {
-          const feature = data.features[0];
-          const addressParts = parseGeocodingResult(feature);
-
-          onChangeRef.current({
-            ...addressRef.current,
-            ...addressParts,
-            lat,
-            lng
-          });
-          return;
-        }
-
+      } else {
         onChangeRef.current({
           ...addressRef.current,
           lat,
-          lng
-        });
-      } catch (error) {
-        console.error("Reverse geocoding error:", error);
-        onChangeRef.current({
-          ...addressRef.current,
-          lat,
-          lng
+          lng,
         });
       }
-    },
-    [mapLanguage, parseGeocodingResult]
-  );
+    } catch (error) {
+      console.error("Reverse geocoding error:", error);
+      onChangeRef.current({
+        ...addressRef.current,
+        lat,
+        lng,
+      });
+    }
+  }, []);
 
+  // Add or update marker
   const addMarker = useCallback(
     (lng: number, lat: number) => {
       if (!mapRef.current) return;
@@ -152,7 +133,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
       const marker = new mapboxgl.Marker({
         color: "#10b981",
-        draggable: true
+        draggable: true,
       })
         .setLngLat([lng, lat])
         .addTo(mapRef.current);
@@ -167,17 +148,18 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       mapRef.current.flyTo({
         center: [lng, lat],
         zoom: 14,
-        duration: 1000
+        duration: 1000,
       });
     },
-    [reverseGeocode]
+    [reverseGeocode],
   );
 
+  // Initialize map
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
     try {
-      configureMapboxRuntime(mapboxgl);
+      mapboxgl.accessToken = MAPBOX_TOKEN || "";
 
       const initialLat = initialAddressRef.current.lat;
       const initialLng = initialAddressRef.current.lng;
@@ -189,7 +171,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         style: "mapbox://styles/mapbox/streets-v12",
         center: initialCenter,
         zoom: initialLat && initialLng ? 14 : 10,
-        attributionControl: false
+        attributionControl: false,
       });
 
       map.addControl(new mapboxgl.NavigationControl(), "top-right");
@@ -199,7 +181,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         if (initialLat && initialLng) {
           const marker = new mapboxgl.Marker({
             color: "#10b981",
-            draggable: true
+            draggable: true,
           })
             .setLngLat([initialLng, initialLat])
             .addTo(map);
@@ -213,8 +195,8 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         }
       });
 
-      map.on("click", async (event) => {
-        const { lng, lat } = event.lngLat;
+      map.on("click", async (e) => {
+        const { lng, lat } = e.lngLat;
         addMarker(lng, lat);
         await reverseGeocode(lng, lat);
       });
@@ -226,87 +208,136 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     } catch (error) {
       console.error("Error initializing map:", error);
     }
-  }, [addMarker, defaultCenter, reverseGeocode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const searchLocation = useCallback(
-    async (query: string) => {
-      if (!query.trim()) {
-        setSearchResults([]);
-        return;
-      }
+  // Auto-detect current location on mount (for origin)
+  useEffect(() => {
+    if (!autoDetectLocation || autoDetectDone.current) return;
+    // Only auto-detect if no address has been set yet
+    if (address.lat && address.lng) return;
 
-      try {
-        const forwardGeocodingUrl = buildMapboxForwardGeocodingUrl(query, {
-          limit: 5,
-          language: mapLanguage
-        });
-        if (!forwardGeocodingUrl) {
-          setSearchResults([]);
-          return;
-        }
+    autoDetectDone.current = true;
 
-        const response = await fetch(forwardGeocodingUrl);
-        const data = await response.json();
-        setSearchResults(data.features || []);
-        setShowResults(true);
-      } catch (error) {
-        console.error("Search error:", error);
-        setSearchResults([]);
-      }
-    },
-    [mapLanguage]
-  );
+    if (!navigator.geolocation) return;
 
-  const selectLocation = (result: GeocodingResult) => {
-    const [lng, lat] = result.center;
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { longitude, latitude } = position.coords;
+        // Wait a bit for the map to be ready
+        const waitForMap = () => {
+          if (mapRef.current) {
+            addMarker(longitude, latitude);
+            reverseGeocode(longitude, latitude);
+            setIsLocating(false);
+          } else {
+            setTimeout(waitForMap, 200);
+          }
+        };
+        waitForMap();
+      },
+      (error) => {
+        console.error("Auto-detect location error:", error);
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
+    );
+  }, [autoDetectLocation, address.lat, address.lng, addMarker, reverseGeocode]);
+
+  // Search for location using Nominatim (OpenStreetMap)
+  const searchLocation = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=6&accept-language=vi`,
+        { headers: { "User-Agent": "WeaveCarbon/1.0" } },
+      );
+      const data: NominatimResult[] = await response.json();
+      setSearchResults(data || []);
+      setShowResults(true);
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Handle search result selection
+  const selectLocation = (result: NominatimResult) => {
+    const lng = parseFloat(result.lon);
+    const lat = parseFloat(result.lat);
     addMarker(lng, lat);
 
-    const addressParts = parseGeocodingResult(result);
+    const addressParts = parseNominatimResult(result);
     onChange({
       ...address,
       ...addressParts,
       lat,
-      lng
+      lng,
     });
 
-    setSearchQuery(result.place_name);
+    setSearchQuery(result.display_name);
     setShowResults(false);
     setSearchResults([]);
   };
 
+  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchQuery.length >= 3) {
         searchLocation(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowResults(false);
       }
-    }, 300);
+    }, 400);
 
     return () => clearTimeout(timer);
-  }, [searchLocation, searchQuery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
+  // Get current location (manual button click)
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert(t("browserNotSupported"));
+      alert("Trình duyệt không hỗ trợ định vị");
       return;
     }
 
+    setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { longitude, latitude } = position.coords;
         addMarker(longitude, latitude);
         await reverseGeocode(longitude, latitude);
+        setIsLocating(false);
       },
       (error) => {
         console.error("Geolocation error:", error);
-        alert(t("cannotGetLocation"));
-      }
+        alert(t("currentLocation"));
+        setIsLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
     );
   };
 
-  const aptSuiteValue = [address.ward, address.district].
-    map((part) => part.trim()).
-    filter(Boolean).
-    join(", ");
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".location-search-container")) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <Card>
@@ -316,19 +347,23 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
           {label}
         </div>
 
-        <div className="relative">
+        {/* Search box */}
+        <div className="relative location-search-container">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              {isSearching ? (
+                <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
+              ) : (
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              )}
               <Input
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("searchPlaceholder")}
                 className="pl-9 pr-8"
                 onFocus={() => searchResults.length > 0 && setShowResults(true)}
               />
-
-              {searchQuery ? (
+              {searchQuery && (
                 <button
                   onClick={() => {
                     setSearchQuery("");
@@ -339,126 +374,113 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
                 >
                   <X className="w-4 h-4" />
                 </button>
-              ) : null}
+              )}
             </div>
-
             <Button
               type="button"
               variant="outline"
               size="icon"
               onClick={getCurrentLocation}
+              disabled={isLocating}
               title={t("currentLocation")}
             >
-              <Navigation className="w-4 h-4" />
+              {isLocating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Navigation className="w-4 h-4" />
+              )}
             </Button>
           </div>
 
-          {showResults && searchResults.length > 0 ? (
+          {/* Search results dropdown */}
+          {showResults && searchResults.length > 0 && (
             <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
-              {searchResults.map((result, index) => (
+              {searchResults.map((result) => (
                 <button
-                  key={`${result.place_name}-${index}`}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-start gap-2"
+                  key={result.place_id}
+                  className="w-full px-3 py-2.5 text-left text-sm hover:bg-muted flex items-start gap-2 border-b last:border-b-0"
                   onClick={() => selectLocation(result)}
                 >
                   <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
-                  <span className="line-clamp-2">{result.place_name}</span>
+                  <div className="min-w-0">
+                    <span className="line-clamp-2 text-foreground">
+                      {result.display_name}
+                    </span>
+                    {result.address && (
+                      <span className="text-xs text-muted-foreground block mt-0.5">
+                        {[
+                          result.address.city || result.address.town,
+                          result.address.state,
+                          result.address.country,
+                        ]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
-          ) : null}
+          )}
+
+          {/* No results message */}
+          {showResults &&
+            searchResults.length === 0 &&
+            searchQuery.length >= 3 &&
+            !isSearching && (
+              <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg p-3 text-sm text-muted-foreground text-center">
+                Không tìm thấy kết quả cho &ldquo;{searchQuery}&rdquo;
+              </div>
+            )}
         </div>
 
+        {/* Auto-detecting indicator */}
+        {isLocating && autoDetectLocation && (
+          <div className="flex items-center gap-2 text-xs text-primary bg-primary/5 px-3 py-2 rounded border border-primary/20">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>{t("detectingLocation")}</span>
+          </div>
+        )}
+
+        {/* Map container */}
         <div
           ref={mapContainerRef}
           className="w-full rounded-lg overflow-hidden border"
           style={{ height: "250px" }}
         />
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">
-              {tAddress("aptSuiteLabel")}
-            </Label>
-            <Input
-              value={aptSuiteValue}
-              placeholder={tAddress("aptSuitePlaceholder")}
-              onChange={(event) => {
-                const nextValue = event.target.value.trim();
-                if (!nextValue) {
-                  onChange({
-                    ...address,
-                    ward: "",
-                    district: ""
-                  });
-                  return;
-                }
-
-                const [ward, ...districtParts] = nextValue.
-                  split(",").
-                  map((part) => part.trim()).
-                  filter(Boolean);
-
-                onChange({
-                  ...address,
-                  ward: ward || "",
-                  district: districtParts.join(", ")
-                });
-              }}
-            />
+        {/* Parsed address display */}
+        {address.lat && address.lng && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded">
+              <MapPin className="w-3 h-3 shrink-0" />
+              <span>
+                {address.lat.toFixed(6)}, {address.lng.toFixed(6)}
+              </span>
+              {address.city && (
+                <>
+                  <span className="mx-1">•</span>
+                  <span className="truncate">
+                    {[
+                      address.street,
+                      address.ward,
+                      address.district,
+                      address.city,
+                      address.country,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
+        )}
 
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">
-              {tAddress("provinceLabel")}
-            </Label>
-            <Input
-              value={address.stateRegion || ""}
-              placeholder={tAddress("stateProvincePlaceholder")}
-              onChange={(event) =>
-                onChange({
-                  ...address,
-                  stateRegion: event.target.value
-                })
-              }
-            />
-          </div>
-
-          <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs text-muted-foreground">
-              {tAddress("countryLabel")}
-            </Label>
-            <Input
-              value={address.country || ""}
-              placeholder={tAddress("countryPlaceholder")}
-              onChange={(event) =>
-                onChange({
-                  ...address,
-                  country: event.target.value
-                })
-              }
-            />
-          </div>
-        </div>
-
-        {address.lat && address.lng ? (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded">
-            <MapPin className="w-3 h-3" />
-            <span>
-              {address.lat.toFixed(6)}, {address.lng.toFixed(6)}
-            </span>
-            {address.city ? (
-              <>
-                <span className="mx-1">•</span>
-                <span>
-                  {address.city}, {address.country}
-                </span>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-
-        <p className="text-xs text-muted-foreground">{t("mapHint")}</p>
+        {/* Click instruction */}
+        <p className="text-xs text-muted-foreground">
+          💡 {t("mapHint")}
+        </p>
       </CardContent>
     </Card>
   );

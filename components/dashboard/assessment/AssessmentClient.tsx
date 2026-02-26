@@ -318,6 +318,13 @@ export default function AssessmentClient({
   const [draftHistory, setDraftHistory] = useState<DraftVersion[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // const steps = stepKeys.map((key, i) => ({
+  //   id: i + 1,
+  //   title: t(`steps.${key}`),
+  //   icon: stepIcons[i],
+  //   key,
+  // }));
+
   useEffect(() => {
     if (isModalMode) return;
     setPageTitle(t("pageTitle"), t("pageSubtitle"));

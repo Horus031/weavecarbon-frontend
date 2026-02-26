@@ -1704,7 +1704,7 @@
       "transport": {
         "title": "Phương thức vận chuyển",
         "subtitle": "Thêm các chặng vận chuyển từ điểm đi đến điểm đến",
-        "totalDistance": "Tổng: ~{value} km",
+        "totalDistance": "Tổng: ~{distance} km",
         "leg": "Chặng {index}",
         "distancePlaceholder": "Km ước tính",
         "distanceUnit": "km",
@@ -1720,6 +1720,7 @@
       "suggestedRoute": {
         "title": "Tuyến gợi ý:",
         "road": "Đường bộ (nội địa)",
+        "air": "Đường hàng không",
         "sea": "Đường biển (quốc tế)",
         "apply": "Áp dụng gợi ý này"
       }
@@ -1727,6 +1728,7 @@
     "locationPicker": {
       "browserNotSupported": "Trình duyệt của bạn không hỗ trợ định vị",
       "cannotGetLocation": "Không thể lấy vị trí hiện tại",
+      "detectingLocation": "Đang xác định vị trí của bạn...",
       "searchPlaceholder": "Tìm địa chỉ...",
       "currentLocation": "Vị trí hiện tại",
       "mapHint": "Nhấn vào bản đồ hoặc kéo điểm đánh dấu để chọn vị trí chính xác"

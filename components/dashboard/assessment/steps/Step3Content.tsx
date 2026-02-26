@@ -43,7 +43,6 @@ const Step3ProductionEnergy: React.FC<Step3ProductionEnergyProps> = ({
   onChange
 }) => {
   const t = useTranslations("assessment.step3");
-
   const materialWarnings = useMemo(() => {
     const warnings: { type: "info" | "warning"; message: string }[] = [];
 

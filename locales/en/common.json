@@ -1973,7 +1973,7 @@
       "transport": {
         "title": "Transport Modes",
         "subtitle": "Add transport legs from origin to destination",
-        "totalDistance": "Total: ~{value} km",
+        "totalDistance": "Total: ~{distance} km",
         "leg": "Leg {index}",
         "distancePlaceholder": "Estimated km",
         "distanceUnit": "km",
@@ -1989,6 +1989,7 @@
       "suggestedRoute": {
         "title": "Suggested route:",
         "road": "Road (domestic)",
+        "air":"Air freight",
         "sea": "Sea (international)",
         "apply": "Apply this suggestion"
       }
@@ -1996,6 +1997,7 @@
     "locationPicker": {
       "browserNotSupported": "Your browser does not support geolocation",
       "cannotGetLocation": "Unable to get current location",
+      "detectingLocation": "Determining your location...",
       "searchPlaceholder": "Search address...",
       "currentLocation": "Current location",
       "mapHint": "Click the map or drag the marker to set an exact location"

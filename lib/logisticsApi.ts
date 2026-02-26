@@ -720,6 +720,15 @@ export const formatShipmentLocation = locationLabel;
 
 export const toTrackShipmentStatus = (status: LogisticsShipmentStatus) => status;
 
+// Detect if shipment legs are corrupted (all same transport_mode with 0 distance)
+const isCorruptedLegsData = (legs: LogisticsShipmentLeg[]): boolean => {
+  if (legs.length === 0) return false;
+  const firstMode = legs[0].transport_mode;
+  const allSameMode = legs.every((leg) => leg.transport_mode === firstMode);
+  const allZeroDistance = legs.every((leg) => leg.distance_km === 0 || leg.distance_km === null);
+  return allSameMode && allZeroDistance;
+};
+
 export const toTransportLegs = (shipment: LogisticsShipmentDetail): TransportLeg[] => {
   const originCoordinates = resolveCoordinates(shipment.origin);
   const destinationCoordinates = resolveCoordinates(shipment.destination);
@@ -776,8 +785,12 @@ export const toTransportLegs = (shipment: LogisticsShipmentDetail): TransportLeg
 
   }
 
+  // Check if legs data is corrupted (all same mode with 0 distance)
+  const isCorrupted = isCorruptedLegsData(shipment.legs);
+  const totalLegs = shipment.legs.length;
+  const totalDistanceKm = shipment.total_distance_km || directRouteDistanceKm || 1000;
+
   return shipment.legs.map((leg, index) => {
-    const totalLegs = shipment.legs.length;
     const startProgress = totalLegs > 1 ? index / totalLegs : 0;
     const endProgress = totalLegs > 1 ? (index + 1) / totalLegs : 1;
     const fallbackOriginPoint = interpolate(
@@ -804,15 +817,22 @@ export const toTransportLegs = (shipment: LogisticsShipmentDetail): TransportLeg
 
     const mode = modeToTransportLegMode(leg.transport_mode);
     const routeType = modeToRouteType(leg.transport_mode);
-    const fallbackDistancePerLeg =
-    shipment.total_distance_km > 0 ? shipment.total_distance_km / totalLegs : 0;
+    
+    // If data is corrupted, distribute total distance among legs
+    // Otherwise use individual leg distance or fallback
+    const fallbackDistancePerLeg = isCorrupted ? 
+      totalDistanceKm / totalLegs : 
+      (shipment.total_distance_km > 0 ? shipment.total_distance_km / totalLegs : 0);
+    
     const emissionFactor = resolveLegEmissionFactor(leg);
-    const distanceKm = resolveLegDistanceKm(
-      leg,
-      fallbackDistancePerLeg,
-      fallbackOriginPoint,
-      fallbackDestinationPoint
-    );
+    const distanceKm = isCorrupted ?
+      Math.max(leg.distance_km || 0, fallbackDistancePerLeg) :
+      resolveLegDistanceKm(
+        leg,
+        fallbackDistancePerLeg,
+        fallbackOriginPoint,
+        fallbackDestinationPoint
+      );
     const co2Kg = resolveLegCo2Kg(leg, distanceKm, emissionFactor);
 
     return {
