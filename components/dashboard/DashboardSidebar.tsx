@@ -22,6 +22,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Company, Profile } from "@/types/app.type";
 import { useTranslations } from "next-intl";
+import { Separator } from "../ui/separator";
 
 interface DashboardSidebarProps {
   company: Company | null;
@@ -141,6 +142,18 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
+          <div className="mb-4 border-b border-border">
+            {sidebarOpen && (
+              <div className="mb-3">
+                <p className="font-medium text-sm truncate">
+                  {profile?.full_name || user?.email}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {company?.name || "No company"}
+                </p>
+              </div>
+            )}
+          </div>
           {menuItems.map((item) => {
             const active = isActive(item.path);
             return (
@@ -163,29 +176,17 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               </Link>
             );
           })}
-        </nav>
-
-        <div className="p-4 border-t border-border">
-          {sidebarOpen && (
-            <div className="mb-3">
-              <p className="font-medium text-sm truncate">
-                {profile?.full_name || user?.email}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">
-                {company?.name || "No company"}
-              </p>
-            </div>
-          )}
+          <Separator className="my-4" />
           <Button
             variant="outline"
             size="sm"
-            className="w-full"
+            className="w-full text-left"
             onClick={handleSignOut}
           >
             <LogOut className="w-4 h-4" />
             {sidebarOpen && <span className="ml-2">{t("signOut")}</span>}
           </Button>
-        </div>
+        </nav>
       </aside>
     </>
   );

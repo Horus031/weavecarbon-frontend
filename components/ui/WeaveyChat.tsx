@@ -23,6 +23,12 @@ const WeaveyChat: React.FC<WeaveyChatProps> = ({ variant = "landing" }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Draggable button state
+  const [buttonPosition, setButtonPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number; buttonX: number; buttonY: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
   const { messages, isLoading, sendMessage, clearHistory } = useWeaveyChat({
     currentPage: pathname,
   });
@@ -49,6 +55,133 @@ const WeaveyChat: React.FC<WeaveyChatProps> = ({ variant = "landing" }) => {
     }
   };
 
+  // Drag handlers for the floating button
+  const handleDragStart = (clientX: number, clientY: number) => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setIsDragging(true);
+      setDragStart({
+        x: clientX,
+        y: clientY,
+        buttonX: rect.left,
+        buttonY: rect.top,
+      });
+    }
+  };
+
+  const handleDragMove = (clientX: number, clientY: number) => {
+    if (isDragging && dragStart) {
+      const deltaX = clientX - dragStart.x;
+      const deltaY = clientY - dragStart.y;
+      
+      // Calculate new position
+      let newX = dragStart.buttonX + deltaX;
+      let newY = dragStart.buttonY + deltaY;
+      
+      // Get button dimensions and viewport size
+      if (buttonRef.current) {
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        const buttonWidth = buttonRect.width;
+        const buttonHeight = buttonRect.height;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Apply boundary constraints
+        // Ensure button stays within viewport
+        newX = Math.max(0, Math.min(newX, viewportWidth - buttonWidth));
+        newY = Math.max(0, Math.min(newY, viewportHeight - buttonHeight));
+      }
+      
+      setButtonPosition({
+        x: newX,
+        y: newY,
+      });
+    }
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
+  // Mouse events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleDragStart(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    handleDragMove(e.clientX, e.clientY);
+  };
+
+  const handleMouseUp = () => {
+    handleDragEnd();
+  };
+
+  // Touch events for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      handleDragStart(touch.clientX, touch.clientY);
+    }
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      handleDragMove(touch.clientX, touch.clientY);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    handleDragEnd();
+  };
+
+  // Add/remove event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("touchmove", handleTouchMove);
+      window.addEventListener("touchend", handleTouchEnd);
+
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+        window.removeEventListener("touchmove", handleTouchMove);
+        window.removeEventListener("touchend", handleTouchEnd);
+      };
+    }
+  }, [isDragging, dragStart]);
+  // Handle window resize to keep button within bounds
+  useEffect(() => {
+    const handleResize = () => {
+      if (buttonPosition && buttonRef.current) {
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        const buttonWidth = buttonRect.width;
+        const buttonHeight = buttonRect.height;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Constrain button position within new viewport bounds
+        const constrainedX = Math.max(0, Math.min(buttonPosition.x, viewportWidth - buttonWidth));
+        const constrainedY = Math.max(0, Math.min(buttonPosition.y, viewportHeight - buttonHeight));
+        
+        // Only update if position changed
+        if (constrainedX !== buttonPosition.x || constrainedY !== buttonPosition.y) {
+          setButtonPosition({
+            x: constrainedX,
+            y: constrainedY,
+          });
+        }
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [buttonPosition]);
+
+
   const welcomeMessage = user
     ? `Xin chào! Tôi là Weavey, trợ lý AI của WeaveCarbon. Tôi có thể giúp bạn:
     
@@ -67,10 +200,28 @@ Tôi là trợ lý AI bền vững của WeaveCarbon, sẵn sàng giúp bạn:
 
 Hãy hỏi tôi bất cứ điều gì!`;
 
+  // Handle button click (only open if not dragging)
+  const handleButtonClick = () => {
+    if (!isDragging) {
+      setIsOpen(true);
+    }
+  };
+
   // Landing page variant - larger chat widget
   if (variant === "landing") {
     return (
-      <div className="fixed md:bottom-6 md:right-6 z-50">
+      <div 
+        className={isOpen ? "fixed md:bottom-6 md:right-6 z-50" : "fixed z-50"}
+        style={!isOpen && buttonPosition ? {
+          left: `${buttonPosition.x}px`,
+          top: `${buttonPosition.y}px`,
+          bottom: 'auto',
+          right: 'auto',
+        } : !isOpen ? {
+          bottom: '1.5rem',
+          right: '1.5rem',
+        } : {}}
+      >
         {isOpen ? (
           <div className="bg-card border border-border rounded-2xl shadow-2xl w-95 h-130 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
             {/* Header */}
@@ -168,8 +319,17 @@ Hãy hỏi tôi bất cứ điều gì!`;
           </div>
         ) : (
           <Button
-            onClick={() => setIsOpen(true)}
-            className="w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-linear-to-r from-primary to-accent hover:scale-110"
+            ref={buttonRef}
+            onClick={handleButtonClick}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            className={cn(
+              "w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-linear-to-r from-primary to-accent",
+              isDragging ? "cursor-grabbing scale-110" : "hover:scale-110 cursor-grab"
+            )}
+            style={{
+              touchAction: 'none',
+            }}
           >
             <MessageCircle className="w-6 h-6" />
           </Button>
@@ -180,7 +340,18 @@ Hãy hỏi tôi bất cứ điều gì!`;
 
   // Dashboard variant - compact floating button with expandable chat
   return (
-    <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50">
+    <div 
+      className={isOpen ? "fixed bottom-4 right-4 md:bottom-6 md:right-6 z-50" : "fixed z-50"}
+      style={!isOpen && buttonPosition ? {
+        left: `${buttonPosition.x}px`,
+        top: `${buttonPosition.y}px`,
+        bottom: 'auto',
+        right: 'auto',
+      } : !isOpen ? {
+        bottom: '1rem',
+        right: '1rem',
+      } : {}}
+    >
       {isOpen ? (
         <div className="bg-card border border-border rounded-2xl shadow-2xl w-90 h-80 md:h-120 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
@@ -285,8 +456,17 @@ Hãy hỏi tôi bất cứ điều gì!`;
         </div>
       ) : (
         <Button
-          onClick={() => setIsOpen(true)}
-          className="w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-linear-to-r from-primary to-accent hover:scale-105 relative"
+          ref={buttonRef}
+          onClick={handleButtonClick}
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          className={cn(
+            "w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-linear-to-r from-primary to-accent relative",
+            isDragging ? "cursor-grabbing scale-105" : "hover:scale-105 cursor-grab"
+          )}
+          style={{
+            touchAction: 'none',
+          }}
         >
           <MessageCircle className="w-5 h-5" />
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />

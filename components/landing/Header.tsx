@@ -8,13 +8,14 @@ import { Button } from "../ui/button";
 import UserTypeDialog from "./UserTypeDialog";
 import { LanguageToggle } from "../ui/LanguageToggle";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const Header = () => {
   const navigate = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showUserTypeDialog, setShowUserTypeDialog] = useState(false);
   const t = useTranslations("navigation");
+  const pathname = usePathname();
 
   const navLinks = [
     { labelKey: "features", href: "#features" },
@@ -50,24 +51,28 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-8">
-              {navLinks.map((link) =>
-                link.href.startsWith("/") ? (
-                  <Link
-                    key={link.labelKey}
-                    href={link.href}
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {t(link.labelKey)}
-                  </Link>
-                ) : (
-                  <a
-                    key={link.labelKey}
-                    href={link.href}
-                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {t(link.labelKey)}
-                  </a>
-                ),
+              {pathname !== "/calculator" && (
+                <>
+                  {navLinks.map((link) =>
+                    link.href.startsWith("/") ? (
+                      <Link
+                        key={link.labelKey}
+                        href={link.href}
+                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {t(link.labelKey)}
+                      </Link>
+                    ) : (
+                      <a
+                        key={link.labelKey}
+                        href={link.href}
+                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {t(link.labelKey)}
+                      </a>
+                    ),
+                  )}
+                </>
               )}
             </nav>
 
